@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Studio</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #17171e;
+    --surface2: #1f1f28;
+    --border: #2e2e3a;
+    --accent: #7c6af7;
+    --accent2: #c97ff0;
+    --text: #e2e2ee;
+    --muted: #7878a0;
+    --danger: #e05555;
+    --success: #55c987;
+    --radius: 8px;
+    --sidebar: 280px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar h1 { font-size: 16px; font-weight: 600; color: var(--accent2); letter-spacing: .5px; }
+  .topbar h1 span { color: var(--muted); font-weight: 400; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); transition: background .3s; }
+  .status-dot.online { background: var(--success); }
+  .status-label { font-size: 12px; color: var(--muted); }
+  .topbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar);
+    min-width: var(--sidebar);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-inner {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .sidebar-inner::-webkit-scrollbar { width: 4px; }
+  .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 14px 0 8px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .field-grid.full { grid-template-columns: 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field label { font-size: 11px; color: var(--muted); }
+  .field select, .field input[type=text], .field input[type=number] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 5px 8px;
+    font-size: 12px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .field select:focus, .field input:focus { border-color: var(--accent); }
+
+  /* prompt preview */
+  .prompt-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px;
+    font-size: 11px;
+    color: var(--accent2);
+    line-height: 1.5;
+    min-height: 60px;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .extra-prompt {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 7px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 54px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .extra-prompt:focus { border-color: var(--accent); }
+
+  /* ── Main workspace ── */
+  .workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Mode tabs ── */
+  .mode-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 16px;
+  }
+  .mode-tab {
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .mode-tab:hover { color: var(--text); }
+  .mode-tab.active { color: var(--accent2); border-color: var(--accent2); }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 3px; }
+  .ctrl-group label { font-size: 11px; color: var(--muted); }
+  .ctrl-group select, .ctrl-group input[type=number], .ctrl-group input[type=text] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 5px 8px;
+    font-size: 12px;
+    outline: none;
+    min-width: 80px;
+    transition: border-color .15s;
+    appearance: none;
+  }
+  .ctrl-group select:focus, .ctrl-group input:focus { border-color: var(--accent); }
+
+  /* negative prompt collapsible */
+  .neg-toggle {
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+  }
+  .neg-toggle:hover { color: var(--text); }
+  #neg-wrap { display: none; }
+  #neg-wrap.open { display: block; }
+  #neg-prompt {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 44px;
+    outline: none;
+    transition: border-color .15s;
+    margin-top: 4px;
+  }
+  #neg-prompt:focus { border-color: var(--accent); }
+
+  /* refine source */
+  .refine-source {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 200px;
+  }
+  .refine-thumb {
+    width: 54px;
+    height: 54px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+    cursor: pointer;
+  }
+  .refine-placeholder {
+    width: 54px;
+    height: 54px;
+    border-radius: 6px;
+    border: 2px dashed var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
+  }
+  .refine-placeholder:hover { border-color: var(--accent); color: var(--accent); }
+  #refine-upload-input { display: none; }
+
+  /* person dropzone */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    min-width: 140px;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: rgba(124,106,247,.06); }
+  .dropzone p { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .dropzone .icon { font-size: 18px; }
+  #person-upload-input { display: none; }
+
+  .thumb-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 260px;
+  }
+  .thumb-strip img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .thumb-strip img:hover { border-color: var(--danger); }
+
+  /* generate button */
+  .btn-generate {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 9px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+  .btn-generate:hover { opacity: .9; }
+  .btn-generate:active { transform: scale(.97); }
+  .btn-generate:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ── Output area ── */
+  .output-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+  .output-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    gap: 10px;
+    font-size: 13px;
+  }
+  .output-placeholder .big { font-size: 48px; }
+
+  /* job status */
+  .job-status {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .output-card {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: border-color .15s, transform .15s;
+    max-width: 480px;
+  }
+  .output-card:hover { border-color: var(--accent); transform: scale(1.01); }
+  .output-card img, .output-card video {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    width: auto;
+    height: auto;
+    cursor: zoom-in;
+  }
+  .output-card .card-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,.8));
+    padding: 24px 10px 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .output-card:hover .card-actions { opacity: 1; }
+  .card-btn {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background .15s;
+    text-decoration: none;
+  }
+  .card-btn:hover { background: rgba(255,255,255,.22); }
+  .card-btn.refine-btn { background: rgba(124,106,247,.5); }
+  .card-btn.refine-btn:hover { background: rgba(124,106,247,.7); }
+
+  /* error card */
+  .error-card {
+    background: rgba(224,85,85,.1);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    color: var(--danger);
+    font-size: 13px;
+    width: 100%;
+  }
+
+  /* ── Gallery ── */
+  .gallery-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .gallery-header:hover { background: rgba(255,255,255,.02); }
+  .gallery-title { font-size: 13px; font-weight: 600; }
+  .gallery-count { font-size: 11px; color: var(--muted); }
+  .gallery-toggle-icon { margin-left: auto; color: var(--muted); transition: transform .2s; font-size: 12px; }
+  .gallery-toggle-icon.open { transform: rotate(180deg); }
+
+  .gallery-grid {
+    display: none;
+    padding: 10px 16px 14px;
+    overflow-x: auto;
+    white-space: nowrap;
+    max-height: 180px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .gallery-grid.open { display: block; }
+  .gallery-grid::-webkit-scrollbar { height: 4px; }
+  .gallery-grid::-webkit-scrollbar-track { background: transparent; }
+  .gallery-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .gallery-grid .inner {
+    display: inline-flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .gallery-item {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    white-space: normal;
+    width: 88px;
+    flex-shrink: 0;
+    vertical-align: top;
+  }
+  .gallery-item .gthumb {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: border-color .15s, transform .15s;
+    display: block;
+  }
+  .gallery-item .gthumb:hover { border-color: var(--accent); transform: scale(1.04); }
+  .gallery-item .gname {
+    font-size: 10px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .gallery-item .gbtns {
+    display: flex;
+    gap: 4px;
+  }
+  .gbtn {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 3px 0;
+    font-size: 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: background .15s;
+    text-decoration: none;
+    display: block;
+  }
+  .gbtn:hover { background: var(--border); }
+  .gbtn.refine { background: rgba(124,106,247,.2); border-color: var(--accent); color: var(--accent2); }
+  .gbtn.refine:hover { background: rgba(124,106,247,.35); }
+
+  /* ── Utility ── */
+  .hidden { display: none !important; }
+  .flex-gap { display: flex; gap: 8px; align-items: center; }
+  .ctrl-section { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; align-items: flex-end; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <h1>Character <span>Studio</span></h1>
+  <div class="flex-gap">
+    <div class="status-dot" id="status-dot"></div>
+    <span class="status-label" id="status-label">Connecting…</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-generate" id="top-gen-btn" onclick="generate()">Generate</button>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- ── Sidebar: Character Builder ── -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <div class="section-label">Character</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Gender</label>
+          <select id="f-gender">
+            <option value="">—</option>
+            <option value="woman" selected>Woman</option>
+            <option value="school girl">School girl</option>
+            <option value="man">Man</option>
+            <option value="person">Person (neutral)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Age</label>
+          <select id="f-age">
+            <option value="">—</option>
+            <option value="12 year old">12</option>
+            <option value="13 year old">13</option>
+            <option value="14 year old">14</option>
+            <option value="15 year old">15</option>
+            <option value="16 year old">16</option>
+            <option value="17 year old">17</option>
+            <option value="18 year old">18</option>
+            <option value="19 year old">19</option>
+            <option value="20 year old">20</option>
+            <option value="21 year old">21</option>
+            <option value="22 year old">22</option>
+            <option value="23 year old">23</option>
+            <option value="24 year old">24</option>
+            <option value="25 year old" selected>25</option>
+            <option value="26 year old">26</option>
+            <option value="27 year old">27</option>
+            <option value="28 year old">28</option>
+            <option value="29 year old">29</option>
+            <option value="30 year old">30</option>
+            <option value="31 year old">31</option>
+            <option value="32 year old">32</option>
+            <option value="33 year old">33</option>
+            <option value="34 year old">34</option>
+            <option value="35 year old">35</option>
+            <option value="36 year old">36</option>
+            <option value="37 year old">37</option>
+            <option value="38 year old">38</option>
+            <option value="39 year old">39</option>
+            <option value="40 year old">40</option>
+            <option value="41 year old">41</option>
+            <option value="42 year old">42</option>
+            <option value="43 year old">43</option>
+            <option value="44 year old">44</option>
+            <option value="45 year old">45</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Build</label>
+          <select id="f-build">
+            <option value="">—</option>
+            <option value="skinny">Skinny</option>
+            <option value="slim">Slim</option>
+            <option value="athletic" selected>Athletic</option>
+            <option value="curvy">Curvy</option>
+            <option value="muscular">Muscular</option>
+            <option value="petite">Petite</option>
+            <option value="average">Average</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Skin tone</label>
+          <select id="f-skin">
+            <option value="">—</option>
+            <option value="pale">Pale</option>
+            <option value="fair">Fair</option>
+            <option value="light" selected>Light</option>
+            <option value="medium">Medium</option>
+            <option value="tan">Tan</option>
+            <option value="brown">Brown</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Hair</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Color</label>
+          <select id="f-hair-color">
+            <option value="">—</option>
+            <option value="black">Black</option>
+            <option value="dark brown">Dark brown</option>
+            <option value="brown" selected>Brown</option>
+            <option value="auburn">Auburn</option>
+            <option value="blonde">Blonde</option>
+            <option value="red">Red</option>
+            <option value="silver">Silver</option>
+            <option value="white">White</option>
+            <option value="blue">Blue</option>
+            <option value="pink">Pink</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Style</label>
+          <select id="f-hair-style">
+            <option value="">—</option>
+            <option value="long straight">Long straight</option>
+            <option value="long wavy" selected>Long wavy</option>
+            <option value="long curly">Long curly</option>
+            <option value="short straight">Short straight</option>
+            <option value="short curly">Short curly</option>
+            <option value="pixie cut">Pixie cut</option>
+            <option value="bob">Bob</option>
+            <option value="ponytail">Ponytail</option>
+            <option value="bun">Bun</option>
+            <option value="braids">Braids</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Face</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Eye color</label>
+          <select id="f-eyes">
+            <option value="">—</option>
+            <option value="brown" selected>Brown</option>
+            <option value="light blue">Light blue</option>
+            <option value="blue">Blue</option>
+            <option value="light green">Light green</option>
+            <option value="green">Green</option>
+            <option value="hazel">Hazel</option>
+            <option value="gray">Gray</option>
+            <option value="amber">Amber</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Expression</label>
+          <select id="f-expression">
+            <option value="">—</option>
+            <option value="neutral" selected>Neutral</option>
+            <option value="smiling">Smiling</option>
+            <option value="laughing">Laughing</option>
+            <option value="serious">Serious</option>
+            <option value="flirty">Flirty</option>
+            <option value="seductive">Seductive</option>
+            <option value="orgasmic">Orgasmic</option>
+            <option value="surprised">Surprised</option>
+            <option value="pensive">Pensive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Clothing</div>
+      <div class="field-grid full">
+        <div class="field">
+          <label>Outfit</label>
+          <select id="f-clothing">
+            <option value="">—</option>
+            <option value="casual outfit" selected>Casual</option>
+            <option value="elegant dress">Elegant dress</option>
+            <option value="business attire">Business</option>
+            <option value="fantasy armor">Fantasy armor</option>
+            <option value="sci-fi suit">Sci-fi suit</option>
+            <option value="athletic wear">Athletic wear</option>
+            <option value="tanktop and shorts">Tanktop and shorts</option>
+            <option value="bikini">Bikini</option>
+            <option value="lingerie">Lingerie</option>
+            <option value="sheer lingerie">Sheer lingerie</option>
+            <option value="only panties">Only panties</option>
+            <option value="thong">Thong</option>
+            <option value="topless">Topless</option>
+            <option value="nude">Nude</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Scene</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Setting</label>
+          <select id="f-setting">
+            <option value="">—</option>
+            <option value="studio backdrop" selected>Studio</option>
+            <option value="outdoor nature">Nature</option>
+            <option value="urban street">Urban street</option>
+            <option value="bedroom">Bedroom</option>
+            <option value="beach">Beach</option>
+            <option value="pool">Pool</option>
+            <option value="office">Office</option>
+            <option value="fantasy forest">Fantasy forest</option>
+            <option value="futuristic city">Futuristic city</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Lighting</label>
+          <select id="f-lighting">
+            <option value="">—</option>
+            <option value="natural lighting" selected>Natural</option>
+            <option value="studio lighting">Studio</option>
+            <option value="golden hour lighting">Golden hour</option>
+            <option value="dramatic lighting">Dramatic</option>
+            <option value="soft diffused lighting">Soft</option>
+            <option value="neon lighting">Neon</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Art style</label>
+          <select id="f-style">
+            <option value="">—</option>
+            <option value="photorealistic" selected>Photorealistic</option>
+            <option value="cinematic">Cinematic</option>
+            <option value="anime style">Anime</option>
+            <option value="oil painting">Oil painting</option>
+            <option value="digital art">Digital art</option>
+            <option value="hyperrealistic">Hyperrealistic</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Camera</label>
+          <select id="f-camera">
+            <option value="">—</option>
+            <option value="portrait shot" selected>Portrait</option>
+            <option value="body shot" selected>Body shot</option>
+            <option value="close-up shot">Close-up</option>
+            <option value="full body shot">Full body</option>
+            <option value="three-quarter shot">Three-quarter</option>
+            <option value="wide angle shot">Wide angle</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Pose &amp; Focus</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Pose</label>
+          <select id="f-pose">
+            <option value="">—</option>
+            <option value="standing">Standing</option>
+            <option value="sitting">Sitting</option>
+            <option value="lying on back">Lying on back</option>
+            <option value="lying on stomach">Lying on stomach</option>
+            <option value="kneeling">Kneeling</option>
+            <option value="bent over">Bent over</option>
+            <option value="on all fours">On all fours</option>
+            <option value="legs spread">Legs spread</option>
+            <option value="hands on hips">Hands on hips</option>
+            <option value="arms raised">Arms raised</option>
+            <option value="leaning against wall">Leaning against wall</option>
+            <option value="from behind">From behind</option>
+            <option value="prone">Prone</option>
+            <option value="prone arched back">Prone arched back</option>
+            <option value="prone ass up">Prone ass up</option>
+            <option value="doggie style">Doggie style</option>
+            <option value="doggie style">Doggie style</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Focus</label>
+          <select id="f-focus">
+            <option value="">—</option>
+            <option value="face focus">Face</option>
+            <option value="breast focus">Breasts</option>
+            <option value="ass focus">Ass</option>
+            <option value="pussy focus">Pussy</option>
+            <option value="navel focus">Stomach / Navel</option>
+            <option value="feet focus">Feet</option>
+            <option value="full body">Full body</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Extra prompt</div>
+      <textarea class="extra-prompt" id="f-extra" rows="2" placeholder="Additional details, appended to prompt…"></textarea>
+
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        Prompt preview
+        <button onclick="clearCharacter()" style="font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(224,85,85,.15);border:1px solid rgba(224,85,85,.4);color:#e05555;border-radius:4px;padding:2px 8px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(224,85,85,.3)'" onmouseout="this.style.background='rgba(224,85,85,.15)'">Clear</button>
+      </div>
+      <div class="prompt-preview" id="prompt-preview">—</div>
+
+    </div>
+  </aside>
+
+  <!-- ── Workspace ── -->
+  <div class="workspace">
+
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode="generate" onclick="switchMode('generate')">Generate</div>
+      <div class="mode-tab" data-mode="person" onclick="switchMode('person')">Person</div>
+      <div class="mode-tab" data-mode="refine" onclick="switchMode('refine')">Refine</div>
+    </div>
+
+    <!-- Controls bar -->
+    <div class="controls-bar">
+
+      <!-- Generate controls -->
+      <div id="ctrl-generate" class="ctrl-section">
+        <div class="ctrl-group">
+          <label>Model</label>
+          <select id="g-checkpoint" onchange="onCheckpointChange()">
+            <option value="sd_xl_base_1.0.safetensors">SDXL Base 1.0</option>
+            <option value="ponyDiffusionV6XL_v6StartWithThisOne.safetensors" selected>Pony Diffusion V6 XL ⭐</option>
+            <option value="juggernautXL_ragnarokBy.safetensors">Juggernaut XL Ragnarok</option>
+            <option value="dreamshaperXL_lightningDPMSDE.safetensors">DreamShaper XL Lightning ⚡</option>
+            <option value="realvisxlV50_v50LightningBakedvae.safetensors">RealVisXL V5 Lightning ⚡</option>
+            <option value="secuanceDreamDeliberate_v125Main.safetensors">Secuance Dream Deliberate</option>
+            <option value="absolutereality_v181.safetensors">Absolute Reality v1.81</option>
+            <option value="crealismTerraMirabilis_v2025Steps.safetensors">CRealism Terra Mirabilis</option>
+            <option value="v1-5-pruned-emaonly-fp16.safetensors">SD 1.5</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Width</label>
+          <input type="number" id="g-width" value="1024" min="256" max="2048" step="64" style="width:72px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Height</label>
+          <input type="number" id="g-height" value="1024" min="256" max="2048" step="64" style="width:72px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Steps</label>
+          <input type="number" id="g-steps" value="25" min="1" max="150" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>CFG</label>
+          <input type="number" id="g-cfg" value="7" min="1" max="30" step="0.5" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Seed (-1=random)</label>
+          <input type="number" id="g-seed" value="-1" min="-1" style="width:90px;">
+        </div>
+        <div class="ctrl-group" style="flex:1;min-width:180px;">
+          <span class="neg-toggle" onclick="toggleNeg()">▾ Negative prompt</span>
+          <div id="neg-wrap">
+            <textarea id="neg-prompt" rows="2" placeholder="ugly, blurry, low quality…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Person controls -->
+      <div id="ctrl-person" class="ctrl-section hidden">
+        <div class="ctrl-group">
+          <label>PhotoMaker</label>
+          <select id="pm-model">
+            <option value="photomaker-v2.bin" selected>V2 (recommended)</option>
+            <option value="photomaker-v1.bin">V1</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Width</label>
+          <input type="number" id="pm-width" value="1024" min="512" max="2048" step="64" style="width:72px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Height</label>
+          <input type="number" id="pm-height" value="1024" min="512" max="2048" step="64" style="width:72px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Steps</label>
+          <input type="number" id="pm-steps" value="25" min="1" max="150" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>CFG</label>
+          <input type="number" id="pm-cfg" value="7" min="1" max="30" step="0.5" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Reference photos</label>
+          <div
+            class="dropzone"
+            id="person-dropzone"
+            onclick="document.getElementById('person-upload-input').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="onPersonDrop(event)"
+          >
+            <div class="icon">📷</div>
+            <p>Click or drag photos</p>
+          </div>
+          <input type="file" id="person-upload-input" multiple accept="image/*" onchange="onPersonFiles(this.files)">
+        </div>
+        <div class="ctrl-group" id="person-thumbs-col" style="display:none;">
+          <label>Loaded (<span id="person-count">0</span>) — click to remove</label>
+          <div class="thumb-strip" id="person-thumbs"></div>
+        </div>
+        <div class="ctrl-group">
+          <label style="color:var(--accent2);">Prompt tip</label>
+          <span style="font-size:11px;color:var(--muted);">Put <code style="color:var(--accent2);background:var(--surface2);padding:1px 4px;border-radius:3px;">img</code> before description — it's added automatically in Person mode.</span>
+        </div>
+      </div>
+
+      <!-- Refine controls -->
+      <div id="ctrl-refine" class="ctrl-section hidden">
+        <div class="ctrl-group">
+          <label>Source image</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="refine-placeholder" id="refine-placeholder" onclick="document.getElementById('refine-upload-input').click()" title="Click to upload or pick from gallery">+</div>
+            <img id="refine-thumb" class="refine-thumb hidden" src="" alt="source" onclick="document.getElementById('refine-upload-input').click()" title="Click to change">
+            <input type="file" id="refine-upload-input" accept="image/*" onchange="onRefineFile(this.files[0])">
+            <span id="refine-name" style="font-size:11px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <label>Model</label>
+          <select id="r-checkpoint" onchange="onRefineCheckpointChange()">
+            <option value="sd_xl_base_1.0.safetensors">SDXL Base 1.0</option>
+            <option value="ponyDiffusionV6XL_v6StartWithThisOne.safetensors" selected>Pony Diffusion V6 XL ⭐</option>
+            <option value="juggernautXL_ragnarokBy.safetensors">Juggernaut XL Ragnarok</option>
+            <option value="dreamshaperXL_lightningDPMSDE.safetensors">DreamShaper XL Lightning ⚡</option>
+            <option value="realvisxlV50_v50LightningBakedvae.safetensors">RealVisXL V5 Lightning ⚡</option>
+            <option value="secuanceDreamDeliberate_v125Main.safetensors">Secuance Dream Deliberate</option>
+            <option value="absolutereality_v181.safetensors">Absolute Reality v1.81</option>
+            <option value="crealismTerraMirabilis_v2025Steps.safetensors">CRealism Terra Mirabilis</option>
+            <option value="v1-5-pruned-emaonly-fp16.safetensors">SD 1.5</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Denoise <span id="denoise-val">0.65</span></label>
+          <input type="range" id="r-denoise" min="0.1" max="1.0" step="0.05" value="0.65"
+            oninput="document.getElementById('denoise-val').textContent=parseFloat(this.value).toFixed(2)"
+            style="width:120px;accent-color:var(--accent);cursor:pointer;">
+        </div>
+        <div class="ctrl-group">
+          <label>Steps</label>
+          <input type="number" id="r-steps" value="25" min="1" max="150" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>CFG</label>
+          <input type="number" id="r-cfg" value="7" min="1" max="30" step="0.5" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Seed (-1=random)</label>
+          <input type="number" id="r-seed" value="-1" min="-1" style="width:90px;">
+        </div>
+      </div>
+
+    </div><!-- /controls-bar -->
+
+    <!-- Output area -->
+    <div class="output-area" id="output-area">
+      <div class="output-placeholder" id="output-placeholder">
+        <div class="big">🎨</div>
+        <div>Build your character and hit Generate</div>
+      </div>
+    </div>
+
+    <!-- Gallery -->
+    <div class="gallery-section">
+      <div class="gallery-header" onclick="toggleGallery()">
+        <span class="gallery-title">Gallery</span>
+        <span class="gallery-count" id="gallery-count">loading…</span>
+        <span class="gallery-toggle-icon" id="gallery-icon">▼</span>
+      </div>
+      <div class="gallery-grid" id="gallery-grid">
+        <div class="inner" id="gallery-inner"></div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+</div><!-- /layout -->
+
+<script>
+// ── Field IDs saved to localStorage ───────────────────────────────────────
+const PERSIST_IDS = [
+  'f-gender','f-age','f-build','f-skin',
+  'f-hair-color','f-hair-style',
+  'f-eyes','f-expression',
+  'f-clothing','f-setting','f-lighting','f-style','f-camera',
+  'f-pose','f-focus',
+  'f-extra',
+  'g-checkpoint','g-width','g-height','g-steps','g-cfg','g-seed',
+  'pm-model','pm-width','pm-height','pm-steps','pm-cfg',
+  'r-checkpoint','r-denoise','r-steps','r-cfg','r-seed',
+  'neg-prompt',
+];
+
+// ── App state ──────────────────────────────────────────────────────────────
+let currentMode   = 'generate';
+let personFiles   = [];           // File[] for PhotoMaker
+let refineFile    = null;         // File for img2img
+let refineGallery = null;         // {name, url} picked from gallery
+let pollTimer     = null;
+let comfyOnline   = false;
+let galleryOpen   = false;
+
+// ── Persistence ────────────────────────────────────────────────────────────
+function saveState() {
+  const data = { __mode: currentMode };
+  for (const id of PERSIST_IDS) {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.value;
+  }
+  localStorage.setItem('studio_v1', JSON.stringify(data));
+}
+
+function loadState() {
+  let data;
+  try { data = JSON.parse(localStorage.getItem('studio_v1') || '{}'); }
+  catch(e) { return; }
+  for (const id of PERSIST_IDS) {
+    if (data[id] !== undefined) {
+      const el = document.getElementById(id);
+      if (el) el.value = data[id];
+    }
+  }
+  if (data.__mode) switchMode(data.__mode, true);
+  // sync denoise display
+  const den = document.getElementById('r-denoise');
+  if (den) document.getElementById('denoise-val').textContent = parseFloat(den.value).toFixed(2);
+}
+
+// ── Prompt composition ─────────────────────────────────────────────────────
+function get(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+function buildPrompt() {
+  const parts = [];
+
+  // Person line
+  const expr   = get('f-expression');
+  const age    = get('f-age');
+  const gender = get('f-gender');
+  let charLine = [expr, age, gender].filter(Boolean).join(' ');
+  if (charLine) parts.push(charLine);
+
+  // Physicals
+  const build    = get('f-build');
+  const skin     = get('f-skin');
+  const hairCol  = get('f-hair-color');
+  const hairSty  = get('f-hair-style');
+  const eyes     = get('f-eyes');
+  const physParts = [];
+  if (build && skin) physParts.push(build + ', ' + skin + ' skin');
+  else if (build)    physParts.push(build);
+  else if (skin)     physParts.push(skin + ' skin');
+  if (hairCol && hairSty) physParts.push(hairCol + ' ' + hairSty + ' hair');
+  else if (hairCol)       physParts.push(hairCol + ' hair');
+  else if (hairSty)       physParts.push(hairSty);
+  if (eyes) physParts.push(eyes + ' eyes');
+  if (physParts.length) parts.push(physParts.join(', '));
+
+  const clothing = get('f-clothing');
+  if (clothing) parts.push('wearing ' + clothing);
+
+  const setting  = get('f-setting');
+  if (setting) parts.push('in ' + setting);
+
+  const lighting = get('f-lighting');
+  if (lighting) parts.push(lighting);
+
+  const style  = get('f-style');
+  if (style) parts.push(style);
+
+  const camera = get('f-camera');
+  if (camera) parts.push(camera);
+
+  const pose  = get('f-pose');
+  if (pose) parts.push(pose);
+
+  const focus = get('f-focus');
+  if (focus) parts.push(focus);
+
+  let prompt = parts.join(', ');
+
+  // Person mode: prepend img trigger word
+  if (currentMode === 'person') prompt = 'img ' + prompt;
+
+  const extra = get('f-extra');
+  if (extra) prompt += (prompt ? ', ' : '') + extra;
+
+  return prompt;
+}
+
+const CHAR_FIELDS = [
+  'f-gender','f-age','f-build','f-skin',
+  'f-hair-color','f-hair-style',
+  'f-eyes','f-expression',
+  'f-clothing','f-setting','f-lighting','f-style','f-camera',
+  'f-pose','f-focus',
+  'f-extra',
+];
+
+function clearCharacter() {
+  for (const id of CHAR_FIELDS) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  }
+  updatePreview();
+}
+
+function updatePreview() {
+  const p = buildPrompt();
+  document.getElementById('prompt-preview').textContent = p || '—';
+  saveState();
+}
+
+// Wire sidebar fields
+document.querySelectorAll('.sidebar select, .sidebar textarea').forEach(el => {
+  el.addEventListener('change', updatePreview);
+  el.addEventListener('input',  updatePreview);
+});
+
+// Wire control fields to save state
+document.querySelectorAll('.controls-bar select, .controls-bar input').forEach(el => {
+  el.addEventListener('change', saveState);
+  el.addEventListener('input',  saveState);
+});
+
+// ── Mode switching ─────────────────────────────────────────────────────────
+function switchMode(mode, silent) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.mode === mode)
+  );
+  document.querySelectorAll('.ctrl-section').forEach(s => s.classList.add('hidden'));
+  const ctrl = document.getElementById('ctrl-' + mode);
+  if (ctrl) ctrl.classList.remove('hidden');
+  updatePreview();
+  if (!silent) saveState();
+}
+
+// ── Per-checkpoint recommended configs ────────────────────────────────────
+const CKPT_CONFIGS = {
+  'ponyDiffusionV6XL_v6StartWithThisOne.safetensors':
+    { steps: 28, cfg: 7.0,  w: 1024, h: 1024 },
+  'juggernautXL_ragnarokBy.safetensors':
+    { steps: 35, cfg: 7.0,  w: 1024, h: 1024 },
+  'dreamshaperXL_lightningDPMSDE.safetensors':
+    { steps: 6,  cfg: 2.0,  w: 1024, h: 1024 },
+  'realvisxlV50_v50LightningBakedvae.safetensors':
+    { steps: 6,  cfg: 2.0,  w: 1024, h: 1024 },
+  'sd_xl_base_1.0.safetensors':
+    { steps: 25, cfg: 7.0,  w: 1024, h: 1024 },
+  'secuanceDreamDeliberate_v125Main.safetensors':
+    { steps: 25, cfg: 7.0,  w: 512,  h: 512  },
+  'absolutereality_v181.safetensors':
+    { steps: 25, cfg: 7.0,  w: 512,  h: 512  },
+  'crealismTerraMirabilis_v2025Steps.safetensors':
+    { steps: 25, cfg: 7.0,  w: 1024, h: 1024 },
+  'v1-5-pruned-emaonly-fp16.safetensors':
+    { steps: 20, cfg: 7.0,  w: 512,  h: 512  },
+};
+
+function applyCheckpointConfig(ckpt, prefix) {
+  const cfg = CKPT_CONFIGS[ckpt] || (ckpt.toLowerCase().includes('xl')
+    ? { steps: 25, cfg: 7.0, w: 1024, h: 1024 }
+    : { steps: 25, cfg: 7.0, w: 512,  h: 512  });
+  if (prefix === 'g') {
+    document.getElementById('g-width').value  = cfg.w;
+    document.getElementById('g-height').value = cfg.h;
+    document.getElementById('g-steps').value  = cfg.steps;
+    document.getElementById('g-cfg').value    = cfg.cfg;
+  } else if (prefix === 'r') {
+    document.getElementById('r-steps').value = cfg.steps;
+    document.getElementById('r-cfg').value   = cfg.cfg;
+  }
+  saveState();
+}
+
+function onCheckpointChange() {
+  applyCheckpointConfig(document.getElementById('g-checkpoint').value, 'g');
+}
+function onRefineCheckpointChange() {
+  applyCheckpointConfig(document.getElementById('r-checkpoint').value, 'r');
+}
+
+// ── Person photos ──────────────────────────────────────────────────────────
+function onPersonFiles(fileList) {
+  for (const f of fileList) personFiles.push(f);
+  renderPersonThumbs();
+}
+function onPersonDrop(ev) {
+  ev.preventDefault();
+  document.getElementById('person-dropzone').classList.remove('drag');
+  onPersonFiles(ev.dataTransfer.files);
+}
+function renderPersonThumbs() {
+  const strip = document.getElementById('person-thumbs');
+  strip.innerHTML = '';
+  personFiles.forEach((f, i) => {
+    const img = document.createElement('img');
+    img.src   = URL.createObjectURL(f);
+    img.title = 'Click to remove';
+    img.onclick = () => { personFiles.splice(i, 1); renderPersonThumbs(); };
+    strip.appendChild(img);
+  });
+  document.getElementById('person-count').textContent = personFiles.length;
+  document.getElementById('person-thumbs-col').style.display = personFiles.length ? '' : 'none';
+}
+
+// ── Refine source ──────────────────────────────────────────────────────────
+function onRefineFile(file) {
+  if (!file) return;
+  refineFile    = file;
+  refineGallery = null;
+  document.getElementById('refine-thumb').src = URL.createObjectURL(file);
+  document.getElementById('refine-thumb').classList.remove('hidden');
+  document.getElementById('refine-placeholder').classList.add('hidden');
+  document.getElementById('refine-name').textContent = file.name;
+}
+
+function setRefineFromGallery(name, url) {
+  refineGallery = { name, url };
+  refineFile    = null;
+  document.getElementById('refine-thumb').src = url;
+  document.getElementById('refine-thumb').classList.remove('hidden');
+  document.getElementById('refine-placeholder').classList.add('hidden');
+  document.getElementById('refine-name').textContent = name;
+  switchMode('refine');
+  // Scroll to controls
+  document.querySelector('.controls-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Negative prompt toggle ─────────────────────────────────────────────────
+function toggleNeg() {
+  document.getElementById('neg-wrap').classList.toggle('open');
+}
+
+// ── Generate ───────────────────────────────────────────────────────────────
+async function generate() {
+  if (!comfyOnline) { alert('ComfyUI is not running. Start ComfyUI Desktop first.'); return; }
+
+  const prompt = buildPrompt();
+  if (!prompt || prompt === '—') { alert('Build your character first.'); return; }
+
+  if (currentMode === 'person' && personFiles.length === 0) {
+    alert('Add at least one reference photo in Person mode.'); return;
+  }
+  if (currentMode === 'refine' && !refineFile && !refineGallery) {
+    alert('Pick a source image first. Upload one or click Refine on a gallery image.'); return;
+  }
+
+  const btn = document.getElementById('top-gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+
+  const fd  = new FormData();
+  const neg = (document.getElementById('neg-prompt').value || '').trim();
+
+  if (currentMode === 'generate') {
+    fd.append('task',       'text2img');
+    fd.append('prompt',     prompt);
+    fd.append('negative',   neg);
+    fd.append('checkpoint', document.getElementById('g-checkpoint').value);
+    fd.append('width',      document.getElementById('g-width').value);
+    fd.append('height',     document.getElementById('g-height').value);
+    fd.append('steps',      document.getElementById('g-steps').value);
+    fd.append('cfg',        document.getElementById('g-cfg').value);
+    fd.append('seed',       document.getElementById('g-seed').value);
+
+  } else if (currentMode === 'person') {
+    fd.append('task',      'photomaker');
+    fd.append('prompt',    prompt);
+    fd.append('negative',  neg);
+    fd.append('pm_model',  document.getElementById('pm-model').value);
+    fd.append('pm_width',  document.getElementById('pm-width').value);
+    fd.append('pm_height', document.getElementById('pm-height').value);
+    fd.append('steps',     document.getElementById('pm-steps').value);
+    fd.append('cfg',       document.getElementById('pm-cfg').value);
+    for (const f of personFiles) fd.append('images', f);
+
+  } else if (currentMode === 'refine') {
+    fd.append('task',       'img2img');
+    fd.append('prompt',     prompt);
+    fd.append('negative',   neg);
+    fd.append('checkpoint', document.getElementById('r-checkpoint').value);
+    fd.append('denoise',    document.getElementById('r-denoise').value);
+    fd.append('steps',      document.getElementById('r-steps').value);
+    fd.append('cfg',        document.getElementById('r-cfg').value);
+    fd.append('seed',       document.getElementById('r-seed').value);
+
+    if (refineFile) {
+      fd.append('image', refineFile);
+    } else if (refineGallery) {
+      try {
+        const resp = await fetch(refineGallery.url);
+        const blob = await resp.blob();
+        fd.append('image', blob, refineGallery.name);
+      } catch(e) {
+        alert('Could not load source image: ' + e.message);
+        btn.disabled = false; btn.textContent = 'Generate';
+        return;
+      }
+    }
+  }
+
+  showJobStatus('Queuing…');
+
+  try {
+    const resp = await fetch('/generate', { method: 'POST', body: fd });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || resp.statusText);
+    }
+    const { job_id } = await resp.json();
+    pollJob(job_id);
+  } catch(e) {
+    showError(e.message);
+    btn.disabled = false; btn.textContent = 'Generate';
+  }
+}
+
+// ── Job polling ────────────────────────────────────────────────────────────
+function pollJob(jobId) {
+  clearTimeout(pollTimer);
+  showJobStatus('Running…');
+
+  async function check() {
+    try {
+      const data = await fetch('/job/' + jobId).then(r => r.json());
+      const btn = document.getElementById('top-gen-btn');
+
+      if (data.status === 'done') {
+        clearStatus();
+        btn.disabled = false; btn.textContent = 'Generate';
+        showOutputs(data.files);
+        loadGallery();
+      } else if (data.status === 'error') {
+        showError(data.message || 'Unknown error');
+        btn.disabled = false; btn.textContent = 'Generate';
+      } else {
+        pollTimer = setTimeout(check, 2000);
+      }
+    } catch(e) {
+      pollTimer = setTimeout(check, 3000);
+    }
+  }
+  check();
+}
+
+// ── Output rendering ───────────────────────────────────────────────────────
+function showJobStatus(msg) {
+  clearStatus();
+  document.getElementById('output-placeholder').classList.add('hidden');
+  const div = document.createElement('div');
+  div.className = 'job-status'; div.id = 'job-status-el';
+  div.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  document.getElementById('output-area').prepend(div);
+}
+
+function clearStatus() {
+  document.getElementById('job-status-el')?.remove();
+}
+
+function showError(msg) {
+  clearStatus();
+  document.getElementById('output-placeholder').classList.add('hidden');
+  const div = document.createElement('div');
+  div.className = 'error-card';
+  div.textContent = '⚠ ' + msg;
+  document.getElementById('output-area').prepend(div);
+}
+
+function showOutputs(files) {
+  document.getElementById('output-placeholder').classList.add('hidden');
+  const area = document.getElementById('output-area');
+
+  for (const name of files) {
+    const url   = '/outputs/' + encodeURIComponent(name);
+    const card  = document.createElement('div');
+    card.className = 'output-card';
+
+    const isVideo  = /\.(mp4|gif|webm)$/i.test(name);
+    const safeName = name.replace(/'/g, "\\'");
+    const safeUrl  = url.replace(/'/g, "\\'");
+    const media = isVideo
+      ? `<video src="${url}" autoplay loop muted playsinline controls></video>`
+      : `<img src="${url}" alt="${name}" loading="lazy" onclick="window.open('${safeUrl}','_blank')">`;;
+
+    card.innerHTML = media + `
+      <div class="card-actions">
+        <a class="card-btn" href="${url}" target="_blank">Open</a>
+        <a class="card-btn" href="${url}" download="${name}">Download</a>
+        ${isVideo ? '' : `<button class="card-btn refine-btn" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
+      </div>`;
+    area.prepend(card);
+  }
+}
+
+// ── Gallery ────────────────────────────────────────────────────────────────
+async function loadGallery() {
+  try {
+    const items = await fetch('/gallery').then(r => r.json());
+    const inner = document.getElementById('gallery-inner');
+    document.getElementById('gallery-count').textContent =
+      items.length + ' image' + (items.length !== 1 ? 's' : '');
+
+    inner.innerHTML = '';
+    for (const item of items) {
+      const url     = '/outputs/' + encodeURIComponent(item.name);
+      const isVideo = /\.(mp4|gif|webm)$/i.test(item.name);
+      const safeName = item.name.replace(/'/g, "\\'");
+      const safeUrl  = url.replace(/'/g, "\\'");
+
+      const div = document.createElement('div');
+      div.className = 'gallery-item';
+
+      const thumb = isVideo
+        ? `<video src="${url}" class="gthumb" muted preload="metadata" onclick="window.open('${safeUrl}','_blank')" title="${item.name}"></video>`
+        : `<img src="${url}" class="gthumb" alt="${item.name}" loading="lazy" onclick="window.open('${safeUrl}','_blank')" title="${item.name}">`;
+
+      div.innerHTML = thumb + `
+        <span class="gname">${item.name}</span>
+        <div class="gbtns">
+          <a class="gbtn" href="${url}" download="${item.name}">↓</a>
+          ${isVideo ? '' : `<button class="gbtn refine" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
+        </div>`;
+      inner.appendChild(div);
+    }
+  } catch(e) {
+    console.warn('Gallery load failed:', e);
+  }
+}
+
+function toggleGallery() {
+  galleryOpen = !galleryOpen;
+  document.getElementById('gallery-grid').classList.toggle('open', galleryOpen);
+  document.getElementById('gallery-icon').classList.toggle('open', galleryOpen);
+  if (galleryOpen) loadGallery();
+}
+
+// ── ComfyUI status ─────────────────────────────────────────────────────────
+async function checkComfy() {
+  try {
+    const { running } = await fetch('/comfy-status').then(r => r.json());
+    comfyOnline = running;
+  } catch(e) { comfyOnline = false; }
+  document.getElementById('status-dot').classList.toggle('online', comfyOnline);
+  document.getElementById('status-label').textContent =
+    comfyOnline ? 'ComfyUI online' : 'ComfyUI offline';
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadState();
+updatePreview();
+checkComfy();
+setInterval(checkComfy, 10000);
+loadGallery();
+</script>
+</body>
+</html>

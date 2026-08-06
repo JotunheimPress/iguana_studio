@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+FROM python:3.12-slim
+
+LABEL org.opencontainers.image.title="iguana ComfyUI GUI"
+LABEL org.opencontainers.image.description="FastAPI web GUI for ComfyUI automation (text2img/img2img/video/photomaker)"
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY client.py server.py run.py ./
+COPY workflows/ ./workflows/
+COPY static/ ./static/
+
+RUN mkdir -p /app/outputs /app/temp
+
+# Reach ComfyUI on the host (it runs in the comfyui distrobox on host networking).
+ENV COMFY_HOST=host.containers.internal \
+    COMFY_PORT=8188 \
+    PORT=7862
+# COMFY_BASE intentionally unset — the video tab's client-side setup check is skipped
+# in-container (ComfyUI validates its own side; see server.py).
+
+EXPOSE 7862
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -fs http://localhost:7862/ || exit 1
+
+CMD ["python", "server.py"]

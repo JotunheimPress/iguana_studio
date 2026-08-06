@@ -11,6 +11,7 @@ Usage examples:
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -19,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import client
 from workflows import text2img, img2img, video
 
-COMFY_BASE = Path("C:/Users/blade/Documents/ComfyUI")
+COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/ComfyUI"))
 OUTPUT_DIR = Path(__file__).parent / "outputs"
 
 

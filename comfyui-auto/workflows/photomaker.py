@@ -14,12 +14,10 @@ import random
 from pathlib import Path
 from client import upload_image
 
+from workflows.defaults import NEGATIVE_PORTRAIT as DEFAULT_NEGATIVE
+
 DEFAULT_CHECKPOINT   = "sd_xl_base_1.0.safetensors"
 DEFAULT_PHOTOMAKER   = "photomaker-v1.bin"
-DEFAULT_NEGATIVE     = (
-    "ugly, blurry, low quality, deformed face, bad anatomy, "
-    "watermark, signature, extra limbs"
-)
 TRIGGER_WORD = "img"
 
 

@@ -1,5 +1,6 @@
 """FastAPI web GUI for ComfyUI automation."""
 
+import os
 import sys
 import uuid
 import shutil
@@ -21,7 +22,7 @@ BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 TEMP_DIR   = BASE_DIR / "temp"
 STATIC_DIR = BASE_DIR / "static"
-COMFY_BASE = Path("C:/Users/blade/Documents/ComfyUI")
+COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/ComfyUI"))
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
@@ -45,7 +46,10 @@ def _run_job(
         elif task == "img2img":
             workflow = img2img.build(image_path=image_path, **params)
         elif task == "video":
-            workflow = video.build(**params, comfy_base=COMFY_BASE)
+            # comfy_base is only a client-side pre-flight check for AnimateDiff files;
+            # skip it when the ComfyUI dir isn't visible here (e.g. containerized) —
+            # ComfyUI validates its own side anyway.
+            workflow = video.build(**params, comfy_base=COMFY_BASE if COMFY_BASE.exists() else None)
         elif task == "photomaker":
             workflow = photomaker.build(image_paths=image_paths, **params)
         else:
@@ -167,12 +171,25 @@ def get_job(job_id: str):
     return jobs.get(job_id, {"status": "not_found"})
 
 
+@app.get("/checkpoints")
+def list_checkpoints():
+    """Return checkpoint filenames available in ComfyUI, sorted alphabetically."""
+    import requests as req
+    try:
+        r = req.get(f"{client.COMFY_URL}/object_info/CheckpointLoaderSimple", timeout=5)
+        r.raise_for_status()
+        names = r.json()["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
+        return {"checkpoints": sorted(names)}
+    except Exception as e:
+        return {"checkpoints": [], "error": str(e)}
+
+
 @app.get("/debug/nodes")
 def debug_nodes():
     """List all node class names ComfyUI knows about."""
     import requests as req
     try:
-        r = req.get(f"http://localhost:{client.COMFY_PORT}/object_info", timeout=5)
+        r = req.get(f"{client.COMFY_URL}/object_info", timeout=5)
         return {"nodes": sorted(r.json().keys())}
     except Exception as e:
         return {"error": str(e)}
@@ -221,5 +238,5 @@ def get_output(filename: str):
 
 if __name__ == "__main__":
     print("ComfyUI Automation GUI starting...")
-    print("Open http://localhost:7860 in your browser\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=7860, reload=False)
+    print("Open http://localhost:7861 in your browser\n")
+    uvicorn.run("server:app", host="0.0.0.0", port=int(os.environ.get("PORT", "7862")), reload=False)

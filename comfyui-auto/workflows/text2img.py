@@ -1,17 +1,9 @@
-"""Text-to-image workflow — supports both SD 1.5 and SDXL."""
+"""Text-to-image workflow — supports SD 1.5, SDXL, and FLUX."""
 
 import random
+from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_sdxl
 
 DEFAULT_CHECKPOINT = "sd_xl_base_1.0.safetensors"
-DEFAULT_NEGATIVE = (
-    "ugly, blurry, low quality, watermark, signature, deformed, bad anatomy"
-)
-
-
-def _is_sdxl(checkpoint: str) -> bool:
-    name = checkpoint.lower()
-    _SDXL_NAMES = {"crealism", "mirabilis", "juggernaut", "dreamshaper", "realvis", "pony"}
-    return "xl" in name or "sdxl" in name or any(k in name for k in _SDXL_NAMES)
 
 
 def build(
@@ -27,10 +19,22 @@ def build(
     scheduler: str = "normal",
     filename_prefix: str = "text2img",
 ) -> dict:
+    if is_flux(checkpoint):
+        from workflows.flux import build as flux_build
+        return flux_build(
+            prompt=prompt,
+            checkpoint=checkpoint,
+            width=width, height=height,
+            steps=steps, cfg=cfg, seed=seed,
+            sampler=sampler,
+            scheduler="simple",
+            filename_prefix=filename_prefix,
+        )
+
     if seed == -1:
         seed = random.randint(0, 2**32 - 1)
 
-    sdxl = _is_sdxl(checkpoint)
+    sdxl = is_sdxl(checkpoint)
 
     # SDXL needs CLIPTextEncodeSDXL for proper prompt following
     if sdxl:

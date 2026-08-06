@@ -5,10 +5,10 @@ A Python toolkit + web GUI for automating ComfyUI workflows on demand.
 No clicking in the browser — jobs are submitted via API and results are saved automatically.
 
 ## User environment
-- **ComfyUI**: Desktop app (Electron), data folder at `C:\Users\blade\Documents\ComfyUI\`
-- **ComfyUI server**: runs on `http://localhost:8188` (port can be overridden with `COMFY_PORT` env var)
-- **Web GUI**: FastAPI server at `http://localhost:7860`
-- **OS**: Windows 11
+- **ComfyUI**: Podman container on host network, data folder at `/home/user/ComfyUI/`
+- **ComfyUI server**: runs on `http://localhost:8188` (host: `COMFY_HOST`, port: `COMFY_PORT` env vars)
+- **Web GUI**: FastAPI server at `http://localhost:7861`
+- **OS**: Linux (Fedora), Podman containers
 
 ## Installed models
 - **Checkpoint (SD 1.5)**: `v1-5-pruned-emaonly-fp16.safetensors` — selectable in text2img/img2img, 512×512
@@ -42,13 +42,21 @@ comfyui-auto/
 ```
 
 ## How to run
-```bash
-# Install dependencies (first time only)
-pip install -r requirements.txt
 
-# Start the GUI (ComfyUI must already be running)
-python server.py
-# → open http://localhost:7860
+**Containerized (default — via the ai-stack launcher).** Runs as a Podman container `iguana` on the
+`ai-net` network, reaching ComfyUI at `host.containers.internal:8188`.
+```bash
+stack iguana                 # build (first run) + start on :7862  (or: ./run-podman.sh [--rebuild])
+# → open http://localhost:7862 ; logs: podman logs -f iguana ; stop: stack down iguana
+```
+ComfyUI must be up (`stack up`). Env: `COMFY_HOST`/`COMFY_PORT` (default `host.containers.internal:8188`),
+`PORT` (7862). Generated images persist in `outputs/` (a volume mount).
+
+**Host dev (venv) — for the CLI or quick iteration.** `run.py` is a host CLI and still uses the venv.
+```bash
+python3 -m venv venv && venv/bin/pip install -r requirements.txt
+PORT=7862 venv/bin/python server.py     # GUI    → http://localhost:7862
+venv/bin/python run.py text2img "a cat" # CLI
 ```
 
 ## GUI tabs and their defaults

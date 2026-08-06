@@ -6,8 +6,9 @@ import uuid
 import requests
 from pathlib import Path
 
+COMFY_HOST = os.environ.get("COMFY_HOST", "localhost")
 COMFY_PORT = os.environ.get("COMFY_PORT", "8188")
-COMFY_URL = f"http://localhost:{COMFY_PORT}"
+COMFY_URL = f"http://{COMFY_HOST}:{COMFY_PORT}"
 
 
 def is_running() -> bool:

@@ -24,11 +24,10 @@ import random
 from pathlib import Path
 
 
+from workflows.defaults import NEGATIVE_VIDEO as DEFAULT_NEGATIVE
+
 DEFAULT_CHECKPOINT = "v1-5-pruned-emaonly-fp16.safetensors"
 DEFAULT_MOTION_MODULE = "mm_sd_v15_v2.ckpt"
-DEFAULT_NEGATIVE = (
-    "ugly, blurry, low quality, watermark, deformed, flickering, static, still"
-)
 
 REQUIRED_NODES = [
     "ADE_AnimateDiffLoaderWithContext",

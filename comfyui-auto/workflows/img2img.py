@@ -1,20 +1,12 @@
-"""Image-to-image (edit existing image) workflow — supports SD 1.5 and SDXL."""
+"""Image-to-image (edit existing image) workflow — supports SD 1.5, SDXL, and FLUX."""
 
 import random
 from pathlib import Path
 
 from client import upload_image
+from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_sdxl
 
 DEFAULT_CHECKPOINT = "sd_xl_base_1.0.safetensors"
-DEFAULT_NEGATIVE = (
-    "ugly, blurry, low quality, watermark, signature, deformed, bad anatomy"
-)
-
-
-def _is_sdxl(checkpoint: str) -> bool:
-    name = checkpoint.lower()
-    _SDXL_NAMES = {"crealism", "mirabilis", "juggernaut", "dreamshaper", "realvis", "pony"}
-    return "xl" in name or "sdxl" in name or any(k in name for k in _SDXL_NAMES)
 
 
 def build(
@@ -31,18 +23,30 @@ def build(
     filename_prefix: str = "img2img",
 ) -> dict:
     """
-    Build an img2img workflow. Works with both SD 1.5 and SDXL.
+    Build an img2img workflow. Auto-detects SD 1.5, SDXL, and FLUX.
 
     denoise: 0.0 = keep original, 1.0 = full redraw. 0.6–0.8 recommended for edits.
     """
+    if is_flux(checkpoint):
+        from workflows.flux import build_img2img as flux_img2img
+        return flux_img2img(
+            image_path=image_path,
+            prompt=prompt,
+            checkpoint=checkpoint,
+            denoise=denoise,
+            steps=steps, cfg=cfg, seed=seed,
+            sampler=sampler,
+            scheduler="simple",
+            filename_prefix=filename_prefix,
+        )
+
     if seed == -1:
         seed = random.randint(0, 2**32 - 1)
 
     server_image = upload_image(image_path)
-    sdxl = _is_sdxl(checkpoint)
+    sdxl = is_sdxl(checkpoint)
 
-    # For SDXL, read the actual uploaded image size for proper conditioning
-    # Use safe defaults — ComfyUI's LoadImage will handle resize
+    # For SDXL, use safe defaults — ComfyUI's LoadImage will handle resize
     w, h = (1024, 1024) if sdxl else (512, 512)
 
     if sdxl:

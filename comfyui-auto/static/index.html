@@ -821,15 +821,7 @@
         <div class="ctrl-group">
           <label>Model</label>
           <select id="g-checkpoint" onchange="onCheckpointChange()">
-            <option value="sd_xl_base_1.0.safetensors">SDXL Base 1.0</option>
-            <option value="ponyDiffusionV6XL_v6StartWithThisOne.safetensors" selected>Pony Diffusion V6 XL ⭐</option>
-            <option value="juggernautXL_ragnarokBy.safetensors">Juggernaut XL Ragnarok</option>
-            <option value="dreamshaperXL_lightningDPMSDE.safetensors">DreamShaper XL Lightning ⚡</option>
-            <option value="realvisxlV50_v50LightningBakedvae.safetensors">RealVisXL V5 Lightning ⚡</option>
-            <option value="secuanceDreamDeliberate_v125Main.safetensors">Secuance Dream Deliberate</option>
-            <option value="absolutereality_v181.safetensors">Absolute Reality v1.81</option>
-            <option value="crealismTerraMirabilis_v2025Steps.safetensors">CRealism Terra Mirabilis</option>
-            <option value="v1-5-pruned-emaonly-fp16.safetensors">SD 1.5</option>
+            <option value="">Loading…</option>
           </select>
         </div>
         <div class="ctrl-group">
@@ -845,8 +837,8 @@
           <input type="number" id="g-steps" value="25" min="1" max="150" style="width:58px;">
         </div>
         <div class="ctrl-group">
-          <label>CFG</label>
-          <input type="number" id="g-cfg" value="7" min="1" max="30" step="0.5" style="width:58px;">
+          <label id="g-cfg-label">CFG</label>
+          <input type="number" id="g-cfg" value="7" min="0.1" max="100" step="0.5" style="width:58px;">
         </div>
         <div class="ctrl-group">
           <label>Seed (-1=random)</label>
@@ -855,7 +847,7 @@
         <div class="ctrl-group" style="flex:1;min-width:180px;">
           <span class="neg-toggle" onclick="toggleNeg()">▾ Negative prompt</span>
           <div id="neg-wrap">
-            <textarea id="neg-prompt" rows="2" placeholder="ugly, blurry, low quality…"></textarea>
+            <textarea id="neg-prompt" rows="2" placeholder="negative prompt…">(worst quality, low quality, normal quality:1.4), (jpeg artifacts, compression artifacts, blurry, grainy, noisy:1.2), (deformed, distorted, disfigured:1.3), bad anatomy, bad proportions, (extra limbs, missing limbs, floating limbs:1.2), (extra fingers, missing fingers, fused fingers, too many fingers:1.4), malformed hands, mutated hands, long neck, ugly face, bad face, watermark, signature, text, logo, username, out of frame, cropped, lowres, draft</textarea>
           </div>
         </div>
       </div>
@@ -924,15 +916,7 @@
         <div class="ctrl-group">
           <label>Model</label>
           <select id="r-checkpoint" onchange="onRefineCheckpointChange()">
-            <option value="sd_xl_base_1.0.safetensors">SDXL Base 1.0</option>
-            <option value="ponyDiffusionV6XL_v6StartWithThisOne.safetensors" selected>Pony Diffusion V6 XL ⭐</option>
-            <option value="juggernautXL_ragnarokBy.safetensors">Juggernaut XL Ragnarok</option>
-            <option value="dreamshaperXL_lightningDPMSDE.safetensors">DreamShaper XL Lightning ⚡</option>
-            <option value="realvisxlV50_v50LightningBakedvae.safetensors">RealVisXL V5 Lightning ⚡</option>
-            <option value="secuanceDreamDeliberate_v125Main.safetensors">Secuance Dream Deliberate</option>
-            <option value="absolutereality_v181.safetensors">Absolute Reality v1.81</option>
-            <option value="crealismTerraMirabilis_v2025Steps.safetensors">CRealism Terra Mirabilis</option>
-            <option value="v1-5-pruned-emaonly-fp16.safetensors">SD 1.5</option>
+            <option value="">Loading…</option>
           </select>
         </div>
         <div class="ctrl-group">
@@ -946,8 +930,8 @@
           <input type="number" id="r-steps" value="25" min="1" max="150" style="width:58px;">
         </div>
         <div class="ctrl-group">
-          <label>CFG</label>
-          <input type="number" id="r-cfg" value="7" min="1" max="30" step="0.5" style="width:58px;">
+          <label id="r-cfg-label">CFG</label>
+          <input type="number" id="r-cfg" value="7" min="0.1" max="100" step="0.5" style="width:58px;">
         </div>
         <div class="ctrl-group">
           <label>Seed (-1=random)</label>
@@ -1141,6 +1125,7 @@ function switchMode(mode, silent) {
 
 // ── Per-checkpoint recommended configs ────────────────────────────────────
 const CKPT_CONFIGS = {
+  // SDXL / SD 1.5
   'ponyDiffusionV6XL_v6StartWithThisOne.safetensors':
     { steps: 28, cfg: 7.0,  w: 1024, h: 1024 },
   'juggernautXL_ragnarokBy.safetensors':
@@ -1161,18 +1146,36 @@ const CKPT_CONFIGS = {
     { steps: 20, cfg: 7.0,  w: 512,  h: 512  },
 };
 
+function _isFlux(ckpt) { return ckpt.toLowerCase().includes('flux'); }
+function _isSchnell(ckpt) { return ckpt.toLowerCase().includes('schnell'); }
+
+function _fluxConfig(ckpt) {
+  return _isSchnell(ckpt)
+    ? { steps: 4,  cfg: 1.0, w: 1024, h: 1024 }
+    : { steps: 20, cfg: 3.5, w: 1024, h: 1024 };
+}
+
 function applyCheckpointConfig(ckpt, prefix) {
-  const cfg = CKPT_CONFIGS[ckpt] || (ckpt.toLowerCase().includes('xl')
-    ? { steps: 25, cfg: 7.0, w: 1024, h: 1024 }
-    : { steps: 25, cfg: 7.0, w: 512,  h: 512  });
+  const flux = _isFlux(ckpt);
+  const conf = flux
+    ? _fluxConfig(ckpt)
+    : CKPT_CONFIGS[ckpt] || (ckpt.toLowerCase().includes('xl')
+        ? { steps: 25, cfg: 7.0, w: 1024, h: 1024 }
+        : { steps: 25, cfg: 7.0, w: 512,  h: 512  });
+
   if (prefix === 'g') {
-    document.getElementById('g-width').value  = cfg.w;
-    document.getElementById('g-height').value = cfg.h;
-    document.getElementById('g-steps').value  = cfg.steps;
-    document.getElementById('g-cfg').value    = cfg.cfg;
+    document.getElementById('g-width').value  = conf.w;
+    document.getElementById('g-height').value = conf.h;
+    document.getElementById('g-steps').value  = conf.steps;
+    document.getElementById('g-cfg').value    = conf.cfg;
+    // Relabel CFG ↔ Guidance and toggle negative prompt
+    document.getElementById('g-cfg-label').textContent = flux ? 'Guidance' : 'CFG';
+    document.getElementById('neg-wrap').style.display  = flux ? 'none' : '';
+    document.querySelector('[onclick="toggleNeg()"]').style.display = flux ? 'none' : '';
   } else if (prefix === 'r') {
-    document.getElementById('r-steps').value = cfg.steps;
-    document.getElementById('r-cfg').value   = cfg.cfg;
+    document.getElementById('r-steps').value = conf.steps;
+    document.getElementById('r-cfg').value   = conf.cfg;
+    document.getElementById('r-cfg-label').textContent = flux ? 'Guidance' : 'CFG';
   }
   saveState();
 }
@@ -1450,11 +1453,53 @@ async function checkComfy() {
     comfyOnline ? 'ComfyUI online' : 'ComfyUI offline';
 }
 
+// ── Checkpoints ────────────────────────────────────────────────────────────
+function ckptLabel(filename) {
+  return filename.replace(/\.(safetensors|ckpt|pt|bin)$/i, '').replace(/[_-]+/g, ' ');
+}
+
+async function loadCheckpoints() {
+  const IDS = ['g-checkpoint', 'r-checkpoint'];
+  // Remember what was saved so we can restore after repopulating
+  const saved = {};
+  for (const id of IDS) saved[id] = document.getElementById(id).value;
+
+  try {
+    const { checkpoints, error } = await fetch('/checkpoints').then(r => r.json());
+    if (!checkpoints || !checkpoints.length) throw new Error(error || 'empty list');
+
+    for (const id of IDS) {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '';
+      for (const name of checkpoints) {
+        const opt = document.createElement('option');
+        opt.value       = name;
+        opt.textContent = ckptLabel(name);
+        sel.appendChild(opt);
+      }
+      // Restore saved value if still present, otherwise leave at first option
+      if (saved[id] && checkpoints.includes(saved[id])) {
+        sel.value = saved[id];
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load checkpoints from ComfyUI:', e);
+    for (const id of IDS) {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">ComfyUI offline</option>';
+    }
+  }
+  // Apply configs for whatever ended up selected
+  applyCheckpointConfig(document.getElementById('g-checkpoint').value, 'g');
+  applyCheckpointConfig(document.getElementById('r-checkpoint').value, 'r');
+}
+
 // ── Boot ───────────────────────────────────────────────────────────────────
 loadState();
 updatePreview();
 checkComfy();
 setInterval(checkComfy, 10000);
+loadCheckpoints();
 loadGallery();
 </script>
 </body>

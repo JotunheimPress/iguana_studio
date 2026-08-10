@@ -32,9 +32,10 @@ fi
 
 mkdir -p "$SCRIPT_DIR/outputs"
 
-# Join ai-net for consistency; ComfyUI is reached via host.containers.internal regardless.
-NET_ARG=""
-podman network exists "$NETWORK" && NET_ARG="--network=$NETWORK"
+# Join ai-net: ComfyUI is a container on it now, reached by name at comfyui:8188.
+# Required now, not optional: comfyui:8188 only resolves on this network.
+podman network exists "$NETWORK" || podman network create "$NETWORK" >/dev/null
+NET_ARG="--network=$NETWORK"
 
 echo "==> Starting $CONTAINER on port $PORT …"
 podman run -d \
@@ -42,7 +43,7 @@ podman run -d \
   --restart unless-stopped \
   $NET_ARG \
   -p "${PORT}:7862" \
-  -e COMFY_HOST=host.containers.internal \
+  -e COMFY_HOST=comfyui \
   -e COMFY_PORT=8188 \
   -e PORT=7862 \
   -v "$SCRIPT_DIR/outputs:/app/outputs:z" \

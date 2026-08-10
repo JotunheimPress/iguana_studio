@@ -19,7 +19,7 @@ COPY static/ ./static/
 RUN mkdir -p /app/outputs /app/temp
 
 # Reach ComfyUI on the host (it runs in the comfyui distrobox on host networking).
-ENV COMFY_HOST=host.containers.internal \
+ENV COMFY_HOST=comfyui \
     COMFY_PORT=8188 \
     PORT=7862
 # COMFY_BASE intentionally unset — the video tab's client-side setup check is skipped

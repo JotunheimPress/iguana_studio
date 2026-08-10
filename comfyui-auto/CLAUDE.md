@@ -119,7 +119,8 @@ checkpoint into `models/checkpoints/` and it lights up automatically (schnell �
 guidance 1.0; dev → 20 steps / guidance 3.5, detected by `schnell` in the name).
 
 **Model-type detection lives in two places and must be kept in sync:**
-- backend — `workflows/defaults.py` `is_flux()` / `is_sdxl()` (the `_SDXL_NAMES` keyword set)
+- backend — `workflows/defaults.py` `is_flux()` / `is_sdxl()` (the `_SDXL_NAMES` keyword set).
+  `default_size()` builds on these and is what `run.py` uses to pick a resolution.
 - frontend — `CKPT_CONFIGS` + the `xl` substring fallback (`index.html:1127`)
 
 Adding a checkpoint whose name lacks `xl` means adding it to **both** lists.
@@ -167,9 +168,11 @@ photos, or describe the scene more emphatically.
 **ComfyUI-VideoHelperSuite** into `custom_nodes/`, download `mm_sd_v15_v2.ckpt` into
 `models/animatediff_models/`, restart ComfyUI — then add a GUI mode, since none exists.
 
-**2. `run.py` CLI drifts from the GUI.** `cmd_text2img` never forwards a `--checkpoint`, so it
-always uses `text2img.DEFAULT_CHECKPOINT` (SDXL) while defaulting `--width/--height` to **512** —
-SDXL at 512² produces poor output. The CLI also has no `photomaker` or `flux` subcommand.
+**2. `run.py` CLI is thinner than the GUI.** `text2img`/`img2img` take `--checkpoint`, and size
+defaults to the checkpoint's native resolution via `defaults.default_size()` — so FLUX is reachable
+from the CLI too (any name containing `flux` switches workflow). Still missing: no `photomaker`
+subcommand, and none of the GUI's per-checkpoint step/CFG tuning, so lightning models need an
+explicit `--steps 6 --cfg 2`.
 
 **3. Jobs are in-memory only.** `jobs: dict` in `server.py` has no eviction and no persistence:
 it grows for the process lifetime and every job is lost on restart.

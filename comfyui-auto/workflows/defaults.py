@@ -14,6 +14,17 @@ def is_sdxl(checkpoint: str) -> bool:
     return "xl" in name or "sdxl" in name or any(k in name for k in _SDXL_NAMES)
 
 
+def default_size(checkpoint: str) -> tuple[int, int]:
+    """
+    Native training resolution for the checkpoint's family.
+
+    Callers that have no explicit size should ask for this rather than assuming a
+    fixed default: SDXL and FLUX are trained at 1024², and running them at 512²
+    degrades output badly (soft, malformed, duplicated subjects).
+    """
+    return (1024, 1024) if is_sdxl(checkpoint) or is_flux(checkpoint) else (512, 512)
+
+
 # ── Negative prompts ───────────────────────────────────────────────────────────
 
 # General-purpose negative prompt — works across SD 1.5, SDXL, and Pony-based models.

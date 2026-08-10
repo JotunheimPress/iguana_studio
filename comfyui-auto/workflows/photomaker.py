@@ -1,13 +1,18 @@
 """
 PhotoMaker workflow — generate images of a specific person from reference photos.
 
-Uses the built-in ComfyUI PhotoMaker nodes (no custom node required).
+Requires the **ComfyUI-PhotoMaker-Plus** custom node (shiimizu) in ComfyUI's
+custom_nodes/. The built-in PhotoMakerLoader/PhotoMakerEncode nodes are NOT enough:
+this graph uses the "Plus" variants plus PhotoMakerInsightFaceLoader, which are the
+only ones supporting PhotoMaker V2. If generation fails with an unknown node type,
+that custom node is missing — see the project CLAUDE.md.
 
 Usage:
   - Upload 2–5 photos of the same person
-  - Include the trigger word "photomaker" in your prompt to refer to them:
-      "a photo of photomaker woman hiking in the mountains"
-      "portrait of photomaker man wearing a suit, professional headshot"
+  - Include the trigger word "img" in your prompt to refer to them:
+      "a photo of img woman hiking in the mountains"
+      "portrait of img man wearing a suit, professional headshot"
+    (The GUI prepends it automatically in Person mode.)
 """
 
 import random
@@ -19,6 +24,11 @@ from workflows.defaults import NEGATIVE_PORTRAIT as DEFAULT_NEGATIVE
 DEFAULT_CHECKPOINT   = "sd_xl_base_1.0.safetensors"
 DEFAULT_PHOTOMAKER   = "photomaker-v1.bin"
 TRIGGER_WORD = "img"
+
+# InsightFace execution provider. "CPU" because the ComfyUI image ships the CPU
+# build of onnxruntime — see ai-stack/comfyui/Containerfile for why. Detection is
+# one ~0.3 s pass per job, so this costs nothing next to the diffusion itself.
+INSIGHTFACE_PROVIDER = "CPU"
 
 
 def build(
@@ -78,7 +88,7 @@ def build(
     }
     workflow["3"] = {
         "class_type": "PhotoMakerInsightFaceLoader",
-        "inputs": {"provider": "CUDA"},
+        "inputs": {"provider": INSIGHTFACE_PROVIDER},
     }
 
     # ── LoadImage nodes (one per reference image, starting at node 4) ─────────

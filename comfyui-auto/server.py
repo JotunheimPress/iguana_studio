@@ -22,7 +22,7 @@ BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 TEMP_DIR   = BASE_DIR / "temp"
 STATIC_DIR = BASE_DIR / "static"
-COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/ComfyUI"))
+COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/Development/ai_ecosystem/ComfyUI"))
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)

@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import client
 from workflows import text2img, img2img, video
 
-COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/ComfyUI"))
+COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/Development/ai_ecosystem/ComfyUI"))
 OUTPUT_DIR = Path(__file__).parent / "outputs"
 
 

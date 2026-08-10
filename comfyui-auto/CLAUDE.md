@@ -5,7 +5,7 @@ A Python toolkit + web GUI for automating ComfyUI workflows on demand.
 No clicking in the browser — jobs are submitted via API and results are saved automatically.
 
 ## User environment
-- **ComfyUI**: Podman container on host network, data folder at `/home/user/ComfyUI/`
+- **ComfyUI**: Podman container on host network, data folder at `/home/user/Development/ai_ecosystem/ComfyUI/`
 - **ComfyUI server**: runs on `http://localhost:8188` (host: `COMFY_HOST`, port: `COMFY_PORT` env vars)
 - **Web GUI**: FastAPI server at `http://localhost:7861`
 - **OS**: Linux (Fedora), Podman containers

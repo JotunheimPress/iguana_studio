@@ -93,6 +93,13 @@ In Person mode the whole thing is prefixed with `img `.
 **State** persists to `localStorage` under key `studio_v1` — character fields, mode, and
 per-mode generation settings.
 
+**Deleting** — result cards and gallery tiles both carry a delete control (`Delete` / `✕`) calling
+`deleteOutput()`, which confirms, hits `DELETE /outputs/{name}`, then drops **every** element whose
+`data-file` matches. That matters because one image can be on screen twice at once (result column
+*and* gallery); tagging both containers with `data-file` is what keeps them from going out of sync.
+The gallery count is recomputed from the surviving tiles rather than refetched — `loadGallery()`
+runs at page load, so the tiles exist in the DOM even while the panel is collapsed.
+
 **Checkpoint dropdown** is populated live from `/checkpoints`, which proxies ComfyUI's
 `object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()`.
 
@@ -187,6 +194,7 @@ it grows for the process lifetime and every job is lost on restart.
 | GET | `/checkpoints` | Sorted checkpoint filenames from ComfyUI |
 | GET | `/gallery` | All output files, newest first, with mtime + size |
 | GET | `/outputs/{filename}` | Serves one generated file |
+| DELETE | `/outputs/{filename}` | Deletes one generated file (no trash — it's gone) |
 | GET | `/debug/nodes` | Every node class ComfyUI knows — useful for the breakage above |
 | POST | `/debug/workflow` | Dry-run a graph and return the JSON without queueing |
 
@@ -195,7 +203,9 @@ it grows for the process lifetime and every job is lost on restart.
   `/history/{prompt_id}` every 1.5s with a 600s timeout. Simpler and reliable.
 - **Threading** — each generation runs in a `daemon=True` thread; no queue, no worker pool.
 - **No build step** — the frontend is one self-contained HTML file with inline CSS/JS.
-- **Path traversal protection** — `/outputs/{filename}` applies `Path(filename).name`.
+- **Path traversal protection** — both `/outputs/{filename}` routes apply `Path(filename).name` to
+  strip any directory part. DELETE additionally refuses anything outside `MEDIA_SUFFIXES`, the same
+  set `/gallery` lists by, so the two can't disagree about what's deletable.
 - **Uploads are ephemeral** — temp files are unlinked in the job's `finally` block.
 - **Per-model defaults are a UX affordance, not a constraint** — switching checkpoint overwrites
   the steps/cfg/resolution boxes, and for FLUX relabels CFG → Guidance and hides the negative

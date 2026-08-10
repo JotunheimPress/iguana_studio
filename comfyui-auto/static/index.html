@@ -396,6 +396,10 @@
   .card-btn:hover { background: rgba(255,255,255,.22); }
   .card-btn.refine-btn { background: rgba(124,106,247,.5); }
   .card-btn.refine-btn:hover { background: rgba(124,106,247,.7); }
+  /* Destructive — pushed to the right so it isn't next to Open/Download by accident. */
+  .card-btn.delete-btn { background: rgba(224,85,85,.45); margin-left: auto; }
+  .card-btn.delete-btn:hover { background: rgba(224,85,85,.75); }
+  .card-btn:disabled { opacity: .5; cursor: default; }
 
   /* error card */
   .error-card {
@@ -495,6 +499,11 @@
   .gbtn:hover { background: var(--border); }
   .gbtn.refine { background: rgba(124,106,247,.2); border-color: var(--accent); color: var(--accent2); }
   .gbtn.refine:hover { background: rgba(124,106,247,.35); }
+  /* Destructive: kept narrow and off to the side rather than sharing flex width
+     with ↓/Refine, so it's not an equal-sized target next to the benign ones. */
+  .gbtn.del { flex: 0 0 24px; background: rgba(224,85,85,.15); border-color: rgba(224,85,85,.4); color: #e05555; }
+  .gbtn.del:hover { background: rgba(224,85,85,.35); }
+  .gbtn:disabled { opacity: .5; cursor: default; }
 
   /* ── Utility ── */
   .hidden { display: none !important; }
@@ -1382,6 +1391,7 @@ function showOutputs(files) {
     const url   = '/outputs/' + encodeURIComponent(name);
     const card  = document.createElement('div');
     card.className = 'output-card';
+    card.dataset.file = name;
 
     const isVideo  = /\.(mp4|gif|webm)$/i.test(name);
     const safeName = name.replace(/'/g, "\\'");
@@ -1395,8 +1405,48 @@ function showOutputs(files) {
         <a class="card-btn" href="${url}" target="_blank">Open</a>
         <a class="card-btn" href="${url}" download="${name}">Download</a>
         ${isVideo ? '' : `<button class="card-btn refine-btn" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
+        <button class="card-btn delete-btn" onclick="deleteOutput('${safeName}', this)">Delete</button>
       </div>`;
     area.prepend(card);
+  }
+}
+
+function setGalleryCount(n) {
+  document.getElementById('gallery-count').textContent =
+    n + ' image' + (n !== 1 ? 's' : '');
+}
+
+// Shared by the result card and the gallery tile — `btn` is whichever button was
+// clicked, and the file is dropped from BOTH views, since one image can be on
+// screen twice at once.
+async function deleteOutput(name, btn) {
+  if (!confirm(`Delete ${name}?\n\nThis removes the file from outputs/ for good — there is no undo.`)) return;
+
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const r = await fetch('/outputs/' + encodeURIComponent(name), { method: 'DELETE' });
+    if (!r.ok) {
+      const detail = await r.json().then(j => j.detail).catch(() => null);
+      throw new Error(detail || `HTTP ${r.status}`);
+    }
+    // Compare in JS rather than building an attribute selector — no escaping to
+    // get wrong if a filename ever contains a quote or bracket.
+    document.querySelectorAll('[data-file]').forEach(el => {
+      if (el.dataset.file === name) el.remove();
+    });
+    // loadGallery() runs at page load, so the tiles are in the DOM even while the
+    // panel is collapsed — counting them here is accurate either way.
+    setGalleryCount(document.querySelectorAll('.gallery-item').length);
+    // Nothing left in the results column — bring the placeholder back.
+    if (!document.getElementById('output-area').querySelector('.output-card, .error-card, .job-status')) {
+      document.getElementById('output-placeholder').classList.remove('hidden');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = label;
+    showError('Delete failed: ' + e.message);
   }
 }
 
@@ -1405,8 +1455,7 @@ async function loadGallery() {
   try {
     const items = await fetch('/gallery').then(r => r.json());
     const inner = document.getElementById('gallery-inner');
-    document.getElementById('gallery-count').textContent =
-      items.length + ' image' + (items.length !== 1 ? 's' : '');
+    setGalleryCount(items.length);
 
     inner.innerHTML = '';
     for (const item of items) {
@@ -1417,6 +1466,7 @@ async function loadGallery() {
 
       const div = document.createElement('div');
       div.className = 'gallery-item';
+      div.dataset.file = item.name;
 
       const thumb = isVideo
         ? `<video src="${url}" class="gthumb" muted preload="metadata" onclick="window.open('${safeUrl}','_blank')" title="${item.name}"></video>`
@@ -1427,6 +1477,7 @@ async function loadGallery() {
         <div class="gbtns">
           <a class="gbtn" href="${url}" download="${item.name}">↓</a>
           ${isVideo ? '' : `<button class="gbtn refine" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
+          <button class="gbtn del" title="Delete ${item.name}" onclick="deleteOutput('${safeName}', this)">✕</button>
         </div>`;
       inner.appendChild(div);
     }

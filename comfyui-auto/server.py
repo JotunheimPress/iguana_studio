@@ -27,6 +27,10 @@ COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/Development/ai_ecosys
 OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
 
+# What counts as a generated file — shared by /gallery and the delete endpoint so
+# the two can't disagree about what's listable vs. deletable.
+MEDIA_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4"}
+
 jobs: dict[str, dict] = {}
 
 
@@ -219,7 +223,7 @@ def gallery():
     """Return all output files sorted newest-first."""
     files = []
     for p in OUTPUT_DIR.iterdir():
-        if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4"}:
+        if p.is_file() and p.suffix.lower() in MEDIA_SUFFIXES:
             files.append({"name": p.name, "mtime": p.stat().st_mtime, "size": p.stat().st_size})
     files.sort(key=lambda x: x["mtime"], reverse=True)
     return files
@@ -232,6 +236,24 @@ def get_output(filename: str):
     if not path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path)
+
+
+@app.delete("/outputs/{filename}")
+def delete_output(filename: str):
+    """Delete one generated file. Irreversible — there is no trash."""
+    # Same Path(filename).name guard as the GET: strip any directory part so a
+    # crafted name can't reach outside outputs/.
+    path = OUTPUT_DIR / Path(filename).name
+    # Only ever delete generated media, never anything else that lands in here.
+    if path.suffix.lower() not in MEDIA_SUFFIXES:
+        raise HTTPException(status_code=400, detail="Not a generated media file")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        path.unlink()
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"Could not delete: {e}")
+    return {"deleted": path.name}
 
 
 # ── entry point ──────────────────────────────────────────────────────────────

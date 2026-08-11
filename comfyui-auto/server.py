@@ -14,7 +14,7 @@ import uvicorn
 
 sys.path.insert(0, str(Path(__file__).parent))
 import client
-from workflows import text2img, img2img, video, photomaker
+from workflows import text2img, img2img, video, photomaker, kontext
 
 app = FastAPI(title="Iguana Studio")
 
@@ -56,6 +56,8 @@ def _run_job(
             workflow = video.build(**params, comfy_base=COMFY_BASE if COMFY_BASE.exists() else None)
         elif task == "photomaker":
             workflow = photomaker.build(image_paths=image_paths, **params)
+        elif task == "kontext":
+            workflow = kontext.build(image_path=image_path, **params)
         else:
             raise ValueError(f"Unknown task: {task}")
 
@@ -104,7 +106,7 @@ async def generate(
     image: Optional[UploadFile] = File(None),
     images: list[UploadFile] = File(default=[]),
 ):
-    if task == "img2img" and (not image or not image.filename):
+    if task in ("img2img", "kontext") and (not image or not image.filename):
         raise HTTPException(status_code=400, detail="An image is required for Edit Image.")
     if task == "photomaker" and not any(f.filename for f in images):
         raise HTTPException(status_code=400, detail="At least one reference photo is required.")
@@ -157,6 +159,17 @@ async def generate(
             negative_prompt=negative or photomaker.DEFAULT_NEGATIVE,
             width=pm_width, height=pm_height, steps=steps, cfg=cfg, seed=seed,
             photomaker_model=pm_model,
+        )
+    elif task == "kontext":
+        # No negative prompt, no width/height and no denoise: Kontext zeroes its own
+        # negative, and the output size is derived from the source by
+        # FluxKontextImageScale. Guidance rides in on the `cfg` field so the frontend
+        # can reuse the existing slider — it is NOT sampler CFG, which is pinned to 1.
+        params = dict(
+            prompt=prompt,
+            guidance=cfg,
+            steps=steps,
+            seed=seed,
         )
     else:
         params = {}

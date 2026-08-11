@@ -61,6 +61,7 @@ comfyui-auto/
 │   ├── img2img.py       # edit an image; also delegates to flux.py
 │   ├── flux.py          # FLUX.1 graphs (build + build_img2img)
 │   ├── photomaker.py    # person from reference photos  ← see Known broken
+│   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
 │   └── video.py         # AnimateDiff text → video      ← see Known broken
 ├── static/index.html    # entire frontend, ~1500 lines, no build step
 ├── outputs/             # generated files (volume-mounted, gitignored)
@@ -82,13 +83,17 @@ against the accented first word, so any rename should stay two words to preserve
 Unrelated: "Character" in the sidebar still labels the character-builder panel — that's a feature
 name, not branding, and the `localStorage` key stays `studio_v1` (renaming it discards saved state).
 
-**Three modes** (`static/index.html:838`), which map onto backend tasks:
+**Four modes** (`static/index.html:838`), which map onto backend tasks:
 
 | Mode | Task sent | Controls | Notes |
 |---|---|---|---|
 | **Generate** | `text2img` | checkpoint, w/h, steps, cfg, seed, negative | The main path. Works. |
 | **Person** | `photomaker` | PhotoMaker model, w/h, steps, cfg, multi-photo dropzone | Prepends trigger word `img`. Needs the PhotoMaker-Plus custom node — see below. |
 | **Refine** | `img2img` | checkpoint, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
+| **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the character sidebar.** |
+
+Gallery tiles and result cards carry both a **Refine** and an **Edit** button, so any output can be
+sent straight into either editing path.
 
 There is **no video mode in the GUI**. The `video` task is only reachable via `run.py video`
 or a hand-rolled `POST /generate`.
@@ -149,6 +154,67 @@ guidance 1.0; dev → 20 steps / guidance 3.5, detected by `schnell` in the name
 - frontend — `CKPT_CONFIGS` + the `xl` substring fallback (`index.html:1154`)
 
 Adding a checkpoint whose name lacks `xl` means adding it to **both** lists.
+
+## Flux Kontext (Edit mode) — how it's wired
+
+Working as of 2026-08-11; verified end-to-end through the GUI API.
+
+**What it is.** Instruction-driven editing. Refine (img2img) re-noises the whole image and hopes;
+Kontext encodes the source to a latent and binds it to the *conditioning* via `ReferenceLatent`, so
+the model treats the picture as context and the prompt as an instruction. Everything you don't
+mention is preserved — verified: "change the background to a snowy mountain landscape" swapped the
+backdrop while leaving face, glasses, beard and shirt pixel-identical.
+
+**Prompt like an instruction, not a description.** `"make him wear a red baseball cap"` works;
+`"a man in a red cap, 8k, detailed"` makes it redraw the picture. Edit mode therefore takes its
+prompt from **its own instruction box** and ignores the character-builder sidebar entirely — that
+sidebar composes descriptions, which is the wrong shape of text for this model.
+
+**Models** (~12.5 GB, none of it in git):
+
+| File | Goes in | From |
+|---|---|---|
+| `flux1-kontext-dev-Q4_K_M.gguf` (6.9 GB) | `models/unet/` | `QuantStack/FLUX.1-Kontext-dev-GGUF` |
+| `t5xxl_fp8_e4m3fn_scaled.safetensors` (4.9 GB) | `models/text_encoders/` | `comfyanonymous/flux_text_encoders` |
+| `clip_l.safetensors` (235 MB) | `models/text_encoders/` | `comfyanonymous/flux_text_encoders` |
+| `ae.safetensors` (320 MB) | `models/vae/` | `Comfy-Org/Lumina_Image_2.0_Repackaged` |
+
+**GGUF is not a preference, it's the only option.** Every tutorial uses
+`flux1-dev-kontext_fp8_scaled.safetensors`, which needs **~20 GB VRAM**. This card has 12. Hence
+the Q4_K_M quant and the **ComfyUI-GGUF** custom node (city96) for `UnetLoaderGGUF`; its `gguf` dep
+is baked into `ai-stack/comfyui/Containerfile` like every other custom-node dep. Q5_K_M (8.4 GB)
+would also fit but leaves little headroom; Q6_K and above will thrash.
+
+**Graph** (`workflows/kontext.py`) mirrors ComfyUI's own bundled `flux_kontext_dev_basic` template
+with `UNETLoader` swapped for `UnetLoaderGGUF`. Three things about it are easy to get wrong:
+- **`FluxKontextImageScale` is mandatory.** It snaps the source to a trained resolution; skipping it
+  is the most common cause of mushy or warped output.
+- **Sampler CFG is pinned to 1.0** — Kontext is guidance-distilled. The real knob is `FluxGuidance`
+  (2.5 default, ~1.5 subtle, ~4 forceful). The GUI's slider sends it in the **`cfg` form field** to
+  reuse the existing plumbing, so `cfg` means *guidance* for this task and nothing else.
+- **No negative prompt and no denoise.** The negative is a `ConditioningZeroOut` of the positive,
+  and sampling always runs at denoise 1.0 because the source arrives via `ReferenceLatent` rather
+  than as a partially-noised latent.
+
+**~75 s per 1024² edit** at 20 steps on the 4070.
+
+### The VRAM conflict — it bites in both directions
+
+Kontext needs ~7 GB; KoboldCPP holds ~5.9 GB. **They cannot both be loaded on a 12 GB card.**
+
+- Before editing: `stack down koboldcpp`, or the job OOMs / offloads to system RAM and crawls.
+- **After editing, ComfyUI keeps the model resident** (~6.4 GB observed). KoboldCPP then dies
+  *instantly* on restart, and because `start.sh` runs it with `--rm` the container vanishes before
+  it can log anything — `stack up` just reports "did not come up" and `podman logs` says no such
+  container. It looks like a broken KoboldCPP; it's actually an out-of-memory GPU.
+
+The fix is to make ComfyUI let go, which it will do on request without a restart:
+```bash
+curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' \
+     -d '{"unload_models":true,"free_memory":true}'
+```
+That reliably returns ~6 GB, after which KoboldCPP starts normally. This is deliberately **not**
+automated — a frontend silently stopping or unloading another service is surprising behaviour.
 
 ## PhotoMaker (Person mode) — how it's wired
 

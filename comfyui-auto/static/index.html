@@ -152,7 +152,7 @@
     font-size: 12px;
     font-family: inherit;
     resize: vertical;
-    min-height: 54px;
+    min-height: 110px;
     outline: none;
     transition: border-color .15s;
   }
@@ -412,6 +412,8 @@
   .card-btn:hover { background: rgba(255,255,255,.22); }
   .card-btn.refine-btn { background: rgba(124,106,247,.5); }
   .card-btn.refine-btn:hover { background: rgba(124,106,247,.7); }
+  .card-btn.edit-btn { background: rgba(80,180,140,.5); }
+  .card-btn.edit-btn:hover { background: rgba(80,180,140,.7); }
   /* Destructive — pushed to the right so it isn't next to Open/Download by accident. */
   .card-btn.delete-btn { background: rgba(224,85,85,.45); margin-left: auto; }
   .card-btn.delete-btn:hover { background: rgba(224,85,85,.75); }
@@ -515,6 +517,8 @@
   .gbtn:hover { background: var(--border); }
   .gbtn.refine { background: rgba(124,106,247,.2); border-color: var(--accent); color: var(--accent2); }
   .gbtn.refine:hover { background: rgba(124,106,247,.35); }
+  .gbtn.edit { background: rgba(80,180,140,.2); border-color: rgba(80,180,140,.7); color: #6fd3a8; }
+  .gbtn.edit:hover { background: rgba(80,180,140,.35); }
   /* Destructive: kept narrow and off to the side rather than sharing flex width
      with ↓/Refine, so it's not an equal-sized target next to the benign ones. */
   .gbtn.del { flex: 0 0 24px; background: rgba(224,85,85,.15); border-color: rgba(224,85,85,.4); color: #e05555; }
@@ -557,7 +561,7 @@
       </div>
 
       <div class="section-label">Extra prompt</div>
-      <textarea class="extra-prompt" id="f-extra" rows="2" placeholder="Additional details, appended to prompt…"></textarea>
+      <textarea class="extra-prompt" id="f-extra" rows="5" placeholder="Additional details, appended to prompt…"></textarea>
 
       <div class="section-label">Character</div>
       <div class="field-grid">
@@ -838,6 +842,7 @@
       <div class="mode-tab active" data-mode="generate" onclick="switchMode('generate')">Generate</div>
       <div class="mode-tab" data-mode="person" onclick="switchMode('person')">Person</div>
       <div class="mode-tab" data-mode="refine" onclick="switchMode('refine')">Refine</div>
+      <div class="mode-tab" data-mode="edit" onclick="switchMode('edit')">Edit</div>
     </div>
 
     <!-- Controls bar -->
@@ -966,6 +971,40 @@
         </div>
       </div>
 
+      <!-- Edit (Flux Kontext) — instruction-driven editing. Unlike Refine, this takes
+           an instruction ("make it winter"), not a scene description, and ignores the
+           character sidebar entirely. -->
+      <div id="ctrl-edit" class="ctrl-section hidden">
+        <div class="ctrl-group">
+          <label>Source image</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="refine-placeholder" id="edit-placeholder" onclick="document.getElementById('edit-upload-input').click()" title="Click to upload or pick from gallery">+</div>
+            <img id="edit-thumb" class="refine-thumb hidden" src="" alt="source" onclick="document.getElementById('edit-upload-input').click()" title="Click to change">
+            <input type="file" id="edit-upload-input" accept="image/*" onchange="onEditFile(this.files[0])">
+            <span id="edit-name" style="font-size:11px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+        </div>
+        <div class="ctrl-group" style="flex:1;min-width:260px;">
+          <label>Instruction</label>
+          <textarea id="k-instruction" rows="2" placeholder="change the background to a snowy mountain…"
+            style="width:100%;min-width:240px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 8px;font-size:12px;font-family:inherit;resize:vertical;outline:none;"></textarea>
+        </div>
+        <div class="ctrl-group">
+          <label>Guidance <span id="k-guidance-val">2.5</span></label>
+          <input type="range" id="k-guidance" min="1.0" max="5.0" step="0.1" value="2.5"
+            oninput="document.getElementById('k-guidance-val').textContent=parseFloat(this.value).toFixed(1)"
+            style="width:110px;accent-color:var(--accent);cursor:pointer;">
+        </div>
+        <div class="ctrl-group">
+          <label>Steps</label>
+          <input type="number" id="k-steps" value="20" min="1" max="60" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Seed (-1=random)</label>
+          <input type="number" id="k-seed" value="-1" min="-1" style="width:90px;">
+        </div>
+      </div>
+
     </div><!-- /controls-bar -->
 
     <!-- Output area -->
@@ -1003,6 +1042,7 @@ const PERSIST_IDS = [
   'g-checkpoint','g-width','g-height','g-steps','g-cfg','g-seed',
   'pm-model','pm-width','pm-height','pm-steps','pm-cfg',
   'r-checkpoint','r-denoise','r-steps','r-cfg','r-seed',
+  'k-instruction','k-guidance','k-steps','k-seed',
   'neg-prompt',
 ];
 
@@ -1011,6 +1051,8 @@ let currentMode   = 'generate';
 let personFiles   = [];           // File[] for PhotoMaker
 let refineFile    = null;         // File for img2img
 let refineGallery = null;         // {name, url} picked from gallery
+let editFile      = null;         // File for Kontext
+let editGallery   = null;         // {name, url} picked from gallery
 let pollTimer     = null;
 let comfyOnline   = false;
 let galleryOpen   = false;
@@ -1039,6 +1081,9 @@ function loadState() {
   // sync denoise display
   const den = document.getElementById('r-denoise');
   if (den) document.getElementById('denoise-val').textContent = parseFloat(den.value).toFixed(2);
+  // sync Kontext guidance display
+  const gd = document.getElementById('k-guidance');
+  if (gd) document.getElementById('k-guidance-val').textContent = parseFloat(gd.value).toFixed(1);
 }
 
 // ── Prompt composition ─────────────────────────────────────────────────────
@@ -1131,8 +1176,9 @@ document.querySelectorAll('.sidebar select, .sidebar textarea').forEach(el => {
   el.addEventListener('input',  updatePreview);
 });
 
-// Wire control fields to save state
-document.querySelectorAll('.controls-bar select, .controls-bar input').forEach(el => {
+// Wire control fields to save state. `textarea` is in the selector for the Edit
+// mode instruction box — without it that field silently fails to persist.
+document.querySelectorAll('.controls-bar select, .controls-bar input, .controls-bar textarea').forEach(el => {
   el.addEventListener('change', saveState);
   el.addEventListener('input',  saveState);
 });
@@ -1261,6 +1307,28 @@ function setRefineFromGallery(name, url) {
   document.querySelector('.controls-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// ── Kontext (Edit) source ──────────────────────────────────────────────────
+function onEditFile(file) {
+  if (!file) return;
+  editFile    = file;
+  editGallery = null;
+  document.getElementById('edit-thumb').src = URL.createObjectURL(file);
+  document.getElementById('edit-thumb').classList.remove('hidden');
+  document.getElementById('edit-placeholder').classList.add('hidden');
+  document.getElementById('edit-name').textContent = file.name;
+}
+
+function setEditFromGallery(name, url) {
+  editGallery = { name, url };
+  editFile    = null;
+  document.getElementById('edit-thumb').src = url;
+  document.getElementById('edit-thumb').classList.remove('hidden');
+  document.getElementById('edit-placeholder').classList.add('hidden');
+  document.getElementById('edit-name').textContent = name;
+  switchMode('edit');
+  document.querySelector('.controls-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 // ── Negative prompt toggle ─────────────────────────────────────────────────
 function toggleNeg() {
   document.getElementById('neg-wrap').classList.toggle('open');
@@ -1270,8 +1338,21 @@ function toggleNeg() {
 async function generate() {
   if (!comfyOnline) { alert('ComfyUI is not running. Start ComfyUI Desktop first.'); return; }
 
-  const prompt = buildPrompt();
-  if (!prompt || prompt === '—') { alert('Build your character first.'); return; }
+  // Edit mode is instruction-driven: it takes its prompt from its own box and
+  // ignores the character builder, so buildPrompt() doesn't apply to it.
+  const instruction = (document.getElementById('k-instruction').value || '').trim();
+  const prompt = currentMode === 'edit' ? instruction : buildPrompt();
+
+  if (currentMode === 'edit') {
+    if (!editFile && !editGallery) {
+      alert('Pick a source image first. Upload one or click Edit on a gallery image.'); return;
+    }
+    if (!instruction) {
+      alert('Describe the change you want, e.g. "change the background to a snowy mountain".'); return;
+    }
+  } else if (!prompt || prompt === '—') {
+    alert('Build your character first.'); return;
+  }
 
   if (currentMode === 'person' && personFiles.length === 0) {
     alert('Add at least one reference photo in Person mode.'); return;
@@ -1326,6 +1407,30 @@ async function generate() {
         const resp = await fetch(refineGallery.url);
         const blob = await resp.blob();
         fd.append('image', blob, refineGallery.name);
+      } catch(e) {
+        alert('Could not load source image: ' + e.message);
+        btn.disabled = false; btn.textContent = 'Generate';
+        return;
+      }
+    }
+
+  } else if (currentMode === 'edit') {
+    // Kontext takes no negative prompt and no size — the negative is zeroed
+    // server-side and the output size is derived from the source. `cfg` carries
+    // Guidance here; sampler CFG is pinned to 1.0 in workflows/kontext.py.
+    fd.append('task',   'kontext');
+    fd.append('prompt', prompt);
+    fd.append('cfg',    document.getElementById('k-guidance').value);
+    fd.append('steps',  document.getElementById('k-steps').value);
+    fd.append('seed',   document.getElementById('k-seed').value);
+
+    if (editFile) {
+      fd.append('image', editFile);
+    } else if (editGallery) {
+      try {
+        const resp = await fetch(editGallery.url);
+        const blob = await resp.blob();
+        fd.append('image', blob, editGallery.name);
       } catch(e) {
         alert('Could not load source image: ' + e.message);
         btn.disabled = false; btn.textContent = 'Generate';
@@ -1423,6 +1528,7 @@ function showOutputs(files) {
         <a class="card-btn" href="${url}" target="_blank">Open</a>
         <a class="card-btn" href="${url}" download="${name}">Download</a>
         ${isVideo ? '' : `<button class="card-btn refine-btn" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
+        ${isVideo ? '' : `<button class="card-btn edit-btn" onclick="setEditFromGallery('${safeName}','${safeUrl}')">Edit</button>`}
         <button class="card-btn delete-btn" onclick="deleteOutput('${safeName}', this)">Delete</button>
       </div>`;
     area.prepend(card);
@@ -1495,6 +1601,7 @@ async function loadGallery() {
         <div class="gbtns">
           <a class="gbtn" href="${url}" download="${item.name}">↓</a>
           ${isVideo ? '' : `<button class="gbtn refine" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
+          ${isVideo ? '' : `<button class="gbtn edit" onclick="setEditFromGallery('${safeName}','${safeUrl}')">Edit</button>`}
           <button class="gbtn del" title="Delete ${item.name}" onclick="deleteOutput('${safeName}', this)">✕</button>
         </div>`;
       inner.appendChild(div);

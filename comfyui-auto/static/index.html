@@ -114,6 +114,20 @@
   .field select:focus, .field input:focus { border-color: var(--accent); }
 
   /* prompt preview */
+  /* Pinned to the top of the rail so the composed prompt stays visible while the
+     character dropdowns scroll underneath. top/padding-top cancel .sidebar-inner's
+     14px top padding (so the gap scrolls away and the block lands flush), and the
+     negative side margins bleed the background out to the rail edges — without them
+     the scrolling selects would show through the 12px gutters. */
+  .prompt-sticky {
+    position: sticky;
+    top: -14px;
+    z-index: 5;
+    background: var(--surface);
+    margin: -14px -12px 0;
+    padding: 14px 12px 10px;
+    border-bottom: 1px solid var(--border);
+  }
   .prompt-preview {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -123,6 +137,8 @@
     color: var(--accent2);
     line-height: 1.5;
     min-height: 60px;
+    max-height: 28vh;
+    overflow-y: auto;
     word-break: break-word;
     white-space: pre-wrap;
   }
@@ -532,6 +548,17 @@
   <aside class="sidebar">
     <div class="sidebar-inner">
 
+      <div class="prompt-sticky">
+        <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+          Prompt preview
+          <button onclick="clearCharacter()" style="font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(224,85,85,.15);border:1px solid rgba(224,85,85,.4);color:#e05555;border-radius:4px;padding:2px 8px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(224,85,85,.3)'" onmouseout="this.style.background='rgba(224,85,85,.15)'">Clear</button>
+        </div>
+        <div class="prompt-preview" id="prompt-preview">—</div>
+      </div>
+
+      <div class="section-label">Extra prompt</div>
+      <textarea class="extra-prompt" id="f-extra" rows="2" placeholder="Additional details, appended to prompt…"></textarea>
+
       <div class="section-label">Character</div>
       <div class="field-grid">
         <div class="field">
@@ -799,15 +826,6 @@
           </select>
         </div>
       </div>
-
-      <div class="section-label">Extra prompt</div>
-      <textarea class="extra-prompt" id="f-extra" rows="2" placeholder="Additional details, appended to prompt…"></textarea>
-
-      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
-        Prompt preview
-        <button onclick="clearCharacter()" style="font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(224,85,85,.15);border:1px solid rgba(224,85,85,.4);color:#e05555;border-radius:4px;padding:2px 8px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(224,85,85,.3)'" onmouseout="this.style.background='rgba(224,85,85,.15)'">Clear</button>
-      </div>
-      <div class="prompt-preview" id="prompt-preview">—</div>
 
     </div>
   </aside>

@@ -82,7 +82,7 @@ against the accented first word, so any rename should stay two words to preserve
 Unrelated: "Character" in the sidebar still labels the character-builder panel — that's a feature
 name, not branding, and the `localStorage` key stays `studio_v1` (renaming it discards saved state).
 
-**Three modes** (`static/index.html:811`), which map onto backend tasks:
+**Three modes** (`static/index.html:838`), which map onto backend tasks:
 
 | Mode | Task sent | Controls | Notes |
 |---|---|---|---|
@@ -93,10 +93,20 @@ name, not branding, and the `localStorage` key stays `studio_v1` (renaming it di
 There is **no video mode in the GUI**. The `video` task is only reachable via `run.py video`
 or a hand-rolled `POST /generate`.
 
-**Prompt composition** (`buildPrompt()`, `index.html:1020`) joins fields in a fixed order:
+**Prompt composition** (`buildPrompt()`, `index.html:1047`) joins fields in a fixed order:
 `expression age gender` → `build, skin skin` / `haircolor hairstyle hair` / `eyes eyes` →
 `wearing X` → `in X` → lighting → style → camera → pose → focus → free-text extra.
 In Person mode the whole thing is prefixed with `img `.
+
+That order is fixed in code and is **independent of the sidebar's visual order** — the rail reads
+Prompt preview → Extra prompt → Character/Hair/Face/Clothing/Scene/Pose, but extra text is still
+appended last. Reordering the markup does not reorder the prompt.
+
+The preview sits in a `.prompt-sticky` wrapper (`position: sticky`) so it stays pinned while the
+dropdowns scroll under it. Its `top: -14px` / `padding-top: 14px` pair cancels `.sidebar-inner`'s
+padding so the block lands flush when pinned, and the negative side margins bleed its background
+to the rail edges — without them the scrolling selects show through the gutters. The preview is
+capped at `max-height: 28vh` so a long prompt can't grow the pinned block over the whole rail.
 
 **State** persists to `localStorage` under key `studio_v1` — character fields, mode, and
 per-mode generation settings.
@@ -136,7 +146,7 @@ guidance 1.0; dev → 20 steps / guidance 3.5, detected by `schnell` in the name
 **Model-type detection lives in two places and must be kept in sync:**
 - backend — `workflows/defaults.py` `is_flux()` / `is_sdxl()` (the `_SDXL_NAMES` keyword set).
   `default_size()` builds on these and is what `run.py` uses to pick a resolution.
-- frontend — `CKPT_CONFIGS` + the `xl` substring fallback (`index.html:1127`)
+- frontend — `CKPT_CONFIGS` + the `xl` substring fallback (`index.html:1154`)
 
 Adding a checkpoint whose name lacks `xl` means adding it to **both** lists.
 

@@ -1,4 +1,4 @@
-# iguana studio (comfyui-auto) — Project Context
+# Iguana Studio (comfyui-auto) — Project Context
 
 ## What this is
 A Python toolkit + single-page web GUI that drives ComfyUI over its HTTP API.
@@ -46,8 +46,8 @@ venv/bin/python run.py text2img "a cat"    # CLI (see caveats below)
 | `PORT` | `7862` | Port the GUI binds |
 | `COMFY_BASE` | *unset in container* | Host path to the ComfyUI folder. Only used for the video tab's client-side pre-flight file check; skipped when the path isn't visible (`server.py:52`). |
 
-Note `server.py:241` still prints "Open http://localhost:7861" on startup — cosmetic, the bind
-port is correct. 7861 is the **companion** app; iguana is 7862.
+The startup banner derives its printed URL from the same `PORT` value it binds, so the two can't
+drift apart. (It used to hardcode 7861 — the **companion** app's port; iguana is 7862.)
 
 ## Project structure
 ```
@@ -73,6 +73,14 @@ comfyui-auto/
 
 A left rail of **character-builder dropdowns** feeds a prompt composer; a right panel holds
 mode-specific generation controls; below sits the output view and a gallery.
+
+**The app is named "Iguana Studio"** (it was generically "Character Studio" until 2026-08-11). The
+name is written out in three places that must be changed together: `<title>` and the topbar `<h1>`
+in `static/index.html`, and `FastAPI(title=...)` in `server.py` (which surfaces at `/docs`). The
+`<h1>` deliberately keeps the second word in a `<span>` — `.topbar h1 span` renders it muted
+against the accented first word, so any rename should stay two words to preserve that.
+Unrelated: "Character" in the sidebar still labels the character-builder panel — that's a feature
+name, not branding, and the `localStorage` key stays `studio_v1` (renaming it discards saved state).
 
 **Three modes** (`static/index.html:811`), which map onto backend tasks:
 

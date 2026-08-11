@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import client
 from workflows import text2img, img2img, video, photomaker
 
-app = FastAPI(title="ComfyUI Automation")
+app = FastAPI(title="Iguana Studio")
 
 BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
@@ -259,6 +259,7 @@ def delete_output(filename: str):
 # ── entry point ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("ComfyUI Automation GUI starting...")
-    print("Open http://localhost:7861 in your browser\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=int(os.environ.get("PORT", "7862")), reload=False)
+    port = int(os.environ.get("PORT", "7862"))
+    print("Iguana Studio starting...")
+    print(f"Open http://localhost:{port} in your browser\n")
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)

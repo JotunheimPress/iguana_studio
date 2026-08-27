@@ -112,13 +112,17 @@
     transition: border-color .15s;
   }
   .field select:focus, .field input:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); color: var(--text); }
+  .field select optgroup { background: var(--surface); color: var(--muted); font-style: normal; }
 
-  /* prompt preview */
-  /* Pinned to the top of the rail so the composed prompt stays visible while the
-     character dropdowns scroll underneath. top/padding-top cancel .sidebar-inner's
-     14px top padding (so the gap scrolls away and the block lands flush), and the
-     negative side margins bleed the background out to the rail edges — without them
-     the scrolling selects would show through the 12px gutters. */
+  /* prompt box + preview */
+  /* Pinned to the top of the rail so the prompt you are typing and its composed
+     result both stay visible while the modifier dropdowns scroll underneath.
+     top/padding-top cancel .sidebar-inner's 14px top padding (so the gap scrolls
+     away and the block lands flush), and the negative side margins bleed the
+     background out to the rail edges — without them the scrolling selects would
+     show through the 12px gutters. Both the textarea and the preview are height-
+     capped so the pinned block can never grow over the whole rail. */
   .prompt-sticky {
     position: sticky;
     top: -14px;
@@ -136,8 +140,8 @@
     font-size: 11px;
     color: var(--accent2);
     line-height: 1.5;
-    min-height: 60px;
-    max-height: 28vh;
+    min-height: 44px;
+    max-height: 16vh;
     overflow-y: auto;
     word-break: break-word;
     white-space: pre-wrap;
@@ -153,6 +157,7 @@
     font-family: inherit;
     resize: vertical;
     min-height: 110px;
+    max-height: 34vh;
     outline: none;
     transition: border-color .15s;
   }
@@ -548,166 +553,86 @@
 <!-- Main layout -->
 <div class="layout">
 
-  <!-- ── Sidebar: Character Builder ── -->
+  <!-- ── Sidebar: Prompt + modifier presets ── -->
   <aside class="sidebar">
     <div class="sidebar-inner">
 
       <div class="prompt-sticky">
         <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
-          Prompt preview
-          <button onclick="clearCharacter()" style="font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(224,85,85,.15);border:1px solid rgba(224,85,85,.4);color:#e05555;border-radius:4px;padding:2px 8px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(224,85,85,.3)'" onmouseout="this.style.background='rgba(224,85,85,.15)'">Clear</button>
+          Prompt
+          <button onclick="clearPrompt()" style="font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(224,85,85,.15);border:1px solid rgba(224,85,85,.4);color:#e05555;border-radius:4px;padding:2px 8px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(224,85,85,.3)'" onmouseout="this.style.background='rgba(224,85,85,.15)'">Clear</button>
         </div>
+        <textarea class="extra-prompt" id="f-extra" rows="7" placeholder="Describe the subject — this is the prompt. The dropdowns below only append modifiers."></textarea>
+
+        <div class="section-label" style="margin-top:10px;">Preview</div>
         <div class="prompt-preview" id="prompt-preview">—</div>
-      </div>
-
-      <div class="section-label">Extra prompt</div>
-      <textarea class="extra-prompt" id="f-extra" rows="5" placeholder="Additional details, appended to prompt…"></textarea>
-
-      <div class="section-label">Character</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Gender</label>
-          <select id="f-gender">
-            <option value="">—</option>
-            <option value="woman" selected>Woman</option>
-            <option value="school girl">School girl</option>
-            <option value="man">Man</option>
-            <option value="person">Person (neutral)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Age</label>
-          <select id="f-age">
-            <option value="">—</option>
-            <option value="12 year old">12</option>
-            <option value="13 year old">13</option>
-            <option value="14 year old">14</option>
-            <option value="15 year old">15</option>
-            <option value="16 year old">16</option>
-            <option value="17 year old">17</option>
-            <option value="18 year old">18</option>
-            <option value="19 year old">19</option>
-            <option value="20 year old">20</option>
-            <option value="21 year old">21</option>
-            <option value="22 year old">22</option>
-            <option value="23 year old">23</option>
-            <option value="24 year old">24</option>
-            <option value="25 year old" selected>25</option>
-            <option value="26 year old">26</option>
-            <option value="27 year old">27</option>
-            <option value="28 year old">28</option>
-            <option value="29 year old">29</option>
-            <option value="30 year old">30</option>
-            <option value="31 year old">31</option>
-            <option value="32 year old">32</option>
-            <option value="33 year old">33</option>
-            <option value="34 year old">34</option>
-            <option value="35 year old">35</option>
-            <option value="36 year old">36</option>
-            <option value="37 year old">37</option>
-            <option value="38 year old">38</option>
-            <option value="39 year old">39</option>
-            <option value="40 year old">40</option>
-            <option value="41 year old">41</option>
-            <option value="42 year old">42</option>
-            <option value="43 year old">43</option>
-            <option value="44 year old">44</option>
-            <option value="45 year old">45</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Build</label>
-          <select id="f-build">
-            <option value="">—</option>
-            <option value="skinny">Skinny</option>
-            <option value="slim">Slim</option>
-            <option value="athletic" selected>Athletic</option>
-            <option value="curvy">Curvy</option>
-            <option value="muscular">Muscular</option>
-            <option value="petite">Petite</option>
-            <option value="average">Average</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Skin tone</label>
-          <select id="f-skin">
-            <option value="">—</option>
-            <option value="pale">Pale</option>
-            <option value="fair">Fair</option>
-            <option value="light" selected>Light</option>
-            <option value="medium">Medium</option>
-            <option value="tan">Tan</option>
-            <option value="brown">Brown</option>
-            <option value="dark">Dark</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="section-label">Hair</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Color</label>
-          <select id="f-hair-color">
-            <option value="">—</option>
-            <option value="black">Black</option>
-            <option value="dark brown">Dark brown</option>
-            <option value="brown" selected>Brown</option>
-            <option value="auburn">Auburn</option>
-            <option value="blonde">Blonde</option>
-            <option value="red">Red</option>
-            <option value="silver">Silver</option>
-            <option value="white">White</option>
-            <option value="blue">Blue</option>
-            <option value="pink">Pink</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Style</label>
-          <select id="f-hair-style">
-            <option value="">—</option>
-            <option value="long straight">Long straight</option>
-            <option value="long wavy" selected>Long wavy</option>
-            <option value="long curly">Long curly</option>
-            <option value="short straight">Short straight</option>
-            <option value="short curly">Short curly</option>
-            <option value="pixie cut">Pixie cut</option>
-            <option value="bob">Bob</option>
-            <option value="ponytail">Ponytail</option>
-            <option value="bun">Bun</option>
-            <option value="braids">Braids</option>
-          </select>
-        </div>
       </div>
 
       <div class="section-label">Face</div>
       <div class="field-grid">
         <div class="field">
           <label>Eye color</label>
+          <!-- Every original value is preserved; the second group is for non-naturalistic
+               colours that only land on stylised checkpoints. -->
           <select id="f-eyes">
             <option value="">—</option>
-            <option value="brown" selected>Brown</option>
-            <option value="light blue">Light blue</option>
-            <option value="blue">Blue</option>
-            <option value="light green">Light green</option>
-            <option value="green">Green</option>
-            <option value="hazel">Hazel</option>
-            <option value="gray">Gray</option>
-            <option value="amber">Amber</option>
+            <optgroup label="Natural">
+              <option value="dark brown">Dark brown</option>
+              <option value="brown">Brown</option>
+              <option value="hazel">Hazel</option>
+              <option value="amber">Amber</option>
+              <option value="green">Green</option>
+              <option value="light green">Light green</option>
+              <option value="blue">Blue</option>
+              <option value="light blue">Light blue</option>
+              <option value="gray">Gray</option>
+            </optgroup>
+            <optgroup label="Striking">
+              <option value="emerald green">Emerald</option>
+              <option value="deep blue">Deep blue</option>
+              <option value="golden">Golden</option>
+              <option value="violet">Violet</option>
+              <option value="silver">Silver</option>
+              <option value="heterochromia">Heterochromia</option>
+            </optgroup>
           </select>
         </div>
         <div class="field">
           <label>Expression</label>
           <select id="f-expression">
             <option value="">—</option>
-            <option value="neutral" selected>Neutral</option>
-            <option value="smiling">Smiling</option>
-            <option value="laughing">Laughing</option>
-            <option value="serious">Serious</option>
-            <option value="flirty">Flirty</option>
-            <option value="seductive">Seductive</option>
-            <option value="orgasmic">Orgasmic</option>
-            <option value="surprised">Surprised</option>
-            <option value="pensive">Pensive</option>
+            <optgroup label="Warm">
+              <option value="neutral">Neutral</option>
+              <option value="soft smile">Soft smile</option>
+              <option value="smiling">Smiling</option>
+              <option value="grinning">Grinning</option>
+              <option value="laughing">Laughing</option>
+              <option value="content">Content</option>
+            </optgroup>
+            <optgroup label="Composed">
+              <option value="serious">Serious</option>
+              <option value="pensive">Pensive</option>
+              <option value="determined">Determined</option>
+              <option value="confident">Confident</option>
+              <option value="smug">Smug</option>
+              <option value="bored">Bored</option>
+            </optgroup>
+            <optgroup label="Distressed">
+              <option value="sad">Sad</option>
+              <option value="crying">Crying</option>
+              <option value="worried">Worried</option>
+              <option value="fearful">Fearful</option>
+              <option value="angry">Angry</option>
+              <option value="surprised">Surprised</option>
+            </optgroup>
+            <optgroup label="Sensual">
+              <option value="flirty">Flirty</option>
+              <option value="playful wink">Playful wink</option>
+              <option value="biting lip">Biting lip</option>
+              <option value="seductive">Seductive</option>
+              <option value="sultry gaze">Sultry gaze</option>
+              <option value="orgasmic">Orgasmic</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -718,20 +643,54 @@
           <label>Outfit</label>
           <select id="f-clothing">
             <option value="">—</option>
-            <option value="casual outfit" selected>Casual</option>
-            <option value="elegant dress">Elegant dress</option>
-            <option value="business attire">Business</option>
-            <option value="fantasy armor">Fantasy armor</option>
-            <option value="sci-fi suit">Sci-fi suit</option>
-            <option value="athletic wear">Athletic wear</option>
-            <option value="tanktop and shorts">Tanktop and shorts</option>
-            <option value="bikini">Bikini</option>
-            <option value="lingerie">Lingerie</option>
-            <option value="sheer lingerie">Sheer lingerie</option>
-            <option value="only panties">Only panties</option>
-            <option value="thong">Thong</option>
-            <option value="topless">Topless</option>
-            <option value="nude">Nude</option>
+            <optgroup label="Casual">
+              <option value="casual outfit">Casual</option>
+              <option value="jeans and a t-shirt">Jeans and t-shirt</option>
+              <option value="a hoodie and jeans">Hoodie and jeans</option>
+              <option value="a summer dress">Summer dress</option>
+              <option value="a sweater and skirt">Sweater and skirt</option>
+              <option value="an oversized shirt">Oversized shirt</option>
+              <option value="tanktop and shorts">Tanktop and shorts</option>
+            </optgroup>
+            <optgroup label="Formal">
+              <option value="elegant dress">Elegant dress</option>
+              <option value="an evening gown">Evening gown</option>
+              <option value="a cocktail dress">Cocktail dress</option>
+              <option value="business attire">Business attire</option>
+              <option value="a tailored suit">Tailored suit</option>
+            </optgroup>
+            <optgroup label="Costume &amp; genre">
+              <option value="fantasy armor">Fantasy armor</option>
+              <option value="sci-fi suit">Sci-fi suit</option>
+              <option value="a medieval gown">Medieval gown</option>
+              <option value="a silk kimono">Kimono</option>
+              <option value="cyberpunk streetwear">Cyberpunk streetwear</option>
+              <option value="a witch costume">Witch costume</option>
+              <option value="a maid outfit">Maid outfit</option>
+            </optgroup>
+            <optgroup label="Swim &amp; active">
+              <option value="athletic wear">Athletic wear</option>
+              <option value="a sports bra and leggings">Sports bra and leggings</option>
+              <option value="a one-piece swimsuit">One-piece swimsuit</option>
+              <option value="bikini">Bikini</option>
+            </optgroup>
+            <optgroup label="Lingerie &amp; revealing">
+              <option value="lingerie">Lingerie</option>
+              <option value="a lace lingerie set">Lace set</option>
+              <option value="sheer lingerie">Sheer lingerie</option>
+              <option value="a corset">Corset</option>
+              <option value="a babydoll nightie">Babydoll</option>
+              <option value="stockings and a garter belt">Stockings and garter</option>
+              <option value="a silk robe">Silk robe</option>
+              <option value="a sheer bodysuit">Bodysuit</option>
+              <option value="only panties">Only panties</option>
+              <option value="thong">Thong</option>
+            </optgroup>
+            <optgroup label="Undressed">
+              <option value="partially undressed">Partially undressed</option>
+              <option value="topless">Topless</option>
+              <option value="nude">Nude</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -740,53 +699,164 @@
       <div class="field-grid">
         <div class="field">
           <label>Setting</label>
+          <!-- Each value carries its own preposition ("on a beach", "by a lake") rather
+               than relying on buildPrompt() to prepend a blanket "in " — that used to
+               emit "in beach" / "in pool". Genre aesthetics live here as concrete places
+               (cyberpunk alley, gothic cathedral) so they read as settings and don't
+               compete with the Art style dropdown. -->
           <select id="f-setting">
             <option value="">—</option>
-            <option value="studio backdrop" selected>Studio</option>
-            <option value="outdoor nature">Nature</option>
-            <option value="urban street">Urban street</option>
-            <option value="bedroom">Bedroom</option>
-            <option value="beach">Beach</option>
-            <option value="pool">Pool</option>
-            <option value="office">Office</option>
-            <option value="fantasy forest">Fantasy forest</option>
-            <option value="futuristic city">Futuristic city</option>
+            <optgroup label="Studio &amp; interior">
+              <option value="against a plain studio backdrop">Studio backdrop</option>
+              <option value="in a bedroom">Bedroom</option>
+              <option value="in a living room">Living room</option>
+              <option value="in a kitchen">Kitchen</option>
+              <option value="in an office">Office</option>
+              <option value="in a library">Library</option>
+              <option value="in a cafe">Cafe</option>
+              <option value="in a luxury hotel room">Hotel room</option>
+            </optgroup>
+            <optgroup label="Outdoor &amp; nature">
+              <option value="in a forest">Forest</option>
+              <option value="on a beach">Beach</option>
+              <option value="by a swimming pool">Poolside</option>
+              <option value="in the mountains">Mountains</option>
+              <option value="in a desert">Desert</option>
+              <option value="in a flower meadow">Meadow</option>
+              <option value="by a lake">Lakeside</option>
+              <option value="in a snowy landscape">Snowscape</option>
+            </optgroup>
+            <optgroup label="Urban">
+              <option value="on an urban street">Urban street</option>
+              <option value="on a neon-lit street at night">Neon street</option>
+              <option value="on a city rooftop">Rooftop</option>
+              <option value="in a narrow alleyway">Alleyway</option>
+              <option value="in a subway station">Subway</option>
+              <option value="on a balcony overlooking the city">Balcony</option>
+            </optgroup>
+            <optgroup label="Fantasy &amp; sci-fi">
+              <option value="in an enchanted forest">Enchanted forest</option>
+              <option value="in a castle hall">Castle hall</option>
+              <option value="in a gothic cathedral">Gothic cathedral</option>
+              <option value="in a medieval tavern">Medieval tavern</option>
+              <option value="in a futuristic city">Futuristic city</option>
+              <option value="in a neon-lit cyberpunk alley">Cyberpunk alley</option>
+              <option value="aboard a spaceship">Spaceship</option>
+            </optgroup>
           </select>
         </div>
         <div class="field">
           <label>Lighting</label>
+          <!-- All six original values are preserved verbatim, so saved state survives.
+               The studio and dramatic groups lean on real photographic lighting names
+               (Rembrandt, chiaroscuro, high/low key) — models were trained on captions
+               that use them, so they land harder than generic "moody lighting". -->
           <select id="f-lighting">
             <option value="">—</option>
-            <option value="natural lighting" selected>Natural</option>
-            <option value="studio lighting">Studio</option>
-            <option value="golden hour lighting">Golden hour</option>
-            <option value="dramatic lighting">Dramatic</option>
-            <option value="soft diffused lighting">Soft</option>
-            <option value="neon lighting">Neon</option>
+            <optgroup label="Natural">
+              <option value="natural lighting">Natural</option>
+              <option value="golden hour lighting">Golden hour</option>
+              <option value="blue hour lighting">Blue hour</option>
+              <option value="harsh midday sunlight">Midday sun</option>
+              <option value="soft overcast light">Overcast</option>
+              <option value="soft window light">Window light</option>
+              <option value="moonlight">Moonlight</option>
+            </optgroup>
+            <optgroup label="Studio">
+              <option value="studio lighting">Studio</option>
+              <option value="soft diffused lighting">Soft diffused</option>
+              <option value="rim lighting">Rim light</option>
+              <option value="high key lighting">High key</option>
+              <option value="low key lighting">Low key</option>
+              <option value="ring light">Ring light</option>
+            </optgroup>
+            <optgroup label="Dramatic &amp; cinematic">
+              <option value="dramatic lighting">Dramatic</option>
+              <option value="chiaroscuro lighting">Chiaroscuro</option>
+              <option value="Rembrandt lighting">Rembrandt</option>
+              <option value="volumetric god rays">Volumetric rays</option>
+              <option value="backlit silhouette">Silhouette</option>
+              <option value="warm candlelight">Candlelight</option>
+            </optgroup>
+            <optgroup label="Coloured &amp; artificial">
+              <option value="neon lighting">Neon</option>
+              <option value="colored gel lighting">Colored gels</option>
+              <option value="firelight">Firelight</option>
+              <option value="sodium streetlight glow">Streetlight</option>
+              <option value="bioluminescent glow">Bioluminescent</option>
+              <option value="underwater caustic light">Underwater</option>
+            </optgroup>
           </select>
         </div>
         <div class="field">
           <label>Art style</label>
+          <!-- Grouped by medium. Film-stock terms sit up top because they shift the
+               model's grain/colour response, not just the subject — they are the most
+               effective "make it look real" tokens on the photoreal SDXL checkpoints.
+               Genre words (cyberpunk, steampunk, gothic) deliberately live under Scene
+               instead: they describe a world, not a medium, and would fight Setting. -->
           <select id="f-style">
             <option value="">—</option>
-            <option value="photorealistic" selected>Photorealistic</option>
-            <option value="cinematic">Cinematic</option>
-            <option value="anime style">Anime</option>
-            <option value="oil painting">Oil painting</option>
-            <option value="digital art">Digital art</option>
-            <option value="hyperrealistic">Hyperrealistic</option>
+            <optgroup label="Photographic">
+              <option value="photorealistic">Photorealistic</option>
+              <option value="35mm film photography">35mm film</option>
+              <option value="analog photograph">Analog photo</option>
+              <option value="black and white photography">Black &amp; white</option>
+              <option value="editorial fashion photography">Editorial fashion</option>
+              <option value="candid snapshot">Candid snapshot</option>
+            </optgroup>
+            <optgroup label="Digital &amp; cinematic">
+              <option value="cinematic">Cinematic</option>
+              <option value="concept art">Concept art</option>
+              <option value="digital art">Digital art</option>
+              <option value="3D render">3D render</option>
+            </optgroup>
+            <optgroup label="Illustration">
+              <option value="anime style">Anime</option>
+              <option value="manga">Manga</option>
+              <option value="comic book art">Comic book</option>
+              <option value="cel shaded">Cel shaded</option>
+            </optgroup>
+            <optgroup label="Traditional media">
+              <option value="oil painting">Oil painting</option>
+              <option value="watercolor painting">Watercolor</option>
+              <option value="ink drawing">Ink drawing</option>
+              <option value="pencil sketch">Pencil sketch</option>
+            </optgroup>
           </select>
         </div>
         <div class="field">
           <label>Camera</label>
+          <!-- Framing / angle / lens are separable ideas but share one field, so pick the
+               one that matters most and put the rest in the manual prompt. -->
           <select id="f-camera">
             <option value="">—</option>
-            <option value="portrait shot" selected>Portrait</option>
-            <option value="body shot" selected>Body shot</option>
-            <option value="close-up shot">Close-up</option>
-            <option value="full body shot">Full body</option>
-            <option value="three-quarter shot">Three-quarter</option>
-            <option value="wide angle shot">Wide angle</option>
+            <optgroup label="Framing">
+              <option value="extreme close-up shot">Extreme close-up</option>
+              <option value="close-up shot">Close-up</option>
+              <option value="headshot">Headshot</option>
+              <option value="portrait shot">Portrait</option>
+              <option value="upper body shot">Upper body</option>
+              <option value="medium shot">Medium</option>
+              <option value="three-quarter shot">Three-quarter</option>
+              <option value="full body shot">Full body</option>
+              <option value="body shot">Body shot</option>
+            </optgroup>
+            <optgroup label="Angle">
+              <option value="eye level shot">Eye level</option>
+              <option value="low angle shot">Low angle</option>
+              <option value="high angle shot">High angle</option>
+              <option value="overhead shot">Overhead</option>
+              <option value="dutch angle shot">Dutch angle</option>
+              <option value="over-the-shoulder shot">Over the shoulder</option>
+            </optgroup>
+            <optgroup label="Lens">
+              <option value="wide angle shot">Wide angle</option>
+              <option value="telephoto compression">Telephoto</option>
+              <option value="macro shot">Macro</option>
+              <option value="shallow depth of field">Shallow depth of field</option>
+              <option value="fisheye lens">Fisheye</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -797,36 +867,70 @@
           <label>Pose</label>
           <select id="f-pose">
             <option value="">—</option>
-            <option value="standing">Standing</option>
-            <option value="sitting">Sitting</option>
-            <option value="lying on back">Lying on back</option>
-            <option value="lying on stomach">Lying on stomach</option>
-            <option value="kneeling">Kneeling</option>
-            <option value="bent over">Bent over</option>
-            <option value="on all fours">On all fours</option>
-            <option value="legs spread">Legs spread</option>
-            <option value="hands on hips">Hands on hips</option>
-            <option value="arms raised">Arms raised</option>
-            <option value="leaning against wall">Leaning against wall</option>
-            <option value="from behind">From behind</option>
-            <option value="prone">Prone</option>
-            <option value="prone arched back">Prone arched back</option>
-            <option value="prone ass up">Prone ass up</option>
-            <option value="doggie style">Doggie style</option>
-            <option value="doggie style">Doggie style</option>
+            <optgroup label="Standing">
+              <option value="standing">Standing</option>
+              <option value="standing in contrapposto">Contrapposto</option>
+              <option value="hands on hips">Hands on hips</option>
+              <option value="arms crossed">Arms crossed</option>
+              <option value="arms raised">Arms raised</option>
+              <option value="stretching">Stretching</option>
+              <option value="leaning against wall">Leaning against wall</option>
+              <option value="walking">Walking</option>
+              <option value="dancing">Dancing</option>
+            </optgroup>
+            <optgroup label="Seated &amp; reclining">
+              <option value="sitting">Sitting</option>
+              <option value="sitting cross-legged">Sitting cross-legged</option>
+              <option value="reclining on a couch">Reclining</option>
+              <option value="lying on back">Lying on back</option>
+              <option value="lying on stomach">Lying on stomach</option>
+              <option value="curled up">Curled up</option>
+              <option value="kneeling">Kneeling</option>
+              <option value="prone">Prone</option>
+            </optgroup>
+            <optgroup label="Action">
+              <option value="running">Running</option>
+              <option value="jumping">Jumping</option>
+              <option value="crouching">Crouching</option>
+              <option value="looking over shoulder">Looking over shoulder</option>
+              <option value="mid-turn">Mid-turn</option>
+            </optgroup>
+            <optgroup label="Intimate">
+              <option value="bent over">Bent over</option>
+              <option value="on all fours">On all fours</option>
+              <option value="legs spread">Legs spread</option>
+              <option value="straddling">Straddling</option>
+              <option value="from behind">From behind</option>
+              <option value="prone arched back">Prone arched back</option>
+              <option value="prone ass up">Prone ass up</option>
+              <option value="doggie style">Doggie style</option>
+            </optgroup>
           </select>
         </div>
         <div class="field">
           <label>Focus</label>
           <select id="f-focus">
             <option value="">—</option>
-            <option value="face focus">Face</option>
-            <option value="breast focus">Breasts</option>
-            <option value="ass focus">Ass</option>
-            <option value="pussy focus">Pussy</option>
-            <option value="navel focus">Stomach / Navel</option>
-            <option value="feet focus">Feet</option>
-            <option value="full body">Full body</option>
+            <optgroup label="Portrait">
+              <option value="face focus">Face</option>
+              <option value="eye focus">Eyes</option>
+              <option value="lips focus">Lips</option>
+              <option value="hair focus">Hair</option>
+            </optgroup>
+            <optgroup label="Body">
+              <option value="full body">Full body</option>
+              <option value="back focus">Back</option>
+              <option value="hands focus">Hands</option>
+              <option value="legs focus">Legs</option>
+              <option value="thigh focus">Thighs</option>
+              <option value="feet focus">Feet</option>
+              <option value="navel focus">Stomach / Navel</option>
+            </optgroup>
+            <optgroup label="Explicit">
+              <option value="breast focus">Breasts</option>
+              <option value="ass focus">Ass</option>
+              <option value="pussy focus">Pussy</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -1033,8 +1137,6 @@
 <script>
 // ── Field IDs saved to localStorage ───────────────────────────────────────
 const PERSIST_IDS = [
-  'f-gender','f-age','f-build','f-skin',
-  'f-hair-color','f-hair-style',
   'f-eyes','f-expression',
   'f-clothing','f-setting','f-lighting','f-style','f-camera',
   'f-pose','f-focus',
@@ -1089,75 +1191,50 @@ function loadState() {
 // ── Prompt composition ─────────────────────────────────────────────────────
 function get(id) { return (document.getElementById(id)?.value || '').trim(); }
 
+// The manual prompt leads; the remaining dropdowns only append modifiers after it.
+// This order is fixed in code and independent of the sidebar's visual order.
 function buildPrompt() {
   const parts = [];
 
-  // Person line
-  const expr   = get('f-expression');
-  const age    = get('f-age');
-  const gender = get('f-gender');
-  let charLine = [expr, age, gender].filter(Boolean).join(' ');
-  if (charLine) parts.push(charLine);
+  const manual = get('f-extra');
+  if (manual) parts.push(manual);
 
-  // Physicals
-  const build    = get('f-build');
-  const skin     = get('f-skin');
-  const hairCol  = get('f-hair-color');
-  const hairSty  = get('f-hair-style');
-  const eyes     = get('f-eyes');
-  const physParts = [];
-  if (build && skin) physParts.push(build + ', ' + skin + ' skin');
-  else if (build)    physParts.push(build);
-  else if (skin)     physParts.push(skin + ' skin');
-  if (hairCol && hairSty) physParts.push(hairCol + ' ' + hairSty + ' hair');
-  else if (hairCol)       physParts.push(hairCol + ' hair');
-  else if (hairSty)       physParts.push(hairSty);
-  if (eyes) physParts.push(eyes + ' eyes');
-  if (physParts.length) parts.push(physParts.join(', '));
+  const expr = get('f-expression');
+  if (expr) parts.push(expr);
+
+  const eyes = get('f-eyes');
+  if (eyes) parts.push(eyes + ' eyes');
 
   const clothing = get('f-clothing');
   if (clothing) parts.push('wearing ' + clothing);
 
-  const setting  = get('f-setting');
-  if (setting) parts.push('in ' + setting);
+  // Setting values carry their own preposition ("on a beach", "aboard a spaceship"),
+  // so this pushes them verbatim.
+  const setting = get('f-setting');
+  if (setting) parts.push(setting);
 
-  const lighting = get('f-lighting');
-  if (lighting) parts.push(lighting);
-
-  const style  = get('f-style');
-  if (style) parts.push(style);
-
-  const camera = get('f-camera');
-  if (camera) parts.push(camera);
-
-  const pose  = get('f-pose');
-  if (pose) parts.push(pose);
-
-  const focus = get('f-focus');
-  if (focus) parts.push(focus);
+  for (const id of ['f-lighting', 'f-style', 'f-camera', 'f-pose', 'f-focus']) {
+    const v = get(id);
+    if (v) parts.push(v);
+  }
 
   let prompt = parts.join(', ');
 
-  // Person mode: prepend img trigger word
+  // Person mode: prepend the PhotoMaker trigger word
   if (currentMode === 'person') prompt = 'img ' + prompt;
-
-  const extra = get('f-extra');
-  if (extra) prompt += (prompt ? ', ' : '') + extra;
 
   return prompt;
 }
 
-const CHAR_FIELDS = [
-  'f-gender','f-age','f-build','f-skin',
-  'f-hair-color','f-hair-style',
+const PROMPT_FIELDS = [
+  'f-extra',
   'f-eyes','f-expression',
   'f-clothing','f-setting','f-lighting','f-style','f-camera',
   'f-pose','f-focus',
-  'f-extra',
 ];
 
-function clearCharacter() {
-  for (const id of CHAR_FIELDS) {
+function clearPrompt() {
+  for (const id of PROMPT_FIELDS) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   }

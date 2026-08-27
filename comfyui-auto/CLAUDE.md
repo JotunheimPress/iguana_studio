@@ -2,8 +2,8 @@
 
 ## What this is
 A Python toolkit + single-page web GUI that drives ComfyUI over its HTTP API.
-No clicking around in ComfyUI's node editor — the GUI composes a prompt from structured
-character fields, submits a generated workflow graph, polls for the result, and saves it.
+No clicking around in ComfyUI's node editor — you write a prompt, the GUI submits a generated
+workflow graph, polls for the result, and saves it.
 
 Facts below were verified against the running stack on **2026-08-10**. Where the code and
 reality disagree, that's called out explicitly under [Known broken / stale](#known-broken--stale).
@@ -72,16 +72,83 @@ comfyui-auto/
 
 ## The GUI
 
-A left rail of **character-builder dropdowns** feeds a prompt composer; a right panel holds
-mode-specific generation controls; below sits the output view and a gallery.
+A left rail holds the **manual prompt box** and a handful of modifier dropdowns; a right panel
+holds mode-specific generation controls; below sits the output view and a gallery.
+
+**The prompt is written by hand.** As of 2026-08-27 the rail is prompt-first: you type the subject
+into the textarea and the remaining dropdowns only *append* modifiers to it. The old
+character-builder combos for gender, age, build, skin tone and hair were removed — describing a
+person in free text is more expressive than picking from fixed lists, and the lists were the thing
+standing between the user and the prompt. What survives (Face, Clothing, Scene, Pose & Focus) is
+kept for the terms that are fiddly to retype, and **every one of them now defaults to `—` (off)**,
+so a fresh session composes exactly what you typed and nothing else.
+
+**Art style** is the one preset kept deliberately broad (18 terms under four `<optgroup>`s:
+Photographic / Digital & cinematic / Illustration / Traditional media). The photographic group
+leads because film-stock terms — `35mm film photography`, `analog photograph`, `candid snapshot` —
+shift the model's grain and colour response rather than just relabelling the subject, which makes
+them the most effective realism tokens on the photoreal SDXL checkpoints. `hyperrealistic` was
+dropped as a near-duplicate of `photorealistic`. Genre words (cyberpunk, steampunk, gothic) are
+kept **out** of this list on purpose: they describe a world, not a medium, so they belong under
+Scene where they won't fight Setting.
+
+Caveat — **Pony Diffusion V6 XL largely ignores plain style words.** It is trained on
+`score_9, score_8_up, source_anime`-style tags, so terms from this dropdown underperform on that
+checkpoint specifically; type the score tags into the manual prompt instead.
+
+**Setting** got the same treatment as Art style — 29 places under four `<optgroup>`s (Studio &
+interior / Outdoor & nature / Urban / Fantasy & sci-fi), replacing the original nine. Genre
+aesthetics live here rather than under Art style, expressed as **concrete places** rather than
+floating vibes: `in a neon-lit cyberpunk alley`, `in a gothic cathedral`, `in a medieval tavern`.
+Phrased that way they are settings, so they compose cleanly instead of competing with the medium
+term coming from Art style.
+
+**Lighting** likewise went 6 → 25 under four `<optgroup>`s (Natural / Studio / Dramatic &
+cinematic / Coloured & artificial). Unlike Art style and Setting, **all six original values were
+kept verbatim**, so no saved state was invalidated by this one. The studio and dramatic groups use
+real photographic lighting names — `Rembrandt lighting`, `chiaroscuro lighting`, `high key` /
+`low key` — because the training captions use them too, so they land harder than a vague
+"moody lighting" would.
+
+Note that Lighting and Setting can contradict each other (`moonlight` + `in a kitchen`). Nothing
+guards against it; the dropdowns are independent by design and the manual prompt is the place to
+resolve any conflict.
+
+**Every remaining dropdown got the same pass** on 2026-08-27, and from Lighting onward **all
+original values were kept verbatim** — only Art style (`hyperrealistic` dropped) and Setting
+(re-worded to carry prepositions) invalidated saved selections.
+
+| Field | Was | Now | Groups |
+|---|---|---|---|
+| Art style | 6 | 18 | Photographic · Digital & cinematic · Illustration · Traditional media |
+| Setting | 9 | 29 | Studio & interior · Outdoor & nature · Urban · Fantasy & sci-fi |
+| Lighting | 6 | 25 | Natural · Studio · Dramatic & cinematic · Coloured & artificial |
+| Camera | 6 | 20 | Framing · Angle · Lens |
+| Clothing | 14 | 36 | Casual · Formal · Costume & genre · Swim & active · Lingerie & revealing · Undressed |
+| Pose | 16 | 30 | Standing · Seated & reclining · Action · Intimate |
+| Focus | 7 | 14 | Portrait · Body · Explicit |
+| Expression | 9 | 24 | Warm · Composed · Distressed · Sensual |
+| Eye colour | 8 | 15 | Natural · Striking |
+
+Two conventions hold across all of them:
+- **Explicit options are grouped, not scattered** — Focus/Pose/Clothing keep theirs in a clearly
+  labelled trailing group so the everyday options stay quick to reach.
+- **Clothing values added after the first pass carry their own article** (`a tailored suit`,
+  `a silk robe`) because `buildPrompt()` prepends a bare `wearing `. The original fourteen have no
+  article (`wearing casual outfit`) and were left alone rather than re-worded, since changing them
+  would discard saved state for no real gain.
+
+The `<optgroup>` labels need explicit colours (`.field select optgroup`): the selects set
+`appearance: none`, but the popup is browser-native, so without a rule the group headers render in
+browser defaults — dark text on the dark theme, i.e. invisible.
 
 **The app is named "Iguana Studio"** (it was generically "Character Studio" until 2026-08-11). The
 name is written out in three places that must be changed together: `<title>` and the topbar `<h1>`
 in `static/index.html`, and `FastAPI(title=...)` in `server.py` (which surfaces at `/docs`). The
 `<h1>` deliberately keeps the second word in a `<span>` — `.topbar h1 span` renders it muted
 against the accented first word, so any rename should stay two words to preserve that.
-Unrelated: "Character" in the sidebar still labels the character-builder panel — that's a feature
-name, not branding, and the `localStorage` key stays `studio_v1` (renaming it discards saved state).
+The `localStorage` key stays `studio_v1` (renaming it discards saved state) — dropping fields from
+`PERSIST_IDS` is enough, since stale keys in a saved blob are simply ignored on load.
 
 **Four modes** (`static/index.html:838`), which map onto backend tasks:
 
@@ -90,7 +157,7 @@ name, not branding, and the `localStorage` key stays `studio_v1` (renaming it di
 | **Generate** | `text2img` | checkpoint, w/h, steps, cfg, seed, negative | The main path. Works. |
 | **Person** | `photomaker` | PhotoMaker model, w/h, steps, cfg, multi-photo dropzone | Prepends trigger word `img`. Needs the PhotoMaker-Plus custom node — see below. |
 | **Refine** | `img2img` | checkpoint, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
-| **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the character sidebar.** |
+| **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the prompt sidebar.** |
 
 Gallery tiles and result cards carry both a **Refine** and an **Edit** button, so any output can be
 sent straight into either editing path.
@@ -98,22 +165,30 @@ sent straight into either editing path.
 There is **no video mode in the GUI**. The `video` task is only reachable via `run.py video`
 or a hand-rolled `POST /generate`.
 
-**Prompt composition** (`buildPrompt()`, `index.html:1047`) joins fields in a fixed order:
-`expression age gender` → `build, skin skin` / `haircolor hairstyle hair` / `eyes eyes` →
-`wearing X` → `in X` → lighting → style → camera → pose → focus → free-text extra.
-In Person mode the whole thing is prefixed with `img `.
+**Prompt composition** (`buildPrompt()`) joins fields in a fixed order, manual text first:
+manual prompt (`f-extra`) → expression → `eyes eyes` → `wearing X` → setting → lighting → style →
+camera → pose → focus. In Person mode the whole thing is prefixed with `img `.
 
-That order is fixed in code and is **independent of the sidebar's visual order** — the rail reads
-Prompt preview → Extra prompt → Character/Hair/Face/Clothing/Scene/Pose, but extra text is still
-appended last. Reordering the markup does not reorder the prompt.
+**Setting values carry their own preposition** (`on a beach`, `by a lake`, `aboard a spaceship`)
+and are pushed verbatim. `buildPrompt()` used to prepend a blanket `in `, which emitted
+`in beach` / `in pool`; per-value prepositions fix that and let each place pick the right word.
+Clothing still uses a prepended `wearing `, because that one reads correctly for every value.
 
-The preview sits in a `.prompt-sticky` wrapper (`position: sticky`) so it stays pinned while the
-dropdowns scroll under it. Its `top: -14px` / `padding-top: 14px` pair cancels `.sidebar-inner`'s
-padding so the block lands flush when pinned, and the negative side margins bleed its background
-to the rail edges — without them the scrolling selects show through the gutters. The preview is
-capped at `max-height: 28vh` so a long prompt can't grow the pinned block over the whole rail.
+The manual box leads deliberately: diffusion models weight early tokens more heavily, so the text
+you wrote should outrank the canned modifiers. (It used to be appended *last*, back when the
+dropdowns carried the subject.)
 
-**State** persists to `localStorage` under key `studio_v1` — character fields, mode, and
+That order is fixed in code and is **independent of the sidebar's visual order** — reordering the
+markup does not reorder the prompt.
+
+The prompt box and the preview share a `.prompt-sticky` wrapper (`position: sticky`) so both stay
+pinned while the modifier dropdowns scroll under them. Its `top: -14px` / `padding-top: 14px` pair
+cancels `.sidebar-inner`'s padding so the block lands flush when pinned, and the negative side
+margins bleed its background to the rail edges — without them the scrolling selects show through
+the gutters. Both halves are height-capped (`34vh` textarea, `16vh` preview) so the pinned block
+can never grow over the whole rail.
+
+**State** persists to `localStorage` under key `studio_v1` — prompt fields, mode, and
 per-mode generation settings.
 
 **Deleting** — result cards and gallery tiles both carry a delete control (`Delete` / `✕`) calling
@@ -167,7 +242,7 @@ backdrop while leaving face, glasses, beard and shirt pixel-identical.
 
 **Prompt like an instruction, not a description.** `"make him wear a red baseball cap"` works;
 `"a man in a red cap, 8k, detailed"` makes it redraw the picture. Edit mode therefore takes its
-prompt from **its own instruction box** and ignores the character-builder sidebar entirely — that
+prompt from **its own instruction box** and ignores the prompt sidebar entirely — that
 sidebar composes descriptions, which is the wrong shape of text for this model.
 
 **Models** (~12.5 GB, none of it in git):

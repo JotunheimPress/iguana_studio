@@ -27,6 +27,8 @@ ENV COMFY_HOST=comfyui \
 
 EXPOSE 7862
 
+# HEALTHCHECK is a docker-format field with no OCI slot, so podman drops it unless the build
+# passes --format docker (run-podman.sh does). Without that flag this block is silently inert.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fs http://localhost:7862/ || exit 1
 

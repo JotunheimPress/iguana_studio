@@ -22,7 +22,7 @@ done
 
 if [[ "$REBUILD" -eq 1 ]] || ! podman image exists "$IMAGE"; then
   echo "==> Building image $IMAGE …"
-  podman build -t "$IMAGE" -f "$SCRIPT_DIR/Containerfile" "$SCRIPT_DIR"
+  podman build --format docker -t "$IMAGE" -f "$SCRIPT_DIR/Containerfile" "$SCRIPT_DIR"
 fi
 
 if podman container exists "$CONTAINER"; then

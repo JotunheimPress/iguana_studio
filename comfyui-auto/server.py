@@ -22,7 +22,6 @@ BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 TEMP_DIR   = BASE_DIR / "temp"
 STATIC_DIR = BASE_DIR / "static"
-COMFY_BASE = Path(os.environ.get("COMFY_BASE", "/home/user/Development/ai_ecosystem/ComfyUI"))
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
@@ -30,6 +29,12 @@ TEMP_DIR.mkdir(exist_ok=True)
 # What counts as a generated file — shared by /gallery and the delete endpoint so
 # the two can't disagree about what's listable vs. deletable.
 MEDIA_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4"}
+
+# A 121-frame WAN clip runs well past the 600 s client default, and a job that finished
+# but got reported as a timeout is the worst of both outcomes — it burned the GPU time and
+# threw the result away. Video tasks get their own budget.
+VIDEO_TIMEOUT = 1800
+VIDEO_TASKS = {"img2vid", "video"}
 
 jobs: dict[str, dict] = {}
 
@@ -49,11 +54,10 @@ def _run_job(
             workflow = text2img.build(**params)
         elif task == "img2img":
             workflow = img2img.build(image_path=image_path, **params)
+        elif task == "img2vid":
+            workflow = video.build_i2v(image_path=image_path, **params)
         elif task == "video":
-            # comfy_base is only a client-side pre-flight check for AnimateDiff files;
-            # skip it when the ComfyUI dir isn't visible here (e.g. containerized) —
-            # ComfyUI validates its own side anyway.
-            workflow = video.build(**params, comfy_base=COMFY_BASE if COMFY_BASE.exists() else None)
+            workflow = video.build_t2v(**params)
         elif task == "photomaker":
             workflow = photomaker.build(image_paths=image_paths, **params)
         elif task == "kontext":
@@ -61,7 +65,8 @@ def _run_job(
         else:
             raise ValueError(f"Unknown task: {task}")
 
-        paths = client.run_workflow(workflow, save_dir=OUTPUT_DIR)
+        timeout = VIDEO_TIMEOUT if task in VIDEO_TASKS else 600
+        paths = client.run_workflow(workflow, save_dir=OUTPUT_DIR, timeout=timeout)
         jobs[job_id].update(status="done", files=[p.name for p in paths])
     except Exception as e:
         jobs[job_id].update(status="error", message=str(e))
@@ -97,17 +102,17 @@ async def generate(
     cfg: float = Form(7.0),
     seed: int = Form(-1),
     denoise: float = Form(0.75),
-    frames: int = Form(16),
-    fps: int = Form(8),
-    fmt: str = Form("gif"),
+    length: int = Form(49),
+    fps: int = Form(24),
+    shift: float = Form(8.0),
     pm_width: int = Form(1024),
     pm_height: int = Form(1024),
     pm_model: str = Form("photomaker-v2.bin"),
     image: Optional[UploadFile] = File(None),
     images: list[UploadFile] = File(default=[]),
 ):
-    if task in ("img2img", "kontext") and (not image or not image.filename):
-        raise HTTPException(status_code=400, detail="An image is required for Edit Image.")
+    if task in ("img2img", "kontext", "img2vid") and (not image or not image.filename):
+        raise HTTPException(status_code=400, detail="A source image is required for this mode.")
     if task == "photomaker" and not any(f.filename for f in images):
         raise HTTPException(status_code=400, detail="At least one reference photo is required.")
 
@@ -146,12 +151,15 @@ async def generate(
             checkpoint=checkpoint,
             denoise=denoise, steps=steps, cfg=cfg, seed=seed,
         )
-    elif task == "video":
+    elif task in VIDEO_TASKS:
+        # img2vid and video take identical params — the only difference is the source
+        # image, which rides the same upload path as img2img and is applied by the
+        # dispatcher, not here.
         params = dict(
             prompt=prompt,
             negative_prompt=negative or video.DEFAULT_NEGATIVE,
-            num_frames=frames, width=width, height=height,
-            steps=steps, cfg=cfg, seed=seed, fps=fps, format=fmt,
+            width=width, height=height, length=length,
+            steps=steps, cfg=cfg, seed=seed, fps=fps, shift=shift,
         )
     elif task == "photomaker":
         params = dict(

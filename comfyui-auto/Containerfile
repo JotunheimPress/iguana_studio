@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="iguana ComfyUI GUI"
-LABEL org.opencontainers.image.description="FastAPI web GUI for ComfyUI automation (text2img/img2img/video/photomaker)"
+LABEL org.opencontainers.image.description="FastAPI web GUI for ComfyUI automation (text2img/img2img/img2vid/photomaker)"
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
@@ -22,8 +22,8 @@ RUN mkdir -p /app/outputs /app/temp
 ENV COMFY_HOST=comfyui \
     COMFY_PORT=8188 \
     PORT=7862
-# COMFY_BASE intentionally unset — the video tab's client-side setup check is skipped
-# in-container (ComfyUI validates its own side; see server.py).
+# COMFY_BASE is gone: it existed only for the old AnimateDiff pre-flight file check, which
+# went with that workflow. ComfyUI validates its own model files and reports them back.
 
 EXPOSE 7862
 

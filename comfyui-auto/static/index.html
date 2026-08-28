@@ -275,7 +275,10 @@
     cursor: pointer;
   }
   .refine-placeholder:hover { border-color: var(--accent); color: var(--accent); }
-  #refine-upload-input { display: none; }
+  /* The visible affordance is the placeholder/thumb next to it; the raw input is only
+     there to be .click()ed. Selected by id per mode, so a new source-image mode has to be
+     added here too — Edit was missing and showed a stray file picker. */
+  #refine-upload-input, #edit-upload-input, #animate-upload-input { display: none; }
 
   /* person dropzone */
   .dropzone {
@@ -419,6 +422,8 @@
   .card-btn.refine-btn:hover { background: rgba(124,106,247,.7); }
   .card-btn.edit-btn { background: rgba(80,180,140,.5); }
   .card-btn.edit-btn:hover { background: rgba(80,180,140,.7); }
+  .card-btn.animate-btn { background: rgba(224,161,58,.5); }
+  .card-btn.animate-btn:hover { background: rgba(224,161,58,.7); }
   /* Destructive — pushed to the right so it isn't next to Open/Download by accident. */
   .card-btn.delete-btn { background: rgba(224,85,85,.45); margin-left: auto; }
   .card-btn.delete-btn:hover { background: rgba(224,85,85,.75); }
@@ -524,6 +529,8 @@
   .gbtn.refine:hover { background: rgba(124,106,247,.35); }
   .gbtn.edit { background: rgba(80,180,140,.2); border-color: rgba(80,180,140,.7); color: #6fd3a8; }
   .gbtn.edit:hover { background: rgba(80,180,140,.35); }
+  .gbtn.animate { background: rgba(224,161,58,.2); border-color: rgba(224,161,58,.7); color: #e6b45c; }
+  .gbtn.animate:hover { background: rgba(224,161,58,.35); }
   /* Destructive: kept narrow and off to the side rather than sharing flex width
      with ↓/Refine, so it's not an equal-sized target next to the benign ones. */
   .gbtn.del { flex: 0 0 24px; background: rgba(224,85,85,.15); border-color: rgba(224,85,85,.4); color: #e05555; }
@@ -947,6 +954,7 @@
       <div class="mode-tab" data-mode="person" onclick="switchMode('person')">Person</div>
       <div class="mode-tab" data-mode="refine" onclick="switchMode('refine')">Refine</div>
       <div class="mode-tab" data-mode="edit" onclick="switchMode('edit')">Edit</div>
+      <div class="mode-tab" data-mode="animate" onclick="switchMode('animate')">Animate</div>
     </div>
 
     <!-- Controls bar -->
@@ -1109,6 +1117,56 @@
         </div>
       </div>
 
+      <!-- Animate controls (WAN 2.2 TI2V 5B) -->
+      <div id="ctrl-animate" class="ctrl-section hidden">
+        <div class="ctrl-group">
+          <label>Source image</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="refine-placeholder" id="animate-placeholder" onclick="document.getElementById('animate-upload-input').click()" title="Click to upload or pick from gallery">+</div>
+            <img id="animate-thumb" class="refine-thumb hidden" src="" alt="source" onclick="document.getElementById('animate-upload-input').click()" title="Click to change">
+            <input type="file" id="animate-upload-input" accept="image/*" onchange="onAnimateFile(this.files[0])">
+            <span id="animate-name" style="font-size:11px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <!-- Snapped server-side onto the 4n+1 grid the 5B VAE needs; step=4 keeps the
+               spinner on valid values so the number you pick is the number you get. -->
+          <label>Length <span id="v-length-val">49f · 2.0s</span></label>
+          <input type="number" id="v-length" value="49" min="5" max="121" step="4" style="width:64px;"
+            oninput="updateAnimateLength()">
+        </div>
+        <div class="ctrl-group">
+          <label>FPS</label>
+          <input type="number" id="v-fps" value="24" min="1" max="60" style="width:58px;"
+            oninput="updateAnimateLength()">
+        </div>
+        <div class="ctrl-group">
+          <label>Size</label>
+          <select id="v-size">
+            <option value="1280x704" selected>1280×704 (native)</option>
+            <option value="960x544">960×544</option>
+            <option value="704x1280">704×1280 (portrait)</option>
+            <option value="640x640">640×640</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Steps</label>
+          <input type="number" id="v-steps" value="30" min="1" max="80" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>CFG</label>
+          <input type="number" id="v-cfg" value="5" min="0.1" max="20" step="0.5" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Shift</label>
+          <input type="number" id="v-shift" value="8" min="1" max="20" step="0.5" style="width:58px;">
+        </div>
+        <div class="ctrl-group">
+          <label>Seed (-1=random)</label>
+          <input type="number" id="v-seed" value="-1" min="-1" style="width:90px;">
+        </div>
+      </div>
+
     </div><!-- /controls-bar -->
 
     <!-- Output area -->
@@ -1145,6 +1203,7 @@ const PERSIST_IDS = [
   'pm-model','pm-width','pm-height','pm-steps','pm-cfg',
   'r-checkpoint','r-denoise','r-steps','r-cfg','r-seed',
   'k-instruction','k-guidance','k-steps','k-seed',
+  'v-length','v-fps','v-size','v-steps','v-cfg','v-shift','v-seed',
   'neg-prompt',
 ];
 
@@ -1155,6 +1214,8 @@ let refineFile    = null;         // File for img2img
 let refineGallery = null;         // {name, url} picked from gallery
 let editFile      = null;         // File for Kontext
 let editGallery   = null;         // {name, url} picked from gallery
+let animateFile    = null;        // File chosen for Animate
+let animateGallery = null;        // {name, url} picked from gallery
 let pollTimer     = null;
 let comfyOnline   = false;
 let galleryOpen   = false;
@@ -1406,6 +1467,42 @@ function setEditFromGallery(name, url) {
   document.querySelector('.controls-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// ── Animate (WAN image→video) source ───────────────────────────────────────
+// Same shape as the Refine and Edit sources above: an upload and a gallery pick are
+// mutually exclusive, and picking from the gallery switches mode and scrolls the
+// controls into view.
+function onAnimateFile(file) {
+  if (!file) return;
+  animateFile    = file;
+  animateGallery = null;
+  document.getElementById('animate-thumb').src = URL.createObjectURL(file);
+  document.getElementById('animate-thumb').classList.remove('hidden');
+  document.getElementById('animate-placeholder').classList.add('hidden');
+  document.getElementById('animate-name').textContent = file.name;
+}
+
+function setAnimateFromGallery(name, url) {
+  animateGallery = { name, url };
+  animateFile    = null;
+  document.getElementById('animate-thumb').src = url;
+  document.getElementById('animate-thumb').classList.remove('hidden');
+  document.getElementById('animate-placeholder').classList.add('hidden');
+  document.getElementById('animate-name').textContent = name;
+  switchMode('animate');
+  document.querySelector('.controls-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Frames are the time budget, and 49 frames means nothing without the fps beside it.
+// The 4n+1 snap is mirrored from workflows/video.py clamp_length() so the label can't
+// promise a length the server will round away.
+function updateAnimateLength() {
+  const raw = parseInt(document.getElementById('v-length').value, 10) || 49;
+  const fps = parseInt(document.getElementById('v-fps').value, 10) || 24;
+  const n   = Math.floor((Math.max(5, Math.min(raw, 121)) - 1) / 4) * 4 + 1;
+  document.getElementById('v-length-val').textContent =
+    `${n}f · ${(n / Math.max(fps, 1)).toFixed(1)}s`;
+}
+
 // ── Negative prompt toggle ─────────────────────────────────────────────────
 function toggleNeg() {
   document.getElementById('neg-wrap').classList.toggle('open');
@@ -1436,6 +1533,9 @@ async function generate() {
   }
   if (currentMode === 'refine' && !refineFile && !refineGallery) {
     alert('Pick a source image first. Upload one or click Refine on a gallery image.'); return;
+  }
+  if (currentMode === 'animate' && !animateFile && !animateGallery) {
+    alert('Pick a source image first. Upload one or click Animate on a gallery image.'); return;
   }
 
   const btn = document.getElementById('top-gen-btn');
@@ -1508,6 +1608,37 @@ async function generate() {
         const resp = await fetch(editGallery.url);
         const blob = await resp.blob();
         fd.append('image', blob, editGallery.name);
+      } catch(e) {
+        alert('Could not load source image: ' + e.message);
+        btn.disabled = false; btn.textContent = 'Generate';
+        return;
+      }
+    }
+
+  } else if (currentMode === 'animate') {
+    // The subject is already fixed by the source image, so the prompt describes the
+    // motion. Size comes from one select rather than two boxes: WAN has a native
+    // resolution the way SDXL does, and free-form w/h invites drifting off it.
+    const [vw, vh] = document.getElementById('v-size').value.split('x');
+    fd.append('task',     'img2vid');
+    fd.append('prompt',   prompt);
+    fd.append('negative', neg);
+    fd.append('width',    vw);
+    fd.append('height',   vh);
+    fd.append('length',   document.getElementById('v-length').value);
+    fd.append('fps',      document.getElementById('v-fps').value);
+    fd.append('steps',    document.getElementById('v-steps').value);
+    fd.append('cfg',      document.getElementById('v-cfg').value);
+    fd.append('shift',    document.getElementById('v-shift').value);
+    fd.append('seed',     document.getElementById('v-seed').value);
+
+    if (animateFile) {
+      fd.append('image', animateFile);
+    } else if (animateGallery) {
+      try {
+        const resp = await fetch(animateGallery.url);
+        const blob = await resp.blob();
+        fd.append('image', blob, animateGallery.name);
       } catch(e) {
         alert('Could not load source image: ' + e.message);
         btn.disabled = false; btn.textContent = 'Generate';
@@ -1606,6 +1737,7 @@ function showOutputs(files) {
         <a class="card-btn" href="${url}" download="${name}">Download</a>
         ${isVideo ? '' : `<button class="card-btn refine-btn" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
         ${isVideo ? '' : `<button class="card-btn edit-btn" onclick="setEditFromGallery('${safeName}','${safeUrl}')">Edit</button>`}
+        ${isVideo ? '' : `<button class="card-btn animate-btn" onclick="setAnimateFromGallery('${safeName}','${safeUrl}')">Animate</button>`}
         <button class="card-btn delete-btn" onclick="deleteOutput('${safeName}', this)">Delete</button>
       </div>`;
     area.prepend(card);
@@ -1679,6 +1811,7 @@ async function loadGallery() {
           <a class="gbtn" href="${url}" download="${item.name}">↓</a>
           ${isVideo ? '' : `<button class="gbtn refine" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
           ${isVideo ? '' : `<button class="gbtn edit" onclick="setEditFromGallery('${safeName}','${safeUrl}')">Edit</button>`}
+          ${isVideo ? '' : `<button class="gbtn animate" onclick="setAnimateFromGallery('${safeName}','${safeUrl}')">Animate</button>`}
           <button class="gbtn del" title="Delete ${item.name}" onclick="deleteOutput('${safeName}', this)">✕</button>
         </div>`;
       inner.appendChild(div);
@@ -1750,6 +1883,7 @@ async function loadCheckpoints() {
 // ── Boot ───────────────────────────────────────────────────────────────────
 loadState();
 updatePreview();
+updateAnimateLength();   // after loadState, so the label matches the restored length/fps
 checkComfy();
 setInterval(checkComfy, 10000);
 loadCheckpoints();

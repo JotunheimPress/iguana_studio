@@ -57,10 +57,29 @@ def wait_for_completion(prompt_id: str, timeout: int = 600, poll_interval: float
 
 
 def _collect_output_items(result: dict) -> list[dict]:
-    items = []
+    """Every downloadable file a finished job produced, across every output key.
+
+    Two traps here, both found the hard way against SaveVideo:
+
+    * **Not every entry is a file.** SaveVideo reports its mp4 under `images` and sets
+      `"animated": [true]` alongside — a list of *booleans*. Extending blindly put `True`
+      in this list and `download_outputs` then died on `item["filename"]`, i.e. after a
+      multi-minute render had already succeeded. Only real file dicts are taken.
+    * **One file can appear under two keys**, so the same bytes would be fetched twice and
+      the UI would render two cards for one result. Identity is (filename, subfolder,
+      type) — the same triple `/view` is addressed by.
+    """
+    items, seen = [], set()
     for node_output in result.get("outputs", {}).values():
         for key in ("images", "gifs", "videos", "animated"):
-            items.extend(node_output.get(key, []))
+            for item in node_output.get(key, []):
+                if not isinstance(item, dict) or "filename" not in item:
+                    continue
+                ident = (item["filename"], item.get("subfolder", ""), item.get("type", "output"))
+                if ident in seen:
+                    continue
+                seen.add(ident)
+                items.append(item)
     return items
 
 

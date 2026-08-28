@@ -1,155 +1,113 @@
-"""
-Text/image-to-video workflow using AnimateDiff Evolved.
+"""Short video from a still image (or from text alone) — WAN 2.2 TI2V 5B.
 
-SETUP REQUIRED before this workflow will work:
-  1. Install custom node:
-       ComfyUI Manager → search "AnimateDiff Evolved" → Install
-       (or clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
-        into ComfyUI/custom_nodes/)
+Replaces the AnimateDiff module that used to live here. That one targeted `ADE_*` and
+`VHS_*` nodes from two custom node packs, neither of which is installed, and it had never
+run. It is not needed: ComfyUI v0.31.1 ships **native** WAN support, so this whole feature
+costs zero custom nodes, zero `stack` CUSTOM_NODES rows and zero image rebuilds — only the
+weights listed in `ai-stack/comfyui/INSTALL.md` §8.
 
-  2. Install video helper node (for saving .gif/.mp4):
-       ComfyUI Manager → search "ComfyUI-VideoHelperSuite" → Install
+**One graph, two entry points.** `Wan22ImageToVideoLatent` takes `start_image` as an
+*optional* input, so image→video and text→video differ by exactly one key. Building them
+as one spine (`_build`) means the sampler settings can never drift apart between the mode
+you use from the GUI and the one you use from the CLI.
 
-  3. Download a motion module into models/animatediff_models/:
-       Recommended: mm_sd_v15_v2.ckpt
-       Source: https://huggingface.co/guoyww/animatediff/tree/main
-
-  4. Restart ComfyUI.
-
-Once set up, this workflow animates a scene described by your text prompt
-using your SD 1.5 checkpoint as the base model.
+Sizing rules that are enforced here rather than trusted to the caller:
+  * `length` must be **4n+1** — the 5B VAE compresses 4x temporally, and an off-grid
+    length is rejected deep inside the sampler with a shape error that reads like a bug.
+  * 1280x704 is the native training resolution. Going far under it degrades WAN the way
+    512 degrades SDXL, which is the reasoning already written down in `defaults.py`.
 """
 
 import random
 from pathlib import Path
 
-
+from client import upload_image
 from workflows.defaults import NEGATIVE_VIDEO as DEFAULT_NEGATIVE
 
-DEFAULT_CHECKPOINT = "v1-5-pruned-emaonly-fp16.safetensors"
-DEFAULT_MOTION_MODULE = "mm_sd_v15_v2.ckpt"
+# All three are supplied by the operator — see ai-stack/comfyui/INSTALL.md §8.
+DEFAULT_MODEL   = "wan2.2_ti2v_5B_fp16.safetensors"      # models/diffusion_models/
+DEFAULT_CLIP    = "umt5_xxl_fp8_e4m3fn_scaled.safetensors"  # models/text_encoders/
+DEFAULT_VAE     = "wan2.2_vae.safetensors"               # models/vae/
 
-REQUIRED_NODES = [
-    "ADE_AnimateDiffLoaderWithContext",
-    "ADE_UseEvolvedSampling",
-    "VHS_VideoCombine",
-]
+# Native resolution and the frame grid the 5B VAE works on.
+NATIVE_W, NATIVE_H = 1280, 704
+FRAME_STEP  = 4        # length must be 4n+1
+MIN_LENGTH  = 5
+MAX_LENGTH  = 121      # ~5 s at 24 fps; the documented ceiling for this model
 
 
-def check_setup(comfy_base: str | Path = None) -> list[str]:
+def clamp_length(length: int) -> int:
+    """Round `length` onto the 4n+1 grid, within [5, 121].
+
+    Rounds *down* to the nearest valid value so a request can never silently cost more
+    time than it asked for — a video length is a time budget as much as a size.
     """
-    Check if AnimateDiff dependencies exist. Returns a list of missing items.
-    Pass comfy_base as the path to your ComfyUI folder (e.g. C:/Users/blade/Documents/ComfyUI).
-    """
-    issues = []
-    if comfy_base is None:
-        return issues  # skip filesystem checks if no path given
-
-    base = Path(comfy_base)
-    motion_path = base / "models" / "animatediff_models" / DEFAULT_MOTION_MODULE
-    if not motion_path.exists():
-        issues.append(
-            f"Missing motion module: {motion_path}\n"
-            "  → Download mm_sd_v15_v2.ckpt from "
-            "https://huggingface.co/guoyww/animatediff"
-        )
-
-    ade_node = base / "custom_nodes" / "ComfyUI-AnimateDiff-Evolved"
-    if not ade_node.exists():
-        issues.append(
-            "Missing custom node: ComfyUI-AnimateDiff-Evolved\n"
-            "  → Install via ComfyUI Manager or clone "
-            "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved"
-        )
-
-    vhs_node = base / "custom_nodes" / "ComfyUI-VideoHelperSuite"
-    if not vhs_node.exists():
-        issues.append(
-            "Missing custom node: ComfyUI-VideoHelperSuite\n"
-            "  → Install via ComfyUI Manager or clone "
-            "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
-        )
-
-    return issues
+    length = max(MIN_LENGTH, min(int(length), MAX_LENGTH))
+    return ((length - 1) // FRAME_STEP) * FRAME_STEP + 1
 
 
-def build(
+def _build(
     prompt: str,
-    negative_prompt: str = DEFAULT_NEGATIVE,
-    checkpoint: str = DEFAULT_CHECKPOINT,
-    motion_module: str = DEFAULT_MOTION_MODULE,
-    num_frames: int = 16,
-    width: int = 512,
-    height: int = 512,
-    steps: int = 20,
-    cfg: float = 7.5,
-    seed: int = -1,
-    sampler: str = "euler",
-    scheduler: str = "linear",
-    fps: int = 8,
-    format: str = "gif",
-    filename_prefix: str = "video",
-    comfy_base: str | Path = None,
+    negative_prompt: str,
+    server_image: str | None,
+    width: int,
+    height: int,
+    length: int,
+    steps: int,
+    cfg: float,
+    seed: int,
+    fps: int,
+    shift: float,
+    sampler: str,
+    scheduler: str,
+    filename_prefix: str,
 ) -> dict:
-    """
-    Build an AnimateDiff video workflow dict.
-
-    Args:
-        prompt:        Text description of the animated scene.
-        num_frames:    Number of frames to generate (8–32, multiples of 8).
-        width/height:  Frame resolution (512x512 or 512x768 work well).
-        steps:         Sampling steps.
-        cfg:           Guidance scale.
-        seed:          -1 for random.
-        fps:           Frames per second in the output video.
-        format:        Output format: "gif" or "mp4".
-        motion_module: Filename in models/animatediff_models/.
-        comfy_base:    Path to ComfyUI folder, used to verify setup files exist.
-    """
-    if comfy_base is not None:
-        issues = check_setup(comfy_base)
-        if issues:
-            raise RuntimeError(
-                "AnimateDiff setup incomplete:\n\n" + "\n\n".join(issues)
-            )
-
+    """The shared spine. `server_image` is a filename already uploaded to ComfyUI's input
+    folder, or None for text→video."""
     if seed == -1:
         seed = random.randint(0, 2**32 - 1)
 
-    num_frames = max(8, (num_frames // 8) * 8)  # must be multiple of 8
+    length = clamp_length(length)
 
-    return {
-        # Load checkpoint
+    latent_inputs = {
+        "vae": ["3", 0],
+        "width": width,
+        "height": height,
+        "length": length,
+        "batch_size": 1,
+    }
+
+    graph = {
         "1": {
-            "class_type": "CheckpointLoaderSimple",
-            "inputs": {"ckpt_name": checkpoint},
+            "class_type": "UNETLoader",
+            "inputs": {"unet_name": DEFAULT_MODEL, "weight_dtype": "default"},
         },
-        # Load AnimateDiff motion module
         "2": {
-            "class_type": "ADE_AnimateDiffLoaderWithContext",
-            "inputs": {
-                "model_name": motion_module,
-                "beta_schedule": "linear",
-                "model": ["1", 0],
-            },
+            "class_type": "CLIPLoader",
+            "inputs": {"clip_name": DEFAULT_CLIP, "type": "wan"},
         },
-        # Positive prompt
         "3": {
-            "class_type": "CLIPTextEncode",
-            "inputs": {"text": prompt, "clip": ["1", 1]},
+            "class_type": "VAELoader",
+            "inputs": {"vae_name": DEFAULT_VAE},
         },
-        # Negative prompt
         "4": {
             "class_type": "CLIPTextEncode",
-            "inputs": {"text": negative_prompt, "clip": ["1", 1]},
+            "inputs": {"text": prompt, "clip": ["2", 0]},
         },
-        # Empty latent (batch_size = num_frames for AnimateDiff)
         "5": {
-            "class_type": "EmptyLatentImage",
-            "inputs": {"width": width, "height": height, "batch_size": num_frames},
+            "class_type": "CLIPTextEncode",
+            "inputs": {"text": negative_prompt, "clip": ["2", 0]},
         },
-        # KSampler with AnimateDiff evolved sampling
-        "6": {
+        # 6 is LoadImage, added below only for image→video.
+        "7": {
+            "class_type": "Wan22ImageToVideoLatent",
+            "inputs": latent_inputs,
+        },
+        "8": {
+            "class_type": "ModelSamplingSD3",
+            "inputs": {"model": ["1", 0], "shift": shift},
+        },
+        "9": {
             "class_type": "KSampler",
             "inputs": {
                 "seed": seed,
@@ -158,28 +116,93 @@ def build(
                 "sampler_name": sampler,
                 "scheduler": scheduler,
                 "denoise": 1.0,
-                "model": ["2", 0],
-                "positive": ["3", 0],
-                "negative": ["4", 0],
-                "latent_image": ["5", 0],
+                "model": ["8", 0],
+                "positive": ["4", 0],
+                "negative": ["5", 0],
+                "latent_image": ["7", 0],
             },
         },
-        # Decode latents to pixels
-        "7": {
+        "10": {
             "class_type": "VAEDecode",
-            "inputs": {"samples": ["6", 0], "vae": ["1", 2]},
+            "inputs": {"samples": ["9", 0], "vae": ["3", 0]},
         },
-        # Combine frames into video
-        "8": {
-            "class_type": "VHS_VideoCombine",
+        "11": {
+            "class_type": "CreateVideo",
+            "inputs": {"images": ["10", 0], "fps": float(fps)},
+        },
+        # format/codec verified against this ComfyUI build: both are accepted in API
+        # format as bare strings, and "auto" muxes h264 via the container's PyAV 17.
+        "12": {
+            "class_type": "SaveVideo",
             "inputs": {
-                "images": ["7", 0],
-                "frame_rate": fps,
-                "loop_count": 0,
+                "video": ["11", 0],
                 "filename_prefix": filename_prefix,
-                "format": f"image/{format}",
-                "save_output": True,
-                "pingpong": False,
+                "format": "mp4",
+                "codec": "auto",
             },
         },
     }
+
+    if server_image is not None:
+        graph["6"] = {
+            "class_type": "LoadImage",
+            "inputs": {"image": server_image, "upload": "image"},
+        }
+        # Set on the graph directly rather than through the `latent_inputs` alias — the
+        # aliasing works, but a link this load-bearing should be visible where it lands.
+        # Omitted entirely (not passed as None) for text→video: the input is optional and
+        # ComfyUI rejects a null where it expects an IMAGE link.
+        graph["7"]["inputs"]["start_image"] = ["6", 0]
+
+    return graph
+
+
+def build_i2v(
+    image_path: str | Path,
+    prompt: str,
+    negative_prompt: str = DEFAULT_NEGATIVE,
+    width: int = NATIVE_W,
+    height: int = NATIVE_H,
+    length: int = 49,
+    steps: int = 30,
+    cfg: float = 5.0,
+    seed: int = -1,
+    fps: int = 24,
+    shift: float = 8.0,
+    sampler: str = "uni_pc",
+    scheduler: str = "simple",
+    filename_prefix: str = "video/iguana_i2v",
+) -> dict:
+    """Animate a still image. The prompt describes the *motion*, not the subject —
+    the subject is already fixed by the image."""
+    return _build(
+        prompt=prompt, negative_prompt=negative_prompt,
+        server_image=upload_image(image_path),
+        width=width, height=height, length=length, steps=steps, cfg=cfg,
+        seed=seed, fps=fps, shift=shift, sampler=sampler, scheduler=scheduler,
+        filename_prefix=filename_prefix,
+    )
+
+
+def build_t2v(
+    prompt: str,
+    negative_prompt: str = DEFAULT_NEGATIVE,
+    width: int = NATIVE_W,
+    height: int = NATIVE_H,
+    length: int = 49,
+    steps: int = 30,
+    cfg: float = 5.0,
+    seed: int = -1,
+    fps: int = 24,
+    shift: float = 8.0,
+    sampler: str = "uni_pc",
+    scheduler: str = "simple",
+    filename_prefix: str = "video/iguana_t2v",
+) -> dict:
+    """Video from a text prompt alone — same weights, same spine, no start image."""
+    return _build(
+        prompt=prompt, negative_prompt=negative_prompt, server_image=None,
+        width=width, height=height, length=length, steps=steps, cfg=cfg,
+        seed=seed, fps=fps, shift=shift, sampler=sampler, scheduler=scheduler,
+        filename_prefix=filename_prefix,
+    )

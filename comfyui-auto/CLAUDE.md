@@ -44,7 +44,6 @@ venv/bin/python run.py text2img "a cat"    # CLI (see caveats below)
 | `COMFY_HOST` | `comfyui` | ComfyUI hostname |
 | `COMFY_PORT` | `8188` | ComfyUI port |
 | `PORT` | `7862` | Port the GUI binds |
-| `COMFY_BASE` | *unset in container* | Host path to the ComfyUI folder. Only used for the video tab's client-side pre-flight file check; skipped when the path isn't visible (`server.py:52`). |
 
 The startup banner derives its printed URL from the same `PORT` value it binds, so the two can't
 drift apart. (It used to hardcode 7861 — the **companion** app's port; iguana is 7862.)
@@ -62,7 +61,7 @@ comfyui-auto/
 │   ├── flux.py          # FLUX.1 graphs (build + build_img2img)
 │   ├── photomaker.py    # person from reference photos  ← see Known broken
 │   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
-│   └── video.py         # AnimateDiff text → video      ← see Known broken
+│   └── video.py         # WAN 2.2 image→video + text→video
 ├── static/index.html    # entire frontend, ~1500 lines, no build step
 ├── outputs/             # generated files (volume-mounted, gitignored)
 ├── temp/                # uploaded images, deleted after each job
@@ -158,12 +157,14 @@ The `localStorage` key stays `studio_v1` (renaming it discards saved state) — 
 | **Person** | `photomaker` | PhotoMaker model, w/h, steps, cfg, multi-photo dropzone | Prepends trigger word `img`. Needs the PhotoMaker-Plus custom node — see below. |
 | **Refine** | `img2img` | checkpoint, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
 | **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the prompt sidebar.** |
+| **Animate** | `img2vid` | source image, length, fps, size, steps, CFG, shift, seed | WAN 2.2 image→video — see below. The prompt describes the *motion*; the subject is already fixed by the image. |
 
-Gallery tiles and result cards carry both a **Refine** and an **Edit** button, so any output can be
-sent straight into either editing path.
+Gallery tiles and result cards carry **Refine**, **Edit** and **Animate** buttons, so any output can
+be sent straight into any of the three. All three are suppressed on video results (`isVideo`), which
+is also why nothing offers to animate a video.
 
-There is **no video mode in the GUI**. The `video` task is only reachable via `run.py video`
-or a hand-rolled `POST /generate`.
+**Animate** is the video mode; `run.py video` reaches the same builders from the CLI
+(`--image` for image→video, omit it for text→video).
 
 **Prompt composition** (`buildPrompt()`) joins fields in a fixed order, manual text first:
 manual prompt (`f-extra`) → expression → `eyes eyes` → `wearing X` → setting → lighting → style →
@@ -329,19 +330,48 @@ photos, or describe the scene more emphatically.
 
 ## Known broken / stale
 
-**1. Video is not usable.** No `ADE_*` or `VHS_*` nodes are loaded, and
-`models/animatediff_models/` is empty. To enable: install **ComfyUI-AnimateDiff-Evolved** and
-**ComfyUI-VideoHelperSuite** into `custom_nodes/`, download `mm_sd_v15_v2.ckpt` into
-`models/animatediff_models/`, restart ComfyUI — then add a GUI mode, since none exists.
-
-**2. `run.py` CLI is thinner than the GUI.** `text2img`/`img2img` take `--checkpoint`, and size
+**1. `run.py` CLI is thinner than the GUI.** `text2img`/`img2img` take `--checkpoint`, and size
 defaults to the checkpoint's native resolution via `defaults.default_size()` — so FLUX is reachable
 from the CLI too (any name containing `flux` switches workflow). Still missing: no `photomaker`
 subcommand, and none of the GUI's per-checkpoint step/CFG tuning, so lightning models need an
 explicit `--steps 6 --cfg 2`.
 
-**3. Jobs are in-memory only.** `jobs: dict` in `server.py` has no eviction and no persistence:
-it grows for the process lifetime and every job is lost on restart.
+**2. Jobs are in-memory only.** `jobs: dict` in `server.py` has no eviction and no persistence:
+it grows for the process lifetime and every job is lost on restart. This bites harder since Animate
+landed — losing a 3 s still is nothing, losing a several-minute video job is not.
+
+## Video — WAN 2.2 TI2V 5B (Animate)
+
+`workflows/video.py` replaced an AnimateDiff module that had never run: it targeted `ADE_*` and
+`VHS_*` nodes from two custom node packs, neither installed. **None of that is needed.** ComfyUI
+v0.31.1 ships native WAN support, so this feature costs **zero custom nodes, zero `stack`
+`CUSTOM_NODES` rows and zero image rebuilds** — only the weights in `ai-stack/comfyui/INSTALL.md` §8.
+
+- **One graph, two entry points.** `Wan22ImageToVideoLatent` takes `start_image` as an *optional*
+  input, so image→video and text→video differ by exactly one key. `build_i2v` and `build_t2v` share
+  `_build`, which is what stops the GUI's sampler settings drifting from the CLI's.
+- **`length` must be 4n+1** — the 5B VAE compresses 4× temporally, and an off-grid length dies deep
+  inside the sampler with a shape error that reads like a bug. `clamp_length()` rounds *down* onto
+  the grid within 5–121, so a request can never silently cost more time than it asked for. The GUI
+  mirrors the same snap in `updateAnimateLength()` so the label can't promise a length the server
+  rounds away.
+- **1280×704 is native.** Going far under it degrades WAN the way 512² degrades SDXL. The Size
+  control is a fixed select rather than free w/h boxes for exactly that reason.
+- **`SaveVideo` reports its file under the `images` key**, not `videos`, and sets `"animated":
+  [true]` alongside — a list of *booleans*. `client._collect_output_items` used to extend blindly
+  from every key, so `download_outputs` died on `item["filename"]` **after** a multi-minute render
+  had already succeeded. It now takes only dicts carrying a filename, and dedupes on
+  (filename, subfolder, type) so a file reported under two keys isn't fetched twice and rendered as
+  two cards.
+- **Video jobs get `VIDEO_TIMEOUT` (1800 s)**, not the 600 s default. A long clip that finished but
+  got reported as a timeout burns the GPU time and throws the result away.
+- **`COMFY_BASE` is gone.** It existed only to feed the old AnimateDiff pre-flight file check.
+- **VRAM: WAN 5B wants the card to itself.** fp16 is ~10 GB of the 11.6 GiB total. `stack down
+  koboldcpp` (or stack-ui's `POST /api/vram/free`) first. If it still won't fit, drop a GGUF WAN 5B
+  into `models/unet/` and swap node `1` from `UNETLoader` to `UnetLoaderGGUF` — `ComfyUI-GGUF` is
+  already installed for Flux Kontext and nothing else in the graph changes.
+
+Measured on this box: 25 frames at 960×544, 20 steps → **41 s**.
 
 ## API endpoints
 | Method | Path | Purpose |

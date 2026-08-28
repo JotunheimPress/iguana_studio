@@ -2,6 +2,7 @@
 
 import os
 import sys
+import json
 import time
 import uuid
 import shutil
@@ -46,6 +47,7 @@ PHASES = {
     "CheckpointLoaderSimple": "loading model", "ImageOnlyCheckpointLoader": "loading model",
     "CLIPLoader": "loading text encoder", "DualCLIPLoader": "loading text encoder",
     "VAELoader": "loading VAE",
+    "LoraLoader": "applying LoRA",
     "CLIPTextEncode": "encoding prompt", "CLIPTextEncodeSDXL": "encoding prompt",
     "CLIPTextEncodeFlux": "encoding prompt",
     "LoadImage": "reading source image", "VAEEncode": "encoding source image",
@@ -147,6 +149,10 @@ async def generate(
     pm_width: int = Form(1024),
     pm_height: int = Form(1024),
     pm_model: str = Form("photomaker-v2.bin"),
+    # JSON array of {name, strength}, in application order. A string rather than repeated
+    # form fields because the two values have to stay paired and ordered — a LoRA stack is
+    # a chain, and "second at 0.4" means nothing once the pairing is lost.
+    loras: str = Form("[]"),
     image: Optional[UploadFile] = File(None),
     images: list[UploadFile] = File(default=[]),
 ):
@@ -154,6 +160,13 @@ async def generate(
         raise HTTPException(status_code=400, detail="A source image is required for this mode.")
     if task == "photomaker" and not any(f.filename for f in images):
         raise HTTPException(status_code=400, detail="At least one reference photo is required.")
+
+    try:
+        lora_stack = json.loads(loras) if loras else []
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Malformed loras field: {e}")
+    if not isinstance(lora_stack, list):
+        raise HTTPException(status_code=400, detail="loras must be a JSON array")
 
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending", "files": [], "message": "",
@@ -183,6 +196,7 @@ async def generate(
             negative_prompt=negative or text2img.DEFAULT_NEGATIVE,
             checkpoint=checkpoint,
             width=width, height=height, steps=steps, cfg=cfg, seed=seed,
+            loras=lora_stack,
         )
     elif task == "img2img":
         params = dict(
@@ -190,6 +204,7 @@ async def generate(
             negative_prompt=negative or img2img.DEFAULT_NEGATIVE,
             checkpoint=checkpoint,
             denoise=denoise, steps=steps, cfg=cfg, seed=seed,
+            loras=lora_stack,
         )
     elif task in VIDEO_TASKS:
         # img2vid and video take identical params — the only difference is the source
@@ -207,6 +222,7 @@ async def generate(
             negative_prompt=negative or photomaker.DEFAULT_NEGATIVE,
             width=pm_width, height=pm_height, steps=steps, cfg=cfg, seed=seed,
             photomaker_model=pm_model,
+            loras=lora_stack,
         )
     elif task == "kontext":
         # No negative prompt, no width/height and no denoise: Kontext zeroes its own
@@ -270,6 +286,23 @@ def list_checkpoints():
         return {"checkpoints": sorted(names)}
     except Exception as e:
         return {"checkpoints": [], "error": str(e)}
+
+
+@app.get("/loras")
+def list_loras():
+    """Return LoRA filenames available in ComfyUI, sorted alphabetically.
+
+    Same shape as /checkpoints: ComfyUI reports installed LoRAs as the enum of
+    LoraLoader's lora_name input, so the node definition is the inventory.
+    """
+    import requests as req
+    try:
+        r = req.get(f"{client.COMFY_URL}/object_info/LoraLoader", timeout=5)
+        r.raise_for_status()
+        names = r.json()["LoraLoader"]["input"]["required"]["lora_name"][0]
+        return {"loras": sorted(names)}
+    except Exception as e:
+        return {"loras": [], "error": str(e)}
 
 
 @app.get("/debug/nodes")

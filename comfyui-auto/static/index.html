@@ -490,6 +490,77 @@
     width: 100%;
   }
 
+  /* ── LoRA stack ── */
+  /* Rows are a chain, not a set: they are applied in listed order, so the list is
+     reorderable and the ordinal is shown rather than left implicit. */
+  .lora-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 8px;
+    margin-bottom: 6px;
+  }
+  .lora-row-top { display: flex; align-items: center; gap: 6px; }
+  .lora-ord {
+    flex: 0 0 auto;
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .lora-row select {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 11px;
+    padding: 4px 5px;
+  }
+  .lora-row select:focus { border-color: var(--accent); outline: none; }
+  .lora-x, .lora-move {
+    flex: 0 0 auto;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1;
+    padding: 3px 5px;
+    cursor: pointer;
+  }
+  .lora-move:hover { color: var(--text); background: var(--surface); }
+  .lora-move:disabled { opacity: .25; cursor: default; }
+  .lora-x:hover { color: var(--danger); background: rgba(224,85,85,.15); }
+  .lora-strength { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+  .lora-strength input[type=range] { flex: 1; min-width: 0; }
+  .lora-strength .val {
+    flex: 0 0 30px;
+    text-align: right;
+    font-size: 10px;
+    color: var(--accent2);
+    font-variant-numeric: tabular-nums;
+  }
+  .lora-add {
+    width: 100%;
+    background: rgba(124,106,247,.15);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent2);
+    font-size: 11px;
+    padding: 5px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .lora-add:hover { background: rgba(124,106,247,.3); }
+  .lora-add:disabled {
+    background: none;
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: default;
+  }
+  .lora-note { font-size: 10px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+
   /* ── Gallery ── */
   /* Collapsed it's just a header strip pinned under the output area. Open, it takes the
      whole display area over: the section grows and .output-area is hidden outright, so the
@@ -622,6 +693,13 @@
 
         <div class="section-label" style="margin-top:10px;">Preview</div>
         <div class="prompt-preview" id="prompt-preview">—</div>
+      </div>
+
+      <div id="lora-section">
+        <div class="section-label">LoRAs</div>
+        <div id="lora-list"></div>
+        <button class="lora-add" id="lora-add" onclick="addLora()">+ Add LoRA</button>
+        <div class="lora-note" id="lora-note"></div>
       </div>
 
       <div class="section-label">Face</div>
@@ -1282,6 +1360,13 @@ let animateGallery = null;        // {name, url} picked from gallery
 let pollTimer     = null;
 let comfyOnline   = false;
 let galleryOpen   = false;
+let loraOptions   = [];           // filenames from /loras
+let loraStack     = [];           // [{name, strength}] — ORDER IS THE CHAIN ORDER
+
+// LoRAs merge into a checkpoint, so they only mean anything in the modes that load one.
+// Edit (Kontext) and Animate (WAN) load a bare UNet with the text encoder from a separate
+// node, which has no single MODEL+CLIP source to splice a LoraLoader into.
+const LORA_MODES = ['generate', 'person', 'refine'];
 
 // ── Persistence ────────────────────────────────────────────────────────────
 // Last-loaded snapshot. Kept around because some fields (the checkpoint selects)
@@ -1301,6 +1386,7 @@ function saveState() {
   for (const id of ASYNC_SELECT_IDS) {
     if (!data[id] && savedState[id]) data[id] = savedState[id];
   }
+  data.__loras = loraStack;
   savedState = data;
   localStorage.setItem('studio_v1', JSON.stringify(data));
 }
@@ -1310,6 +1396,7 @@ function loadState() {
   try { data = JSON.parse(localStorage.getItem('studio_v1') || '{}'); }
   catch(e) { return; }
   savedState = data;
+  if (Array.isArray(data.__loras)) loraStack = data.__loras;
   for (const id of PERSIST_IDS) {
     if (data[id] !== undefined) {
       const el = document.getElementById(id);
@@ -1424,6 +1511,8 @@ function switchMode(mode, silent) {
   document.querySelectorAll('.ctrl-section').forEach(s => s.classList.add('hidden'));
   const ctrl = document.getElementById('ctrl-' + mode);
   if (ctrl) ctrl.classList.remove('hidden');
+  document.getElementById('lora-section')
+    .classList.toggle('hidden', !LORA_MODES.includes(mode));
   updatePreview();
   if (!silent) saveState();
 }
@@ -1659,6 +1748,10 @@ async function generate() {
 
   const fd  = new FormData();
   const neg = (document.getElementById('neg-prompt').value || '').trim();
+
+  // Sent for every task; the server only threads it into the checkpoint-based builders,
+  // so Edit and Animate ignore it rather than needing a special case here.
+  if (LORA_MODES.includes(currentMode)) fd.append('loras', JSON.stringify(activeLoras()));
 
   if (currentMode === 'generate') {
     fd.append('task',       'text2img');
@@ -2173,6 +2266,139 @@ async function checkComfy() {
     comfyOnline ? 'ComfyUI online' : 'ComfyUI offline';
 }
 
+// ── LoRA stack ─────────────────────────────────────────────────────────────
+// The stack is a chain: entry N is applied to the model entry N-1 already patched, so
+// order is meaningful and the UI exposes it (numbered rows, move up/down) rather than
+// pretending the list is a set.
+function loraLabel(filename) {
+  return filename.replace(/\.(safetensors|ckpt|pt|bin)$/i, '').replace(/[_-]+/g, ' ');
+}
+
+async function loadLoras() {
+  try {
+    const { loras, error } = await fetch('/loras').then(r => r.json());
+    if (error) throw new Error(error);
+    loraOptions = loras || [];
+  } catch(e) {
+    console.warn('Could not load LoRAs from ComfyUI:', e);
+    loraOptions = [];
+  }
+  renderLoras();
+}
+
+function renderLoras() {
+  const list = document.getElementById('lora-list');
+  const add  = document.getElementById('lora-add');
+  const note = document.getElementById('lora-note');
+  list.replaceChildren();
+
+  // A saved stack can outlive the files it names — flag those instead of silently
+  // snapping them to some other LoRA, which would generate the wrong image quietly.
+  const missing = loraStack.filter(l => l.name && !loraOptions.includes(l.name));
+
+  loraStack.forEach((entry, i) => {
+    const row = document.createElement('div');
+    row.className = 'lora-row';
+
+    const top = document.createElement('div');
+    top.className = 'lora-row-top';
+
+    const ord = document.createElement('span');
+    ord.className = 'lora-ord';
+    ord.textContent = (i + 1) + '.';
+
+    const sel = document.createElement('select');
+    if (!loraOptions.includes(entry.name)) {
+      const opt = document.createElement('option');
+      opt.value = entry.name;
+      opt.textContent = entry.name ? entry.name + ' (missing)' : '— pick a LoRA —';
+      sel.appendChild(opt);
+    }
+    for (const name of loraOptions) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = loraLabel(name);
+      sel.appendChild(opt);
+    }
+    sel.value = entry.name;
+    sel.onchange = () => { entry.name = sel.value; renderLoras(); saveState(); };
+
+    const up = document.createElement('button');
+    up.className = 'lora-move'; up.type = 'button';
+    up.textContent = '\u2191'; up.title = 'Apply earlier';
+    up.disabled = i === 0;
+    up.onclick = () => moveLora(i, -1);
+
+    const down = document.createElement('button');
+    down.className = 'lora-move'; down.type = 'button';
+    down.textContent = '\u2193'; down.title = 'Apply later';
+    down.disabled = i === loraStack.length - 1;
+    down.onclick = () => moveLora(i, 1);
+
+    const del = document.createElement('button');
+    del.className = 'lora-x'; del.type = 'button';
+    del.textContent = '\u2715'; del.title = 'Remove';
+    del.onclick = () => { loraStack.splice(i, 1); renderLoras(); saveState(); };
+
+    top.append(ord, sel, up, down, del);
+
+    const str = document.createElement('div');
+    str.className = 'lora-strength';
+    const lbl = document.createElement('span');
+    lbl.className = 'lora-ord';
+    lbl.textContent = 'Strength';
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.min = '-1'; range.max = '2'; range.step = '0.05';
+    range.value = entry.strength;
+    const val = document.createElement('span');
+    val.className = 'val';
+    val.textContent = Number(entry.strength).toFixed(2);
+    range.oninput = () => {
+      entry.strength = parseFloat(range.value);
+      val.textContent = entry.strength.toFixed(2);
+    };
+    range.onchange = saveState;
+    str.append(lbl, range, val);
+
+    row.append(top, str);
+    list.appendChild(row);
+  });
+
+  const none = loraOptions.length === 0;
+  add.disabled = none;
+  add.textContent = none ? 'No LoRAs installed' : '+ Add LoRA';
+  note.textContent = none
+    ? 'Drop .safetensors files into ComfyUI/models/loras/ and reload.'
+    : (missing.length
+        ? missing.length + ' saved LoRA' + (missing.length > 1 ? 's are' : ' is') + ' no longer installed.'
+        : (loraStack.length
+            ? 'Applied top to bottom. Most LoRAs need their trigger word in the prompt.'
+            : ''));
+}
+
+function addLora() {
+  if (!loraOptions.length) return;
+  loraStack.push({ name: loraOptions[0], strength: 0.8 });
+  renderLoras();
+  saveState();
+}
+
+function moveLora(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= loraStack.length) return;
+  [loraStack[i], loraStack[j]] = [loraStack[j], loraStack[i]];
+  renderLoras();
+  saveState();
+}
+
+// What actually goes on the wire: named entries only, in order.
+function activeLoras() {
+  return loraStack
+    .filter(l => l.name && loraOptions.includes(l.name))
+    .map(l => ({ name: l.name, strength: l.strength }));
+}
+
 // ── Checkpoints ────────────────────────────────────────────────────────────
 function ckptLabel(filename) {
   return filename.replace(/\.(safetensors|ckpt|pt|bin)$/i, '').replace(/[_-]+/g, ' ');
@@ -2232,6 +2458,7 @@ updateAnimateLength();   // after loadState, so the label matches the restored l
 checkComfy();
 setInterval(checkComfy, 10000);
 loadCheckpoints();
+loadLoras();
 loadGallery();
 </script>
 </body>

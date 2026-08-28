@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 
 from client import upload_image
+from workflows import lora as lora_chain
 from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_sdxl
 
 DEFAULT_CHECKPOINT = "sd_xl_base_1.0.safetensors"
@@ -21,6 +22,7 @@ def build(
     sampler: str = "euler",
     scheduler: str = "normal",
     filename_prefix: str = "img2img",
+    loras=None,
 ) -> dict:
     """
     Build an img2img workflow. Auto-detects SD 1.5, SDXL, and FLUX.
@@ -38,6 +40,7 @@ def build(
             sampler=sampler,
             scheduler="simple",
             filename_prefix=filename_prefix,
+            loras=loras,
         )
 
     if seed == -1:
@@ -80,7 +83,7 @@ def build(
             "inputs": {"text": negative_prompt, "clip": ["1", 1]},
         }
 
-    return {
+    workflow = {
         "1": {
             "class_type": "CheckpointLoaderSimple",
             "inputs": {"ckpt_name": checkpoint},
@@ -116,3 +119,4 @@ def build(
             "inputs": {"filename_prefix": filename_prefix, "images": ["7", 0]},
         },
     }
+    return lora_chain.apply(workflow, loras)

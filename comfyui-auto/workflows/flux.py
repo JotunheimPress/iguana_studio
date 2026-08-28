@@ -15,6 +15,8 @@ FLUX.1-schnell: guidance=1.0, steps=4  (distilled, much faster)
 
 import random
 
+from workflows import lora as lora_chain
+
 DEFAULT_CHECKPOINT = "flux1-dev.safetensors"
 
 
@@ -40,6 +42,7 @@ def build(
     sampler: str = "euler",
     scheduler: str = "simple",
     filename_prefix: str = "flux",
+    loras=None,
 ) -> dict:
     if seed == -1:
         seed = random.randint(0, 2**32 - 1)
@@ -49,7 +52,7 @@ def build(
         steps = defs["steps"]
     guidance = defs["guidance"] if cfg == -1 else float(cfg)
 
-    return {
+    workflow = {
         "1": {
             "class_type": "CheckpointLoaderSimple",
             "inputs": {"ckpt_name": checkpoint},
@@ -109,6 +112,7 @@ def build(
             "inputs": {"filename_prefix": filename_prefix, "images": ["7", 0]},
         },
     }
+    return lora_chain.apply(workflow, loras)
 
 
 def build_img2img(
@@ -123,6 +127,7 @@ def build_img2img(
     sampler: str = "euler",
     scheduler: str = "simple",
     filename_prefix: str = "flux_img2img",
+    loras=None,
 ) -> dict:
     from client import upload_image
 
@@ -136,7 +141,7 @@ def build_img2img(
 
     server_image = upload_image(image_path)
 
-    return {
+    workflow = {
         "1": {
             "class_type": "CheckpointLoaderSimple",
             "inputs": {"ckpt_name": checkpoint},
@@ -196,3 +201,4 @@ def build_img2img(
             "inputs": {"filename_prefix": filename_prefix, "images": ["8", 0]},
         },
     }
+    return lora_chain.apply(workflow, loras)

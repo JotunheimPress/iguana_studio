@@ -56,6 +56,7 @@ comfyui-auto/
 ├── client.py            # ComfyUI API client: queue, poll /history, download /view
 ├── workflows/
 │   ├── defaults.py      # shared negative prompts + is_flux() / is_sdxl() detection
+│   ├── lora.py          # splices a LoraLoader chain into any checkpoint-based graph
 │   ├── text2img.py      # text → image; delegates to flux.py when checkpoint is FLUX
 │   ├── img2img.py       # edit an image; also delegates to flux.py
 │   ├── flux.py          # FLUX.1 graphs (build + build_img2img)
@@ -153,9 +154,9 @@ The `localStorage` key stays `studio_v1` (renaming it discards saved state) — 
 
 | Mode | Task sent | Controls | Notes |
 |---|---|---|---|
-| **Generate** | `text2img` | checkpoint, w/h, steps, cfg, seed, negative | The main path. Works. |
+| **Generate** | `text2img` | checkpoint, LoRA stack, w/h, steps, cfg, seed, negative | The main path. Works. |
 | **Person** | `photomaker` | PhotoMaker model, w/h, steps, cfg, multi-photo dropzone | Prepends trigger word `img`. Needs the PhotoMaker-Plus custom node — see below. |
-| **Refine** | `img2img` | checkpoint, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
+| **Refine** | `img2img` | checkpoint, LoRA stack, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
 | **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the prompt sidebar.** |
 | **Animate** | `img2vid` | source image, **motion box**, length, fps, size, steps, CFG, shift, seed | WAN 2.2 image→video — see below. **Ignores the prompt sidebar**, like Edit. |
 
@@ -272,6 +273,53 @@ visibility) and is safe to run on every boot; `applyCheckpointConfig()` addition
 recommended w/h/steps/CFG and is reserved for an explicit model change, or a first visit with
 nothing saved. `loadCheckpoints()` picks between them by checking whether `savedState` holds that
 mode's numeric fields.
+
+## LoRAs
+
+A checkpoint is the whole model — UNet, CLIP and VAE, loaded one at a time. A LoRA is a small
+set of low-rank matrices merged into an existing checkpoint's attention layers at load time, so
+it is never standalone and is tied to a base architecture (an SDXL LoRA will not load onto SD 1.5).
+
+**`workflows/lora.py` rewrites a finished graph rather than being threaded through each builder.**
+Every checkpoint-based builder publishes the same two edges — `["1", 0]` for MODEL and `["1", 1]`
+for CLIP — so `lora.apply()` chains `LoraLoader` nodes off the checkpoint and repoints those
+edges at the end of the chain. One function therefore covers `text2img`, `img2img`, `photomaker`
+and both FLUX builders, including FLUX's `ModelSamplingFlux`, which sits between the checkpoint
+and the sampler and is rewired like any other MODEL consumer.
+
+Two invariants that must survive any change here:
+
+- **The rewrite runs before the chain is merged in.** The loaders' own `["1", 0]` / `["1", 1]`
+  inputs must stay on the checkpoint — the first link is what anchors the chain. Merging first
+  would rewrite them to point at themselves.
+- **Slot 2 is never touched.** LoRAs do not patch the VAE, and `img2img` has two separate VAE
+  consumers (`VAEEncode` and `VAEDecode`) that both have to keep reading the checkpoint.
+
+Injected node ids are `lora_0`, `lora_1`, … — prefixed so they can never collide with a builder's
+numeric ids.
+
+**Edit and Animate have no LoRA support.** Kontext and WAN load a bare UNet via `UnetLoaderGGUF` /
+`UNETLoader` with the text encoder coming from a separate node, so there is no single MODEL+CLIP
+source to splice into; they would need `LoraLoaderModelOnly` wired by hand. `lora.apply()` raises
+rather than guessing if it is pointed at such a graph, and the frontend hides the section in those
+modes (`LORA_MODES`).
+
+**The stack is a chain, not a set.** Entry N patches the model entry N−1 already patched, so order
+is meaningful — the UI numbers the rows and offers move up/down rather than pretending otherwise.
+Strength runs −1 to 2 (negative pushes away from the concept); one slider drives both
+`strength_model` and `strength_clip`, which is what nearly every LoRA wants.
+
+It rides to the server as a **JSON array on a single `loras` form field**, not repeated fields:
+name and strength have to stay paired and ordered, and "second at 0.4" is meaningless once the
+pairing is lost. The stack persists in `localStorage` under `__loras` alongside the id-keyed
+fields, since the rows are dynamic and have no stable element ids.
+
+A saved stack can outlive the files it names. Missing entries are **kept and flagged** in the UI
+but filtered out of the payload by `activeLoras()` — dropping them silently would change the image
+with no explanation, and sending them would fail the whole job.
+
+Most LoRAs need a **trigger word** in the prompt to activate. Nothing in the app can know what it
+is; that is on the LoRA's model card.
 
 ## Installed checkpoints
 
@@ -519,6 +567,7 @@ later, 55 s total including decode and mux.
 | POST | `/generate` | Multipart form; starts a job, returns `{"job_id": ...}` |
 | GET | `/job/{id}` | `{status, files, message, phase, progress, eta}`; status ∈ pending/running/done/error/not_found |
 | GET | `/checkpoints` | Sorted checkpoint filenames from ComfyUI |
+| GET | `/loras` | Sorted LoRA filenames from ComfyUI |
 | GET | `/gallery` | All output files, newest first, with mtime + size |
 | GET | `/outputs/{filename}` | Serves one generated file |
 | DELETE | `/outputs/{filename}` | Deletes one generated file (no trash — it's gone) |
@@ -549,3 +598,4 @@ referenced as `["node_id", output_index]`.
 - FLUX uses `CLIPTextEncodeFlux` + `ModelSamplingFlux` + `EmptySD3LatentImage`, cfg pinned to 1.0
 - `photomaker.py` builds node IDs **dynamically** (one `LoadImage` per reference photo, chained
   through `ImageBatch`), so IDs shift with the number of uploads — the only non-static graph here
+- `LoraLoader` → `[0]=model, [1]=clip`; it consumes MODEL+CLIP and hands back patched ones

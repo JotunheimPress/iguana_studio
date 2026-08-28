@@ -19,6 +19,7 @@ import random
 from pathlib import Path
 from client import upload_image
 
+from workflows import lora as lora_chain
 from workflows.defaults import NEGATIVE_PORTRAIT as DEFAULT_NEGATIVE
 
 DEFAULT_CHECKPOINT   = "sd_xl_base_1.0.safetensors"
@@ -45,6 +46,7 @@ def build(
     sampler: str = "euler",
     scheduler: str = "normal",
     filename_prefix: str = "photomaker",
+    loras=None,
 ) -> dict:
     """
     Build a PhotoMaker ComfyUI workflow using the built-in nodes.
@@ -173,4 +175,4 @@ def build(
         "inputs": {"filename_prefix": filename_prefix, "images": [dec_id, 0]},
     }
 
-    return workflow
+    return lora_chain.apply(workflow, loras)

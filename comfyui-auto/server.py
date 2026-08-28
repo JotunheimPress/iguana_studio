@@ -17,6 +17,7 @@ import uvicorn
 sys.path.insert(0, str(Path(__file__).parent))
 import client
 from workflows import text2img, img2img, video, photomaker, kontext
+from workflows.defaults import base_of
 
 app = FastAPI(title="Iguana Studio")
 
@@ -277,13 +278,17 @@ def get_job(job_id: str):
 
 @app.get("/checkpoints")
 def list_checkpoints():
-    """Return checkpoint filenames available in ComfyUI, sorted alphabetically."""
+    """Return installed checkpoints as [{name, base}], sorted alphabetically.
+
+    The base ships with each entry so the frontend can group the picker without
+    re-deriving the classification from the filename — see defaults.base_of().
+    """
     import requests as req
     try:
         r = req.get(f"{client.COMFY_URL}/object_info/CheckpointLoaderSimple", timeout=5)
         r.raise_for_status()
         names = r.json()["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
-        return {"checkpoints": sorted(names)}
+        return {"checkpoints": [{"name": n, "base": base_of(n)} for n in sorted(names)]}
     except Exception as e:
         return {"checkpoints": [], "error": str(e)}
 

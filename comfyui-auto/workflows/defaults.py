@@ -14,6 +14,27 @@ def is_sdxl(checkpoint: str) -> bool:
     return "xl" in name or "sdxl" in name or any(k in name for k in _SDXL_NAMES)
 
 
+# Display order for grouped checkpoint lists, newest architecture first. Groups with no
+# installed members are skipped by the frontend, so this order costs nothing when a family
+# is absent.
+BASES = ("FLUX", "SDXL", "SD 1.5")
+
+
+def base_of(checkpoint: str) -> str:
+    """Which model family a checkpoint belongs to.
+
+    The single source of truth for this classification. The frontend used to re-derive it
+    from an `xl` substring test, which got `crealismTerraMirabilis` wrong — it is SDXL but
+    has no "xl" in its name — and meant every new checkpoint had to be taught to two
+    separate lists. /checkpoints now reports the base so there is only one.
+    """
+    if is_flux(checkpoint):
+        return "FLUX"
+    if is_sdxl(checkpoint):
+        return "SDXL"
+    return "SD 1.5"
+
+
 def default_size(checkpoint: str) -> tuple[int, int]:
     """
     Native training resolution for the checkpoint's family.

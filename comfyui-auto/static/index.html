@@ -227,6 +227,10 @@
     appearance: none;
   }
   .ctrl-group select:focus, .ctrl-group input:focus { border-color: var(--accent); }
+  /* Same treatment the sidebar selects get — without it the dropped-open list paints
+     the group headers on the browser's default light background. */
+  .ctrl-group select option { background: var(--surface2); color: var(--text); }
+  .ctrl-group select optgroup { background: var(--surface); color: var(--muted); font-style: normal; }
 
   /* negative prompt collapsible */
   .neg-toggle {
@@ -1540,7 +1544,18 @@ const CKPT_CONFIGS = {
     { steps: 20, cfg: 7.0,  w: 512,  h: 512  },
 };
 
-function _isFlux(ckpt) { return ckpt.toLowerCase().includes('flux'); }
+// filename -> base ("FLUX" | "SDXL" | "SD 1.5"), filled by loadCheckpoints() from the
+// server's classification. defaults.base_of() is the single source of truth; the substring
+// fallbacks below only cover the window before /checkpoints has answered.
+let checkpointBase = {};
+
+function _baseOf(ckpt) {
+  return checkpointBase[ckpt]
+      || (ckpt.toLowerCase().includes('flux') ? 'FLUX'
+      :   ckpt.toLowerCase().includes('xl')   ? 'SDXL' : 'SD 1.5');
+}
+
+function _isFlux(ckpt) { return _baseOf(ckpt) === 'FLUX'; }
 function _isSchnell(ckpt) { return ckpt.toLowerCase().includes('schnell'); }
 
 function _fluxConfig(ckpt) {
@@ -1570,7 +1585,7 @@ function applyCheckpointConfig(ckpt, prefix) {
   const flux = _isFlux(ckpt);
   const conf = flux
     ? _fluxConfig(ckpt)
-    : CKPT_CONFIGS[ckpt] || (ckpt.toLowerCase().includes('xl')
+    : CKPT_CONFIGS[ckpt] || (_baseOf(ckpt) === 'SDXL'
         ? { steps: 25, cfg: 7.0, w: 1024, h: 1024 }
         : { steps: 25, cfg: 7.0, w: 512,  h: 512  });
 
@@ -2400,6 +2415,9 @@ function activeLoras() {
 }
 
 // ── Checkpoints ────────────────────────────────────────────────────────────
+// Mirrors defaults.BASES — newest architecture first.
+const BASE_ORDER = ['FLUX', 'SDXL', 'SD 1.5'];
+
 function ckptLabel(filename) {
   return filename.replace(/\.(safetensors|ckpt|pt|bin)$/i, '').replace(/[_-]+/g, ' ');
 }
@@ -2415,17 +2433,33 @@ async function loadCheckpoints() {
     const { checkpoints, error } = await fetch('/checkpoints').then(r => r.json());
     if (!checkpoints || !checkpoints.length) throw new Error(error || 'empty list');
 
+    checkpointBase = {};
+    for (const c of checkpoints) checkpointBase[c.name] = c.base;
+    const names = checkpoints.map(c => c.name);
+
     for (const id of IDS) {
       const sel = document.getElementById(id);
       sel.innerHTML = '';
-      for (const name of checkpoints) {
-        const opt = document.createElement('option');
-        opt.value       = name;
-        opt.textContent = ckptLabel(name);
-        sel.appendChild(opt);
+      // One <optgroup> per base, in BASE_ORDER; a base with nothing installed is skipped
+      // rather than rendered empty. Bases the server reports but this list doesn't know
+      // about are appended, so a new family shows up without a frontend change.
+      const seen = new Set(checkpoints.map(c => c.base));
+      const order = [...BASE_ORDER.filter(b => seen.has(b)),
+                     ...[...seen].filter(b => !BASE_ORDER.includes(b)).sort()];
+      for (const base of order) {
+        const group = document.createElement('optgroup');
+        group.label = base;
+        for (const c of checkpoints) {
+          if (c.base !== base) continue;
+          const opt = document.createElement('option');
+          opt.value       = c.name;
+          opt.textContent = ckptLabel(c.name);
+          group.appendChild(opt);
+        }
+        sel.appendChild(group);
       }
       // Restore saved value if still present, otherwise leave at first option
-      if (saved[id] && checkpoints.includes(saved[id])) {
+      if (saved[id] && names.includes(saved[id])) {
         sel.value = saved[id];
       }
     }

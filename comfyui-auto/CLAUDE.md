@@ -253,7 +253,9 @@ It then filters the name out of `galleryItems`, takes the count from *that*, and
 removing a tile shifts every later one into a new grid slot.
 
 **Checkpoint dropdown** is populated live from `/checkpoints`, which proxies ComfyUI's
-`object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()`.
+`object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()` and
+grouped into one `<optgroup>` per base (FLUX / SDXL / SD 1.5, `BASE_ORDER`). A base with nothing
+installed is skipped rather than rendered empty, which is why there is no FLUX heading today.
 
 Because that list arrives *after* `loadState()` runs, the checkpoint selects need care that the
 other fields don't — they hold only a `Loading…` placeholder when state is restored, so
@@ -343,12 +345,22 @@ a checkpoint filename contains `flux`, so it is currently dead code. Drop a FLUX
 checkpoint into `models/checkpoints/` and it lights up automatically (schnell → 4 steps /
 guidance 1.0; dev → 20 steps / guidance 3.5, detected by `schnell` in the name).
 
-**Model-type detection lives in two places and must be kept in sync:**
-- backend — `workflows/defaults.py` `is_flux()` / `is_sdxl()` (the `_SDXL_NAMES` keyword set).
-  `default_size()` builds on these and is what `run.py` uses to pick a resolution.
-- frontend — `CKPT_CONFIGS` + the `xl` substring fallback (`index.html:1154`)
+**Model-type detection has one home: `workflows/defaults.py`.** `is_flux()` / `is_sdxl()` (the
+`_SDXL_NAMES` keyword set) classify a filename, `base_of()` turns that into `"FLUX"` / `"SDXL"` /
+`"SD 1.5"`, and `default_size()` builds on the same pair for `run.py`.
 
-Adding a checkpoint whose name lacks `xl` means adding it to **both** lists.
+`/checkpoints` returns `[{name, base}]` rather than bare filenames, so the frontend groups the
+picker and picks its config fallback from the server's answer instead of re-deriving one. This
+used to live in two places — the backend keyword set, and an `xl` substring test in the frontend —
+which disagreed about `crealismTerraMirabilis` (SDXL, no "xl" in the name) and meant every new
+checkpoint had to be taught to both. Now a new checkpoint only needs `_SDXL_NAMES`, if anything.
+
+`checkpointBase` in the frontend is a cache of that response; `_baseOf()` falls back to substring
+tests only for the window before `/checkpoints` has answered.
+
+Adding a **new base family** means: teach `defaults.py` to detect it, add it to `BASES`, and add
+it to `BASE_ORDER` in `index.html` — the picker appends unknown bases after the known ones rather
+than dropping them, so a missed `BASE_ORDER` entry degrades to bad ordering, not a missing group.
 
 ## Flux Kontext (Edit mode) — how it's wired
 
@@ -566,7 +578,7 @@ later, 55 s total including decode and mux.
 | GET | `/comfy-status` | `{"running": bool}` — polled by the status dot |
 | POST | `/generate` | Multipart form; starts a job, returns `{"job_id": ...}` |
 | GET | `/job/{id}` | `{status, files, message, phase, progress, eta}`; status ∈ pending/running/done/error/not_found |
-| GET | `/checkpoints` | Sorted checkpoint filenames from ComfyUI |
+| GET | `/checkpoints` | Installed checkpoints as `[{name, base}]`, sorted by name |
 | GET | `/loras` | Sorted LoRA filenames from ComfyUI |
 | GET | `/gallery` | All output files, newest first, with mtime + size |
 | GET | `/outputs/{filename}` | Serves one generated file |

@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import uuid
 import shutil
 import threading
@@ -36,6 +37,24 @@ MEDIA_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4"}
 VIDEO_TIMEOUT = 1800
 VIDEO_TASKS = {"img2vid", "video"}
 
+# ComfyUI names the running node; the browser wants a phase. Keyed by class_type, which
+# the workflow dict already carries, so this works for every task without each builder
+# having to describe itself. Unknown classes fall through to their own name — wrong-looking
+# is better than a blank status bar with no clue what it is doing.
+PHASES = {
+    "UNETLoader": "loading model", "UnetLoaderGGUF": "loading model",
+    "CheckpointLoaderSimple": "loading model", "ImageOnlyCheckpointLoader": "loading model",
+    "CLIPLoader": "loading text encoder", "DualCLIPLoader": "loading text encoder",
+    "VAELoader": "loading VAE",
+    "CLIPTextEncode": "encoding prompt", "CLIPTextEncodeSDXL": "encoding prompt",
+    "CLIPTextEncodeFlux": "encoding prompt",
+    "LoadImage": "reading source image", "VAEEncode": "encoding source image",
+    "Wan22ImageToVideoLatent": "preparing frames",
+    "KSampler": "sampling", "SamplerCustom": "sampling",
+    "VAEDecode": "decoding", "CreateVideo": "encoding video",
+    "SaveVideo": "saving", "SaveImage": "saving",
+}
+
 jobs: dict[str, dict] = {}
 
 
@@ -65,8 +84,28 @@ def _run_job(
         else:
             raise ValueError(f"Unknown task: {task}")
 
+        job = jobs[job_id]
+
+        def on_progress(value, maximum, node):
+            """Called from the websocket watcher. Only ever writes whole values into the
+            job dict — the poll route reads it from another thread and a half-updated
+            progress block would render as a bar jumping backwards."""
+            if node is not None:
+                cls = (workflow.get(str(node)) or {}).get("class_type", "")
+                job["phase"] = PHASES.get(cls, cls or "working")
+            if value is None or not maximum:
+                return
+            # Timing starts at the first step SEEN, and records the step number as well as
+            # the time. ComfyUI throttles these messages, so the first one can already say
+            # "step 18" — anchoring on time alone then divides a near-zero elapsed by 18
+            # and reports 0s remaining for the rest of the run.
+            if job.get("step_t0") is None:
+                job["step_t0"] = (time.time(), int(value))
+            job["progress"] = {"value": int(value), "max": int(maximum)}
+
         timeout = VIDEO_TIMEOUT if task in VIDEO_TASKS else 600
-        paths = client.run_workflow(workflow, save_dir=OUTPUT_DIR, timeout=timeout)
+        paths = client.run_workflow(workflow, save_dir=OUTPUT_DIR, timeout=timeout,
+                                    on_progress=on_progress)
         jobs[job_id].update(status="done", files=[p.name for p in paths])
     except Exception as e:
         jobs[job_id].update(status="error", message=str(e))
@@ -117,7 +156,8 @@ async def generate(
         raise HTTPException(status_code=400, detail="At least one reference photo is required.")
 
     job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "pending", "files": [], "message": ""}
+    jobs[job_id] = {"status": "pending", "files": [], "message": "",
+                    "phase": "queued", "progress": None, "step_t0": None}
 
     # Single image (img2img)
     image_path = None
@@ -193,7 +233,30 @@ async def generate(
 
 @app.get("/job/{job_id}")
 def get_job(job_id: str):
-    return jobs.get(job_id, {"status": "not_found"})
+    """Job state, plus a step counter and an ETA while it is sampling.
+
+    The ETA is measured, not modelled: elapsed-per-completed-step extrapolated over the
+    steps left. That means it needs no calibration constant and cannot go stale when the
+    model, precision or driver changes — and it corrects itself as the run proceeds.
+    It is deliberately timed from the *first step* rather than from submission, because
+    the model load in front of it is a fixed cost that would otherwise inflate every
+    estimate on a cold start.
+    """
+    job = jobs.get(job_id)
+    if job is None:
+        return {"status": "not_found"}
+
+    out = {k: v for k, v in job.items() if k != "step_t0"}
+    p, anchor = job.get("progress"), job.get("step_t0")
+    if p and anchor and p["max"] > p["value"]:
+        t0, v0 = anchor
+        done = p["value"] - v0
+        # No ETA until a second step has been observed: one sample gives no rate, and a
+        # made-up number here is worse than none.
+        if done > 0:
+            per_step = (time.time() - t0) / done
+            out["eta"] = int(per_step * (p["max"] - p["value"]))
+    return out
 
 
 @app.get("/checkpoints")

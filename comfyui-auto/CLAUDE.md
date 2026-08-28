@@ -373,13 +373,54 @@ v0.31.1 ships native WAN support, so this feature costs **zero custom nodes, zer
 
 Measured on this box: 25 frames at 960×544, 20 steps → **41 s**.
 
+## Live progress + ETA
+
+"Running…" is adequate for a 4-second still and useless for a 3-minute video, where the
+only question is whether it is 40% done or hung. `/job/{id}` now carries `phase`,
+`progress {value, max}` and `eta`, and the browser renders a bar beside the spinner.
+
+- **The websocket is the only source.** `/api/jobs/{id}` (new in v0.31.1) reports a status
+  and a duration but no step counter, and there is no REST progress route — checked. So
+  `client._watch_progress` opens `ws://…/ws?clientId=…` and ComfyUI's `progress` messages
+  carry `{value, max, prompt_id, node}`. That is the one new dependency:
+  `websocket-client`, sync by design because jobs already run in threads.
+- **The socket is opened *before* the job is queued.** Connecting after races the first
+  messages, and on a short job the bar then never moves at all.
+- **The client_id must match.** ComfyUI addresses progress to the client that submitted
+  the job, so `queue_prompt` takes one and the websocket is opened with the same value.
+- **A dead socket must never re-queue.** If the stream drops mid-job the render is still
+  going on the other side, so `_watch_progress` hands the prompt_id back and the caller
+  polls for it. Re-queueing there would silently render a multi-minute video twice — which
+  is also why the caller's `on_progress` is wrapped: a throwing callback would look
+  exactly like a dead socket.
+- **Progress is a nicety, the render is the point.** Anything that fails before the job is
+  queued falls back to the old queue-and-poll path with no progress, rather than failing a
+  job that would have succeeded.
+- **The ETA is measured, not modelled** — elapsed-per-completed-step over the steps left.
+  No calibration constant, so nothing goes stale when the model, precision or driver
+  changes, and it corrects itself as the run proceeds.
+- **It anchors on the first step *seen*, and stores that step number.** ComfyUI throttles
+  `progress` messages, so the first one can already say "step 18"; anchoring on time alone
+  divides a near-zero elapsed by 18 and reports `0s` remaining for the whole run. Observed
+  exactly that before the fix. No ETA is shown until a second step arrives — one sample
+  gives no rate, and a made-up number is worse than none.
+- **The bar covers sampling, not the whole job.** The model load lands before the first
+  step and the VAE decode plus mp4 mux after the last, so the phase is shown next to the
+  bar rather than letting the step count imply the whole run. `PHASES` maps class_type →
+  label, so it works for every task without each builder describing itself.
+- `updateJobStatus()` rewrites text and bar **in place**: replacing the card restarts the
+  CSS spinner animation, which reads as the job having started over.
+
+Measured: img2vid 960×544, L=25, 30 steps → ETA said 35 s at step 3, sampling ended 4 s
+later, 55 s total including decode and mux.
+
 ## API endpoints
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/` | Serves the web GUI |
 | GET | `/comfy-status` | `{"running": bool}` — polled by the status dot |
 | POST | `/generate` | Multipart form; starts a job, returns `{"job_id": ...}` |
-| GET | `/job/{id}` | `{status, files, message}`; status ∈ pending/running/done/error/not_found |
+| GET | `/job/{id}` | `{status, files, message, phase, progress, eta}`; status ∈ pending/running/done/error/not_found |
 | GET | `/checkpoints` | Sorted checkpoint filenames from ComfyUI |
 | GET | `/gallery` | All output files, newest first, with mtime + size |
 | GET | `/outputs/{filename}` | Serves one generated file |
@@ -388,8 +429,10 @@ Measured on this box: 25 frames at 960×544, 20 steps → **41 s**.
 | POST | `/debug/workflow` | Dry-run a graph and return the JSON without queueing |
 
 ## Key design decisions
-- **Polling, not websockets** — the client polls `/job/{id}` every 2s; `client.py` polls ComfyUI's
-  `/history/{prompt_id}` every 1.5s with a 600s timeout. Simpler and reliable.
+- **The browser polls; `client.py` uses a websocket.** The page still polls `/job/{id}` every
+  2s — simple, survives a reload, and needs no connection state. Toward ComfyUI it is now a
+  websocket, because step-level progress is exposed nowhere else, with the `/history`
+  polling loop kept as the fallback when the socket can't be had.
 - **Threading** — each generation runs in a `daemon=True` thread; no queue, no worker pool.
 - **No build step** — the frontend is one self-contained HTML file with inline CSS/JS.
 - **Path traversal protection** — both `/outputs/{filename}` routes apply `Path(filename).name` to

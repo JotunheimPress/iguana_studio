@@ -364,6 +364,16 @@
     color: var(--muted);
     font-size: 13px;
   }
+  /* Takes the leftover width so the bar tracks the panel rather than a fixed size, and
+     sits after the text, which is the part you read first. */
+  .job-bar {
+    flex: 1; min-width: 80px; max-width: 320px; height: 4px;
+    background: var(--surface2); border-radius: 2px; overflow: hidden;
+  }
+  .job-bar > span {
+    display: block; height: 100%; width: 0;
+    background: var(--accent); transition: width .4s ease;
+  }
   .spinner {
     width: 20px; height: 20px;
     border: 2px solid var(--border);
@@ -1664,9 +1674,31 @@ async function generate() {
 }
 
 // ── Job polling ────────────────────────────────────────────────────────────
+// "Running…" is fine for a 4-second still and useless for a 3-minute video, where the
+// only question is whether it is 40% done or hung. The server relays ComfyUI's step
+// counter, so show the real thing.
+function fmtEta(secs) {
+  if (secs == null || secs < 0) return '';
+  if (secs < 60) return `~${secs}s left`;
+  const m = Math.floor(secs / 60), r = secs % 60;
+  return `~${m}m ${String(r).padStart(2, '0')}s left`;
+}
+
+function jobStatusText(data) {
+  const p = data.progress;
+  const phase = data.phase || 'working';
+  if (!p || !p.max) return phase.charAt(0).toUpperCase() + phase.slice(1) + '…';
+  // Sampling is the bulk of a video job but not all of it — the model load lands before
+  // the first step and the decode + mux after the last — so the phase is shown next to
+  // the bar rather than letting the step count imply the whole run.
+  const pct = Math.round(p.value / p.max * 100);
+  const eta = fmtEta(data.eta);
+  return `${phase} · step ${p.value}/${p.max} · ${pct}%${eta ? ' · ' + eta : ''}`;
+}
+
 function pollJob(jobId) {
   clearTimeout(pollTimer);
-  showJobStatus('Running…');
+  showJobStatus('Queued…');
 
   async function check() {
     try {
@@ -1682,6 +1714,7 @@ function pollJob(jobId) {
         showError(data.message || 'Unknown error');
         btn.disabled = false; btn.textContent = 'Generate';
       } else {
+        updateJobStatus(jobStatusText(data), data.progress);
         pollTimer = setTimeout(check, 2000);
       }
     } catch(e) {
@@ -1697,8 +1730,25 @@ function showJobStatus(msg) {
   document.getElementById('output-placeholder').classList.add('hidden');
   const div = document.createElement('div');
   div.className = 'job-status'; div.id = 'job-status-el';
-  div.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  div.innerHTML = `<div class="spinner"></div><span id="job-status-text">${msg}</span>` +
+                  `<div class="job-bar" id="job-bar" hidden><span></span></div>`;
   document.getElementById('output-area').prepend(div);
+}
+
+// Rewrite the text and bar in place rather than re-rendering the card: replacing the node
+// restarts the CSS spinner animation, which reads as the job having started over.
+function updateJobStatus(msg, progress) {
+  const el = document.getElementById('job-status-text');
+  if (!el) return showJobStatus(msg);
+  el.textContent = msg;
+  const bar = document.getElementById('job-bar');
+  if (!bar) return;
+  if (progress && progress.max) {
+    bar.hidden = false;
+    bar.firstChild.style.width = (progress.value / progress.max * 100).toFixed(1) + '%';
+  } else {
+    bar.hidden = true;
+  }
 }
 
 function clearStatus() {

@@ -34,6 +34,10 @@ NATIVE_W, NATIVE_H = 1280, 704
 FRAME_STEP  = 4        # length must be 4n+1
 MIN_LENGTH  = 5
 MAX_LENGTH  = 121      # ~5 s at 24 fps; the documented ceiling for this model
+# 49 frames (~2 s) is not enough room for the model to finish an ordinary action: measured
+# on a fixed seed, "touch her shoulder" started the reach and ran out of clip at 49, and
+# completed at 81. Defaulting short made the model look like it was ignoring the prompt.
+DEFAULT_LENGTH = 81    # ~3.4 s at 24 fps
 
 
 def clamp_length(length: int) -> int:
@@ -163,7 +167,7 @@ def build_i2v(
     negative_prompt: str = DEFAULT_NEGATIVE,
     width: int = NATIVE_W,
     height: int = NATIVE_H,
-    length: int = 49,
+    length: int = DEFAULT_LENGTH,
     steps: int = 30,
     cfg: float = 5.0,
     seed: int = -1,
@@ -189,7 +193,7 @@ def build_t2v(
     negative_prompt: str = DEFAULT_NEGATIVE,
     width: int = NATIVE_W,
     height: int = NATIVE_H,
-    length: int = 49,
+    length: int = DEFAULT_LENGTH,
     steps: int = 30,
     cfg: float = 5.0,
     seed: int = -1,

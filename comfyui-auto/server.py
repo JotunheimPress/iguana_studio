@@ -141,7 +141,7 @@ async def generate(
     cfg: float = Form(7.0),
     seed: int = Form(-1),
     denoise: float = Form(0.75),
-    length: int = Form(49),
+    length: int = Form(81),
     fps: int = Form(24),
     shift: float = Form(8.0),
     pm_width: int = Form(1024),

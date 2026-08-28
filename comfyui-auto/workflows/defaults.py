@@ -61,12 +61,21 @@ NEGATIVE_PORTRAIT = (
 # FLUX — guidance is baked into CLIPTextEncodeFlux; negative is not used
 NEGATIVE_FLUX = ""
 
-# AnimateDiff video — motion-specific additions
+# Video — WAN 2.2. Deliberately does NOT suppress motion.
+#
+# The AnimateDiff-era list this replaces carried "abrupt motion", "jitter", "flickering"
+# and "strobing": terms aimed at that model's temporal artifacts. Under WAN at CFG 5 they
+# also push away from *deliberate* movement, because raising an arm is exactly "abrupt
+# motion" next to ambient drift. Measured on a fixed seed and source image, swapping to
+# this list raised mean frame-to-frame motion ~25% and was the difference between a hand
+# landing on the shoulder it was told to touch and drifting to the chest.
+#
+# The anti-motion terms are kept on the POSITIVE side of the ledger instead: "static,
+# still frame, frozen, motionless" as negatives ask for movement rather than forbidding it.
 NEGATIVE_VIDEO = (
-    "(worst quality, low quality, normal quality:1.4), "
-    "(jpeg artifacts, compression artifacts, blurry, grainy:1.2), "
-    "deformed, bad anatomy, "
+    "(worst quality, low quality:1.4), "
+    "(jpeg artifacts, compression artifacts, blurry:1.2), "
+    "deformed, bad anatomy, extra limbs, malformed hands, "
     "watermark, signature, text, "
-    "flickering, strobing, jitter, static, still frame, "
-    "abrupt motion, inconsistent lighting, lens flare"
+    "static, still frame, frozen, motionless"
 )

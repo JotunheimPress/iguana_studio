@@ -155,7 +155,7 @@ def main():
     v.add_argument("prompt", help="Describe the motion")
     v.add_argument("--image", help="Still to animate; omit for text-only video")
     v.add_argument("--negative", default=video.DEFAULT_NEGATIVE)
-    v.add_argument("--length", type=int, default=49,
+    v.add_argument("--length", type=int, default=video.DEFAULT_LENGTH,
                    help=f"Frames, snapped to 4n+1 ({video.MIN_LENGTH}–{video.MAX_LENGTH})")
     v.add_argument("--width", type=int, default=video.NATIVE_W)
     v.add_argument("--height", type=int, default=video.NATIVE_H)

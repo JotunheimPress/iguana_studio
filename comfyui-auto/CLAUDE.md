@@ -157,7 +157,15 @@ The `localStorage` key stays `studio_v1` (renaming it discards saved state) — 
 | **Person** | `photomaker` | PhotoMaker model, w/h, steps, cfg, multi-photo dropzone | Prepends trigger word `img`. Needs the PhotoMaker-Plus custom node — see below. |
 | **Refine** | `img2img` | checkpoint, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
 | **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the prompt sidebar.** |
-| **Animate** | `img2vid` | source image, length, fps, size, steps, CFG, shift, seed | WAN 2.2 image→video — see below. The prompt describes the *motion*; the subject is already fixed by the image. |
+| **Animate** | `img2vid` | source image, **motion box**, length, fps, size, steps, CFG, shift, seed | WAN 2.2 image→video — see below. **Ignores the prompt sidebar**, like Edit. |
+
+**Two modes ignore the sidebar**: Edit and Animate. Both are instruction-driven and both already
+have their subject fixed by a source image, so a sidebar that describes *a subject* has nothing to
+contribute. Animate's box is worse than merely redundant without this — the sidebar's **Pose** value
+is a *static* pose, which contradicts a motion instruction outright. `activePrompt()` is the single
+place that decides what a mode sends, and the sidebar preview reads through it too; it used to render
+`buildPrompt()` unconditionally and so claimed the sidebar text was in play during an Edit, which was
+never true.
 
 Gallery tiles and result cards carry **Refine**, **Edit** and **Animate** buttons, so any output can
 be sent straight into any of the three. All three are suppressed on video results (`isVideo`), which
@@ -371,7 +379,33 @@ v0.31.1 ships native WAN support, so this feature costs **zero custom nodes, zer
   into `models/unet/` and swap node `1` from `UNETLoader` to `UnetLoaderGGUF` — `ComfyUI-GGUF` is
   already installed for Flux Kontext and nothing else in the graph changes.
 
-Measured on this box: 25 frames at 960×544, 20 steps → **41 s**.
+### Why the defaults are what they are
+
+Both were set by measurement after the model looked like it was ignoring motion prompts. Fixed seed,
+fixed source, prompt "she raises her right hand and touches her own shoulder":
+
+| length | negative | mean frame-to-frame motion | outcome |
+|---|---|---|---|
+| 49 | old | 2.01 | hand ends at the ribs |
+| 49 | new | 2.07 | incomplete |
+| 81 | old | 4.05 | near miss — hands to chest |
+| 81 | new | **5.20** | **hand lands on the shoulder** |
+
+- **`DEFAULT_LENGTH` is 81, not 49.** ~2 s is not enough room for the model to *finish* an ordinary
+  action: it begins the reach and the clip ends. Both 49-frame runs failed regardless of the
+  negative; both 81-frame runs produced the full arm movement. **Length is the dominant factor** —
+  a short default made the model look like it was ignoring the prompt when it was running out of time.
+- **`NEGATIVE_VIDEO` no longer suppresses motion.** It inherited `abrupt motion`, `jitter`,
+  `flickering` and `strobing` from the AnimateDiff module, aimed at *that* model's temporal
+  artifacts. Under WAN at CFG 5 they also push away from deliberate movement — raising an arm is
+  "abrupt motion" next to ambient drift. Worth ~25% more motion, and the difference between landing
+  the shoulder and drifting to the chest. The anti-motion intent survives as `static, still frame,
+  frozen, motionless`, which *ask* for movement rather than forbidding it.
+- **Framing is on the operator.** A tight head-and-shoulders crop has no arm in frame, so there is
+  nowhere for a hand to come from. No setting fixes that.
+
+Measured on this box: 25 frames at 960×544, 20 steps → **41 s**; 81 frames at 544×960, 30 steps →
+**175 s** end to end.
 
 ## Live progress + ETA
 

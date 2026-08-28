@@ -167,9 +167,26 @@ place that decides what a mode sends, and the sidebar preview reads through it t
 `buildPrompt()` unconditionally and so claimed the sidebar text was in play during an Edit, which was
 never true.
 
-Gallery tiles and result cards carry **Refine**, **Edit** and **Animate** buttons, so any output can
-be sent straight into any of the three. All three are suppressed on video results (`isVideo`), which
-is also why nothing offers to animate a video.
+Gallery tiles and result cards both hang their actions off a **"⋯" hover menu** — Download, Refine,
+Edit, Animate, Delete — so any output can be sent straight into any of the three modes. Refine/Edit/
+Animate are suppressed on video results (`isVideo`), which is also why nothing offers to animate a
+video. Opening the image itself is just a click on the thumbnail or card.
+
+The menu is **one element**, `#item-menu`, lifted to `<body>` and `position: fixed`. It has to live
+outside the tile for two reasons: the gallery scroller clips overflow, and virtualisation destroys
+tiles on scroll, which would take an anchored menu with them. `openItemMenu()` measures after
+showing (offsets are 0 while `display: none`), right-aligns to the trigger, and flips above it when
+there's no room below. It closes on outside click, Escape, gallery/output scroll, and resize —
+`position: fixed` against a button that scrolls away underneath it would otherwise drift.
+
+Menu items are built with **DOM calls and closures, not an innerHTML string**. The old inline
+`onclick="setRefineFromGallery('${safeName}', …)"` handlers needed hand-rolled quote escaping to
+survive a filename with an apostrophe in it; passing the name through a closure removes that class
+of bug outright. `galleryTile()` and `showOutputs()` are built the same way for the same reason —
+neither needs a `safeName`/`safeUrl` any more.
+
+`deleteOutput()`'s `btn` argument is now optional: a call from the menu has no lasting button to
+disable, because the menu closes before the confirm opens.
 
 **Animate** is the video mode; `run.py video` reaches the same builders from the CLI
 (`--image` for image→video, omit it for text→video).
@@ -200,15 +217,61 @@ can never grow over the whole rail.
 **State** persists to `localStorage` under key `studio_v1` — prompt fields, mode, and
 per-mode generation settings.
 
+**Gallery** — collapsed it is just a header strip under the output area. Open, it *takes over the
+display area*: `.gallery-section` gets `flex: 1` and `.output-area` is hidden (via a
+`gallery-open` class on `.workspace` — the output area is an earlier sibling, so no CSS
+combinator reaches it), giving the grid the workspace's full width and height. Tiles wrap into
+rows and the panel scrolls vertically.
+
+It is **virtualised**: `galleryItems` holds the whole file list and only the rows in view are
+built as elements, so a few thousand outputs cost the same as a few dozen. `renderGalleryWindow()`
+derives columns from the panel's width, sizes `#gallery-sizer` to the height every row *would*
+occupy (that's what makes the native scrollbar correct), and `translateY`s `#gallery-inner` to the
+first rendered row. Scroll and resize both re-render, coalesced to one per frame via `rAF`.
+
+Two things to respect when touching it:
+
+- **Tile geometry lives in CSS custom properties** (`--gtile`, `--gthumb`, `--gitem-h`, `--ggap`)
+  and `galleryMetrics()` reads them back, so restyling tiles keeps the row math correct. But the
+  tiles must stay *hard-sized* to those values — a tile that sizes to its content breaks the
+  scroller, which is why `.gname` carries an explicit height. `--gitem-h` is `--gthumb + 4 + 14`:
+  thumbnail, gap, filename. There is no button row to account for, since actions moved to the
+  hover menu.
+- **The DOM is not the list.** Anything that adds or removes an image must go through
+  `galleryItems` and re-render; counting `.gallery-item` elements now only counts what's on screen.
+
+Opening the gallery hides the output area, so `closeGallery()` runs from `generate()` and from the
+`set*FromGallery()` pickers — otherwise a job's progress, or the controls a pick just filled in,
+would be generated behind a covering panel.
+
 **Deleting** — result cards and gallery tiles both carry a delete control (`Delete` / `✕`) calling
 `deleteOutput()`, which confirms, hits `DELETE /outputs/{name}`, then drops **every** element whose
 `data-file` matches. That matters because one image can be on screen twice at once (result column
 *and* gallery); tagging both containers with `data-file` is what keeps them from going out of sync.
-The gallery count is recomputed from the surviving tiles rather than refetched — `loadGallery()`
-runs at page load, so the tiles exist in the DOM even while the panel is collapsed.
+It then filters the name out of `galleryItems`, takes the count from *that*, and re-renders —
+removing a tile shifts every later one into a new grid slot.
 
 **Checkpoint dropdown** is populated live from `/checkpoints`, which proxies ComfyUI's
 `object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()`.
+
+Because that list arrives *after* `loadState()` runs, the checkpoint selects need care that the
+other fields don't — they hold only a `Loading…` placeholder when state is restored, so
+`select.value = saved` silently no-ops. Two things keep the last-used model sticky:
+
+- `loadState()` stashes the parsed blob in **`savedState`**, and `loadCheckpoints()` restores from
+  *that*, not from the select's (still empty) live value.
+- `saveState()` refuses to write an empty value over a real saved choice for the ids in
+  **`ASYNC_SELECT_IDS`**. Without this the boot-time `updatePreview()` → `saveState()` call erases
+  the saved checkpoint on every page load, before the fetch has even returned.
+
+Any future control populated over the network needs both halves of that treatment.
+
+**Per-checkpoint tuning is split in two** so a reload doesn't discard the user's own numbers:
+`applyCheckpointUI()` does only the architecture-driven bits (CFG ↔ Guidance label, negative-prompt
+visibility) and is safe to run on every boot; `applyCheckpointConfig()` additionally stamps the
+recommended w/h/steps/CFG and is reserved for an explicit model change, or a first visit with
+nothing saved. `loadCheckpoints()` picks between them by checking whether `savedState` holds that
+mode's numeric fields.
 
 ## Installed checkpoints
 

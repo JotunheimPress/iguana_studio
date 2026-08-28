@@ -20,6 +20,15 @@
     --success: #55c987;
     --radius: 8px;
     --sidebar: 280px;
+
+    /* Gallery tile geometry. The virtual scroller does its row math from these, so they
+       must be exact — every tile is hard-sized to them rather than sized by its content.
+       --gitem-h = --gthumb + 4 (gap) + 14 (name). Actions live in the hover "⋯" menu, so
+       there is no button row to account for. */
+    --gtile: 140px;
+    --gthumb: 140px;
+    --gitem-h: 158px;
+    --ggap: 12px;
   }
 
   body {
@@ -403,42 +412,72 @@
     height: auto;
     cursor: zoom-in;
   }
-  .output-card .card-actions {
+  /* Both the result card and the gallery tile hang their actions off one shared "⋯"
+     affordance — see .item-menu below. The button only shows on hover, or while its own
+     menu is open (otherwise the trigger vanishes the moment the pointer moves to the menu). */
+  .item-menu-btn {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,.8));
-    padding: 24px 10px 10px;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    width: 26px;
+    height: 26px;
     display: flex;
-    gap: 8px;
-    opacity: 0;
-    transition: opacity .15s;
-  }
-  .output-card:hover .card-actions { opacity: 1; }
-  .card-btn {
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
-    color: #fff;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,255,255,.18);
     border-radius: 6px;
-    padding: 5px 12px;
-    font-size: 12px;
+    color: #fff;
+    font-size: 15px;
+    line-height: 1;
     cursor: pointer;
+    opacity: 0;
     backdrop-filter: blur(4px);
-    transition: background .15s;
-    text-decoration: none;
+    transition: opacity .15s, background .15s;
   }
-  .card-btn:hover { background: rgba(255,255,255,.22); }
-  .card-btn.refine-btn { background: rgba(124,106,247,.5); }
-  .card-btn.refine-btn:hover { background: rgba(124,106,247,.7); }
-  .card-btn.edit-btn { background: rgba(80,180,140,.5); }
-  .card-btn.edit-btn:hover { background: rgba(80,180,140,.7); }
-  .card-btn.animate-btn { background: rgba(224,161,58,.5); }
-  .card-btn.animate-btn:hover { background: rgba(224,161,58,.7); }
-  /* Destructive — pushed to the right so it isn't next to Open/Download by accident. */
-  .card-btn.delete-btn { background: rgba(224,85,85,.45); margin-left: auto; }
-  .card-btn.delete-btn:hover { background: rgba(224,85,85,.75); }
-  .card-btn:disabled { opacity: .5; cursor: default; }
+  .gallery-item:hover .item-menu-btn,
+  .output-card:hover .item-menu-btn,
+  .item-menu-btn:focus-visible,
+  .item-menu-btn.open { opacity: 1; }
+  .item-menu-btn:hover, .item-menu-btn.open { background: rgba(0,0,0,.85); }
+
+  /* One menu element, lifted to <body> and position:fixed. It has to live outside the tile:
+     the gallery scroller clips its overflow, and virtualisation destroys tiles on scroll. */
+  .item-menu {
+    position: fixed;
+    z-index: 500;
+    min-width: 158px;
+    display: none;
+    flex-direction: column;
+    padding: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.55);
+  }
+  .item-menu.open { display: flex; }
+  .item-menu a, .item-menu button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    background: none;
+    border: 0;
+    border-radius: 5px;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .item-menu a:hover, .item-menu button:hover { background: rgba(255,255,255,.07); }
+  .item-menu .mi-icon { width: 14px; text-align: center; color: var(--muted); }
+  .item-menu .danger { color: var(--danger); }
+  .item-menu .danger:hover { background: rgba(224,85,85,.15); }
+  .item-menu .danger .mi-icon { color: var(--danger); }
+  .item-menu .sep { height: 1px; margin: 4px 2px; background: var(--border); }
 
   /* error card */
   .error-card {
@@ -452,11 +491,24 @@
   }
 
   /* ── Gallery ── */
+  /* Collapsed it's just a header strip pinned under the output area. Open, it takes the
+     whole display area over: the section grows and .output-area is hidden outright, so the
+     grid gets the workspace's full width and height to wrap into. */
   .gallery-section {
     background: var(--surface);
     border-top: 1px solid var(--border);
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
+  .gallery-section.open {
+    flex: 1;
+    flex-shrink: 1;
+  }
+  /* Toggled from toggleGallery() rather than with :has() — the output area is an earlier
+     sibling, so no combinator reaches it, and this keeps the rule off :has() support. */
+  .workspace.gallery-open .output-area { display: none; }
   .gallery-header {
     display: flex;
     align-items: center;
@@ -474,79 +526,65 @@
   .gallery-grid {
     display: none;
     padding: 10px 16px 14px;
-    overflow-x: auto;
-    white-space: nowrap;
-    max-height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
   .gallery-grid.open { display: block; }
-  .gallery-grid::-webkit-scrollbar { height: 4px; }
+  .gallery-grid::-webkit-scrollbar { width: 8px; }
   .gallery-grid::-webkit-scrollbar-track { background: transparent; }
   .gallery-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
+  /* The sizer is stretched to the full height every row would occupy, so the native
+     scrollbar is correct while only the visible window of tiles exists in the DOM. */
+  .gallery-sizer { position: relative; width: 100%; }
   .gallery-grid .inner {
-    display: inline-flex;
-    gap: 8px;
-    align-items: flex-start;
+    display: grid;
+    gap: var(--ggap);
+    align-content: start;
+    justify-content: start;
+    position: absolute;
+    top: 0; left: 0;
+    will-change: transform;
+  }
+  .gallery-empty {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 24px 0;
   }
   .gallery-item {
-    display: inline-flex;
+    position: relative;
+    display: flex;
     flex-direction: column;
     gap: 4px;
     white-space: normal;
-    width: 88px;
-    flex-shrink: 0;
-    vertical-align: top;
+    width: var(--gtile);
+    height: var(--gitem-h);
   }
   .gallery-item .gthumb {
-    width: 88px;
-    height: 88px;
+    width: 100%;
+    height: var(--gthumb);
     object-fit: cover;
     border-radius: 6px;
     border: 2px solid var(--border);
     cursor: pointer;
     transition: border-color .15s, transform .15s;
     display: block;
+    background: var(--surface2);
   }
   .gallery-item .gthumb:hover { border-color: var(--accent); transform: scale(1.04); }
   .gallery-item .gname {
     font-size: 10px;
+    line-height: 14px;
+    height: 14px;
     color: var(--muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .gallery-item .gbtns {
-    display: flex;
-    gap: 4px;
-  }
-  .gbtn {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 4px;
-    padding: 3px 0;
-    font-size: 10px;
-    cursor: pointer;
-    text-align: center;
-    transition: background .15s;
-    text-decoration: none;
-    display: block;
-  }
-  .gbtn:hover { background: var(--border); }
-  .gbtn.refine { background: rgba(124,106,247,.2); border-color: var(--accent); color: var(--accent2); }
-  .gbtn.refine:hover { background: rgba(124,106,247,.35); }
-  .gbtn.edit { background: rgba(80,180,140,.2); border-color: rgba(80,180,140,.7); color: #6fd3a8; }
-  .gbtn.edit:hover { background: rgba(80,180,140,.35); }
-  .gbtn.animate { background: rgba(224,161,58,.2); border-color: rgba(224,161,58,.7); color: #e6b45c; }
-  .gbtn.animate:hover { background: rgba(224,161,58,.35); }
-  /* Destructive: kept narrow and off to the side rather than sharing flex width
-     with ↓/Refine, so it's not an equal-sized target next to the benign ones. */
-  .gbtn.del { flex: 0 0 24px; background: rgba(224,85,85,.15); border-color: rgba(224,85,85,.4); color: #e05555; }
-  .gbtn.del:hover { background: rgba(224,85,85,.35); }
-  .gbtn:disabled { opacity: .5; cursor: default; }
 
   /* ── Utility ── */
   .hidden { display: none !important; }
@@ -957,7 +995,7 @@
   </aside>
 
   <!-- ── Workspace ── -->
-  <div class="workspace">
+  <div class="workspace" id="workspace">
 
     <!-- Mode tabs -->
     <div class="mode-tabs">
@@ -1198,19 +1236,24 @@
     </div>
 
     <!-- Gallery -->
-    <div class="gallery-section">
+    <div class="gallery-section" id="gallery-section">
       <div class="gallery-header" onclick="toggleGallery()">
         <span class="gallery-title">Gallery</span>
         <span class="gallery-count" id="gallery-count">loading…</span>
         <span class="gallery-toggle-icon" id="gallery-icon">▼</span>
       </div>
       <div class="gallery-grid" id="gallery-grid">
-        <div class="inner" id="gallery-inner"></div>
+        <div class="gallery-sizer" id="gallery-sizer">
+          <div class="inner" id="gallery-inner"></div>
+        </div>
       </div>
     </div>
 
   </div><!-- /workspace -->
 </div><!-- /layout -->
+
+<!-- One shared actions menu for every result card and gallery tile. -->
+<div class="item-menu" id="item-menu"></div>
 
 <script>
 // ── Field IDs saved to localStorage ───────────────────────────────────────
@@ -1241,12 +1284,24 @@ let comfyOnline   = false;
 let galleryOpen   = false;
 
 // ── Persistence ────────────────────────────────────────────────────────────
+// Last-loaded snapshot. Kept around because some fields (the checkpoint selects)
+// are populated asynchronously and can't be restored until their options exist.
+let savedState = {};
+
+// Selects whose options arrive over the network. Until they do, their value is the
+// empty placeholder — never let that overwrite a real saved choice.
+const ASYNC_SELECT_IDS = ['g-checkpoint', 'r-checkpoint'];
+
 function saveState() {
   const data = { __mode: currentMode };
   for (const id of PERSIST_IDS) {
     const el = document.getElementById(id);
     if (el) data[id] = el.value;
   }
+  for (const id of ASYNC_SELECT_IDS) {
+    if (!data[id] && savedState[id]) data[id] = savedState[id];
+  }
+  savedState = data;
   localStorage.setItem('studio_v1', JSON.stringify(data));
 }
 
@@ -1254,6 +1309,7 @@ function loadState() {
   let data;
   try { data = JSON.parse(localStorage.getItem('studio_v1') || '{}'); }
   catch(e) { return; }
+  savedState = data;
   for (const id of PERSIST_IDS) {
     if (data[id] !== undefined) {
       const el = document.getElementById(id);
@@ -1404,6 +1460,23 @@ function _fluxConfig(ckpt) {
     : { steps: 20, cfg: 3.5, w: 1024, h: 1024 };
 }
 
+// Labels and negative-prompt visibility follow the checkpoint's architecture, not the
+// user's numbers — safe to run on every boot without clobbering restored settings.
+function applyCheckpointUI(ckpt, prefix) {
+  const flux = _isFlux(ckpt);
+  if (prefix === 'g') {
+    // Relabel CFG ↔ Guidance and toggle negative prompt
+    document.getElementById('g-cfg-label').textContent = flux ? 'Guidance' : 'CFG';
+    document.getElementById('neg-wrap').style.display  = flux ? 'none' : '';
+    document.querySelector('[onclick="toggleNeg()"]').style.display = flux ? 'none' : '';
+  } else if (prefix === 'r') {
+    document.getElementById('r-cfg-label').textContent = flux ? 'Guidance' : 'CFG';
+  }
+}
+
+// Stamps the checkpoint's recommended numbers over the current ones. Only for an explicit
+// model change (or a first visit with nothing saved) — never on a plain reload, or the
+// user's own steps/CFG would be thrown away every time they open the page.
 function applyCheckpointConfig(ckpt, prefix) {
   const flux = _isFlux(ckpt);
   const conf = flux
@@ -1417,15 +1490,11 @@ function applyCheckpointConfig(ckpt, prefix) {
     document.getElementById('g-height').value = conf.h;
     document.getElementById('g-steps').value  = conf.steps;
     document.getElementById('g-cfg').value    = conf.cfg;
-    // Relabel CFG ↔ Guidance and toggle negative prompt
-    document.getElementById('g-cfg-label').textContent = flux ? 'Guidance' : 'CFG';
-    document.getElementById('neg-wrap').style.display  = flux ? 'none' : '';
-    document.querySelector('[onclick="toggleNeg()"]').style.display = flux ? 'none' : '';
   } else if (prefix === 'r') {
     document.getElementById('r-steps').value = conf.steps;
     document.getElementById('r-cfg').value   = conf.cfg;
-    document.getElementById('r-cfg-label').textContent = flux ? 'Guidance' : 'CFG';
   }
+  applyCheckpointUI(ckpt, prefix);
   saveState();
 }
 
@@ -1472,6 +1541,7 @@ function onRefineFile(file) {
 }
 
 function setRefineFromGallery(name, url) {
+  closeGallery();
   refineGallery = { name, url };
   refineFile    = null;
   document.getElementById('refine-thumb').src = url;
@@ -1495,6 +1565,7 @@ function onEditFile(file) {
 }
 
 function setEditFromGallery(name, url) {
+  closeGallery();
   editGallery = { name, url };
   editFile    = null;
   document.getElementById('edit-thumb').src = url;
@@ -1520,6 +1591,7 @@ function onAnimateFile(file) {
 }
 
 function setAnimateFromGallery(name, url) {
+  closeGallery();
   animateGallery = { name, url };
   animateFile    = null;
   document.getElementById('animate-thumb').src = url;
@@ -1548,6 +1620,7 @@ function toggleNeg() {
 
 // ── Generate ───────────────────────────────────────────────────────────────
 async function generate() {
+  closeGallery();
   if (!comfyOnline) { alert('ComfyUI is not running. Start ComfyUI Desktop first.'); return; }
 
   // Edit and Animate are instruction-driven: each takes its prompt from its own box and
@@ -1801,45 +1874,139 @@ function showOutputs(files) {
   const area = document.getElementById('output-area');
 
   for (const name of files) {
-    const url   = '/outputs/' + encodeURIComponent(name);
-    const card  = document.createElement('div');
+    const url     = '/outputs/' + encodeURIComponent(name);
+    const isVideo = /\.(mp4|gif|webm)$/i.test(name);
+
+    const card = document.createElement('div');
     card.className = 'output-card';
     card.dataset.file = name;
 
-    const isVideo  = /\.(mp4|gif|webm)$/i.test(name);
-    const safeName = name.replace(/'/g, "\\'");
-    const safeUrl  = url.replace(/'/g, "\\'");
-    const media = isVideo
-      ? `<video src="${url}" autoplay loop muted playsinline controls></video>`
-      : `<img src="${url}" alt="${name}" loading="lazy" onclick="window.open('${safeUrl}','_blank')">`;;
+    let media;
+    if (isVideo) {
+      media = document.createElement('video');
+      Object.assign(media, { src: url, autoplay: true, loop: true, muted: true,
+                             playsInline: true, controls: true });
+    } else {
+      media = document.createElement('img');
+      media.src = url;
+      media.alt = name;
+      media.loading = 'lazy';
+      media.onclick = () => window.open(url, '_blank');   // replaces the old Open button
+    }
 
-    card.innerHTML = media + `
-      <div class="card-actions">
-        <a class="card-btn" href="${url}" target="_blank">Open</a>
-        <a class="card-btn" href="${url}" download="${name}">Download</a>
-        ${isVideo ? '' : `<button class="card-btn refine-btn" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
-        ${isVideo ? '' : `<button class="card-btn edit-btn" onclick="setEditFromGallery('${safeName}','${safeUrl}')">Edit</button>`}
-        ${isVideo ? '' : `<button class="card-btn animate-btn" onclick="setAnimateFromGallery('${safeName}','${safeUrl}')">Animate</button>`}
-        <button class="card-btn delete-btn" onclick="deleteOutput('${safeName}', this)">Delete</button>
-      </div>`;
+    card.append(media, itemMenuButton(name, url, isVideo));
     area.prepend(card);
   }
 }
+
+// ── Shared item actions menu ───────────────────────────────────────────────
+// One menu serves every result card and gallery tile. Items are built with DOM calls and
+// closures rather than an innerHTML string, so a filename with a quote in it can't break
+// out into the markup — the old inline `onclick="…('${safeName}')"` handlers needed
+// hand-rolled escaping to stay safe.
+let menuAnchorBtn = null;
+
+function closeItemMenu() {
+  document.getElementById('item-menu').classList.remove('open');
+  if (menuAnchorBtn) menuAnchorBtn.classList.remove('open');
+  menuAnchorBtn = null;
+}
+
+function openItemMenu(btn, name, url, isVideo) {
+  closeItemMenu();
+  const menu = document.getElementById('item-menu');
+  menu.replaceChildren();
+
+  const row = (el, icon, label) => {
+    const i = document.createElement('span');
+    i.className = 'mi-icon';
+    i.textContent = icon;
+    el.append(i, document.createTextNode(label));
+    menu.appendChild(el);
+    return el;
+  };
+  const action = (icon, label, fn, cls) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    if (cls) b.className = cls;
+    // Close first: these switch mode or open a confirm, and a menu left hanging over the
+    // controls they just filled in is exactly what the user has to click away.
+    b.onclick = () => { closeItemMenu(); fn(); };
+    return row(b, icon, label);
+  };
+
+  const dl = document.createElement('a');
+  dl.href = url;
+  dl.download = name;
+  dl.onclick = () => closeItemMenu();
+  row(dl, '\u2193', 'Download');
+
+  if (!isVideo) {
+    action('\u270E', 'Refine',  () => setRefineFromGallery(name, url));
+    action('\u2726', 'Edit',    () => setEditFromGallery(name, url));
+    action('\u25B7', 'Animate', () => setAnimateFromGallery(name, url));
+  }
+
+  const sep = document.createElement('div');
+  sep.className = 'sep';
+  menu.appendChild(sep);
+  action('\u2715', 'Delete', () => deleteOutput(name), 'danger');
+
+  // Show before measuring — offsetWidth/Height are 0 while display is none.
+  menu.classList.add('open');
+  btn.classList.add('open');
+  menuAnchorBtn = btn;
+
+  const r = btn.getBoundingClientRect();
+  let left = r.right - menu.offsetWidth;          // right edges aligned
+  let top  = r.bottom + 4;
+  if (top + menu.offsetHeight > innerHeight - 8)  // no room below: flip above the button
+    top = Math.max(8, r.top - menu.offsetHeight - 4);
+  left = Math.max(8, Math.min(left, innerWidth - menu.offsetWidth - 8));
+  menu.style.left = left + 'px';
+  menu.style.top  = top + 'px';
+}
+
+// The "⋯" trigger, shared by tiles and cards.
+function itemMenuButton(name, url, isVideo) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'item-menu-btn';
+  b.textContent = '\u22EF';
+  b.title = 'More actions';
+  b.setAttribute('aria-label', 'More actions for ' + name);
+  b.onclick = e => {
+    // Without this the document handler below would see the click and close the menu we
+    // are about to open; it also keeps the click off the media underneath.
+    e.stopPropagation();
+    if (menuAnchorBtn === b) closeItemMenu();      // same button again: toggle shut
+    else openItemMenu(b, name, url, isVideo);
+  };
+  return b;
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.item-menu')) closeItemMenu();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeItemMenu(); });
+// The menu is position:fixed against a button that scrolls or reflows away underneath it.
+document.getElementById('gallery-grid').addEventListener('scroll', closeItemMenu, { passive: true });
+document.getElementById('output-area').addEventListener('scroll', closeItemMenu, { passive: true });
+window.addEventListener('resize', closeItemMenu);
 
 function setGalleryCount(n) {
   document.getElementById('gallery-count').textContent =
     n + ' image' + (n !== 1 ? 's' : '');
 }
 
-// Shared by the result card and the gallery tile — `btn` is whichever button was
-// clicked, and the file is dropped from BOTH views, since one image can be on
-// screen twice at once.
+// Shared by the result card and the gallery tile — the file is dropped from BOTH views,
+// since one image can be on screen twice at once. `btn` is optional: calls from the "⋯"
+// menu have no lasting button to disable, because the menu closes before this runs.
 async function deleteOutput(name, btn) {
   if (!confirm(`Delete ${name}?\n\nThis removes the file from outputs/ for good — there is no undo.`)) return;
 
-  const label = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '…';
+  const label = btn && btn.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
     const r = await fetch('/outputs/' + encodeURIComponent(name), { method: 'DELETE' });
     if (!r.ok) {
@@ -1851,64 +2018,149 @@ async function deleteOutput(name, btn) {
     document.querySelectorAll('[data-file]').forEach(el => {
       if (el.dataset.file === name) el.remove();
     });
-    // loadGallery() runs at page load, so the tiles are in the DOM even while the
-    // panel is collapsed — counting them here is accurate either way.
-    setGalleryCount(document.querySelectorAll('.gallery-item').length);
+    // The gallery is virtualised, so the DOM holds only the visible rows — `galleryItems`
+    // is the real list, and dropping the file there is what keeps the count, the scroll
+    // height and the off-screen rows honest. Re-render: pulling a tile out shifts every
+    // later one into a new grid slot.
+    galleryItems = galleryItems.filter(it => it.name !== name);
+    setGalleryCount(galleryItems.length);
+    renderGalleryWindow(true);
     // Nothing left in the results column — bring the placeholder back.
     if (!document.getElementById('output-area').querySelector('.output-card, .error-card, .job-status')) {
       document.getElementById('output-placeholder').classList.remove('hidden');
     }
   } catch (e) {
-    btn.disabled = false;
-    btn.textContent = label;
+    if (btn) { btn.disabled = false; btn.textContent = label; }
     showError('Delete failed: ' + e.message);
   }
 }
 
 // ── Gallery ────────────────────────────────────────────────────────────────
+// The full file list lives here, not in the DOM — only the rows currently on screen are
+// ever built as elements, so a few thousand outputs stay as cheap as a few dozen.
+let galleryItems = [];
+let galleryWindowKey = '';   // cols:start:end of the last render, to skip redundant work
+
+function galleryTile(item) {
+  const name    = item.name;
+  const url     = '/outputs/' + encodeURIComponent(name);
+  const isVideo = /\.(mp4|gif|webm)$/i.test(name);
+
+  const div = document.createElement('div');
+  div.className = 'gallery-item';
+  div.dataset.file = name;
+
+  const thumb = document.createElement(isVideo ? 'video' : 'img');
+  thumb.className = 'gthumb';
+  thumb.src   = url;
+  thumb.title = name;
+  if (isVideo) { thumb.muted = true; thumb.preload = 'metadata'; }
+  else         { thumb.alt = name;   thumb.loading = 'lazy'; }
+  thumb.onclick = () => window.open(url, '_blank');
+
+  const label = document.createElement('span');
+  label.className = 'gname';
+  label.textContent = name;
+
+  div.append(thumb, label, itemMenuButton(name, url, isVideo));
+  return div;
+}
+
+// Tile geometry comes from the CSS custom properties so there is one source of truth —
+// restyling the tiles keeps the scroller's row math correct without touching this code.
+function galleryMetrics() {
+  const cs = getComputedStyle(document.documentElement);
+  const num = n => parseFloat(cs.getPropertyValue(n));
+  return { tileW: num('--gtile'), itemH: num('--gitem-h'), gap: num('--ggap') };
+}
+
+const GALLERY_OVERSCAN = 2;   // extra rows above and below, so a fast flick stays filled
+
+function renderGalleryWindow(force) {
+  const grid  = document.getElementById('gallery-grid');
+  const sizer = document.getElementById('gallery-sizer');
+  const inner = document.getElementById('gallery-inner');
+  // clientWidth is 0 while the panel is collapsed — the column count would be nonsense.
+  if (!galleryOpen || !grid.clientWidth) return;
+
+  const n = galleryItems.length;
+  if (!n) {
+    sizer.style.height = '';
+    inner.innerHTML = '<div class="gallery-empty">No outputs yet.</div>';
+    galleryWindowKey = 'empty';
+    return;
+  }
+
+  const { tileW, itemH, gap } = galleryMetrics();
+  const cs    = getComputedStyle(grid);
+  const avail = grid.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const cols  = Math.max(1, Math.floor((avail + gap) / (tileW + gap)));
+  const rows  = Math.ceil(n / cols);
+  const rowH  = itemH + gap;
+
+  // Full scroll height, minus the gap that would trail the last row.
+  sizer.style.height = (rows * rowH - gap) + 'px';
+
+  const firstRow = Math.max(0, Math.floor(grid.scrollTop / rowH) - GALLERY_OVERSCAN);
+  const lastRow  = Math.min(rows - 1,
+    Math.floor((grid.scrollTop + grid.clientHeight) / rowH) + GALLERY_OVERSCAN);
+  const start = firstRow * cols;
+  const end   = Math.min(n, (lastRow + 1) * cols);
+
+  const key = `${cols}:${start}:${end}`;
+  if (key === galleryWindowKey && !force) return;
+  galleryWindowKey = key;
+
+  inner.style.gridTemplateColumns = `repeat(${cols}, ${tileW}px)`;
+  inner.style.transform = `translateY(${firstRow * rowH}px)`;
+
+  const frag = document.createDocumentFragment();
+  for (let i = start; i < end; i++) frag.appendChild(galleryTile(galleryItems[i]));
+  inner.replaceChildren(frag);
+}
+
 async function loadGallery() {
   try {
-    const items = await fetch('/gallery').then(r => r.json());
-    const inner = document.getElementById('gallery-inner');
-    setGalleryCount(items.length);
-
-    inner.innerHTML = '';
-    for (const item of items) {
-      const url     = '/outputs/' + encodeURIComponent(item.name);
-      const isVideo = /\.(mp4|gif|webm)$/i.test(item.name);
-      const safeName = item.name.replace(/'/g, "\\'");
-      const safeUrl  = url.replace(/'/g, "\\'");
-
-      const div = document.createElement('div');
-      div.className = 'gallery-item';
-      div.dataset.file = item.name;
-
-      const thumb = isVideo
-        ? `<video src="${url}" class="gthumb" muted preload="metadata" onclick="window.open('${safeUrl}','_blank')" title="${item.name}"></video>`
-        : `<img src="${url}" class="gthumb" alt="${item.name}" loading="lazy" onclick="window.open('${safeUrl}','_blank')" title="${item.name}">`;
-
-      div.innerHTML = thumb + `
-        <span class="gname">${item.name}</span>
-        <div class="gbtns">
-          <a class="gbtn" href="${url}" download="${item.name}">↓</a>
-          ${isVideo ? '' : `<button class="gbtn refine" onclick="setRefineFromGallery('${safeName}','${safeUrl}')">Refine</button>`}
-          ${isVideo ? '' : `<button class="gbtn edit" onclick="setEditFromGallery('${safeName}','${safeUrl}')">Edit</button>`}
-          ${isVideo ? '' : `<button class="gbtn animate" onclick="setAnimateFromGallery('${safeName}','${safeUrl}')">Animate</button>`}
-          <button class="gbtn del" title="Delete ${item.name}" onclick="deleteOutput('${safeName}', this)">✕</button>
-        </div>`;
-      inner.appendChild(div);
-    }
+    galleryItems = await fetch('/gallery').then(r => r.json());
+    setGalleryCount(galleryItems.length);
+    galleryWindowKey = '';
+    renderGalleryWindow(true);
   } catch(e) {
     console.warn('Gallery load failed:', e);
   }
+}
+
+// Open, the gallery covers the output area — so anything that wants the output area
+// visible again (picking a source, starting a job) closes it first.
+function closeGallery() {
+  if (galleryOpen) toggleGallery();
 }
 
 function toggleGallery() {
   galleryOpen = !galleryOpen;
   document.getElementById('gallery-grid').classList.toggle('open', galleryOpen);
   document.getElementById('gallery-icon').classList.toggle('open', galleryOpen);
-  if (galleryOpen) loadGallery();
+  document.getElementById('gallery-section').classList.toggle('open', galleryOpen);
+  document.getElementById('workspace').classList.toggle('gallery-open', galleryOpen);
+  if (galleryOpen) {
+    galleryWindowKey = '';
+    loadGallery();
+  }
 }
+
+// Scroll drives the window; resize changes the column count, so both re-render. rAF keeps
+// this to one render per frame no matter how fast the events arrive.
+let galleryFrame = 0;
+function scheduleGalleryRender(force) {
+  if (galleryFrame) return;
+  galleryFrame = requestAnimationFrame(() => {
+    galleryFrame = 0;
+    renderGalleryWindow(force);
+  });
+}
+document.getElementById('gallery-grid')
+  .addEventListener('scroll', () => scheduleGalleryRender(false), { passive: true });
+window.addEventListener('resize', () => { galleryWindowKey = ''; scheduleGalleryRender(true); });
 
 // ── ComfyUI status ─────────────────────────────────────────────────────────
 async function checkComfy() {
@@ -1928,9 +2180,10 @@ function ckptLabel(filename) {
 
 async function loadCheckpoints() {
   const IDS = ['g-checkpoint', 'r-checkpoint'];
-  // Remember what was saved so we can restore after repopulating
+  // Prefer the persisted choice — at boot the selects still hold the "Loading…"
+  // placeholder, so loadState() couldn't apply it yet and their value is empty.
   const saved = {};
-  for (const id of IDS) saved[id] = document.getElementById(id).value;
+  for (const id of IDS) saved[id] = savedState[id] || document.getElementById(id).value;
 
   try {
     const { checkpoints, error } = await fetch('/checkpoints').then(r => r.json());
@@ -1957,9 +2210,19 @@ async function loadCheckpoints() {
       sel.innerHTML = '<option value="">ComfyUI offline</option>';
     }
   }
-  // Apply configs for whatever ended up selected
-  applyCheckpointConfig(document.getElementById('g-checkpoint').value, 'g');
-  applyCheckpointConfig(document.getElementById('r-checkpoint').value, 'r');
+  // Whatever ended up selected: keep the user's own numbers if they were restored, and
+  // only fall back to the checkpoint's recommended config on a first visit.
+  for (const [id, prefix, fields] of [
+    ['g-checkpoint', 'g', ['g-width', 'g-height', 'g-steps', 'g-cfg']],
+    ['r-checkpoint', 'r', ['r-steps', 'r-cfg']],
+  ]) {
+    const ckpt = document.getElementById(id).value;
+    if (fields.every(f => savedState[f] !== undefined && savedState[f] !== '')) {
+      applyCheckpointUI(ckpt, prefix);
+    } else {
+      applyCheckpointConfig(ckpt, prefix);
+    }
+  }
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────

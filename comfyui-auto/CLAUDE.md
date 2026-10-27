@@ -16,6 +16,7 @@ reality disagree, that's called out explicitly under [Known broken / stale](#kno
 | **ComfyUI** | Podman container `comfyui` on network `ai-net` | `comfyui:8188` (from inside `ai-net`) |
 | ComfyUI data | bind mounts from `~/Development/ai_ecosystem/ComfyUI/` | `/data/{models,custom_nodes,input,output,user}` |
 | `outputs/` | bind mount from the repo dir | `/app/outputs` |
+| `data/` | bind mount from the repo dir (gitignored) | `/app/data` — `saved-prompts.json` |
 
 ComfyUI is a **container on `ai-net`**, not host networking — `comfyui:8188` only resolves on
 that network, so joining `ai-net` is required, not optional. (`host.containers.internal` was the
@@ -217,6 +218,17 @@ can never grow over the whole rail.
 
 **State** persists to `localStorage` under key `studio_v1` — prompt fields, mode, and
 per-mode generation settings.
+
+**Saved prompts** (the row under the Prompt heading): a picker that loads on selection, **Save**
+(asks for a name — re-using a name overwrites, after a confirm) and **✕** (delete). A saved
+prompt is `SAVED_PROMPT_FIELDS` = the sidebar's `PROMPT_FIELDS` (manual text + nine modifiers)
+plus `neg-prompt` — deliberately **not** the checkpoint, LoRAs or sampler numbers, which belong
+to a mode; reloading a prompt must not swap the model. Loading over a non-empty, different
+sidebar asks first, and a saved dropdown value that no longer exists falls back to `—`.
+They live **server-side** in `data/saved-prompts.json` (atomic write, a lock around
+read-modify-write), not in `localStorage`, so they survive a cleared browser and a container
+rebuild and are the same in every browser. The server bounds sizes (name ≤ 80, value ≤ 4000,
+≤ 40 fields) but leaves which field ids exist to the page.
 
 **Gallery** — collapsed it is just a header strip under the output area. Open, it *takes over the
 display area*: `.gallery-section` gets `flex: 1` and `.output-area` is hidden (via a
@@ -589,6 +601,9 @@ later, 55 s total including decode and mux.
 | GET | `/job/{id}` | `{status, files, message, phase, progress, eta}`; status ∈ pending/running/done/error/not_found |
 | GET | `/checkpoints` | Installed checkpoints as `[{name, base}]`, sorted by name |
 | GET | `/loras` | Sorted LoRA filenames from ComfyUI |
+| GET | `/prompts` | Saved prompts `[{name, fields, saved}]`, newest first |
+| POST | `/prompts` | JSON `{name, fields}` — save, or overwrite by name |
+| DELETE | `/prompts/{name}` | Delete one saved prompt (404 if none) |
 | GET | `/gallery` | All output files, newest first, with mtime + size |
 | GET | `/outputs/{filename}` | Serves one generated file |
 | DELETE | `/outputs/{filename}` | Deletes one generated file (no trash — it's gone) |

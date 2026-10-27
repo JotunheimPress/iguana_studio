@@ -30,7 +30,7 @@ if podman container exists "$CONTAINER"; then
   podman rm -f "$CONTAINER"
 fi
 
-mkdir -p "$SCRIPT_DIR/outputs"
+mkdir -p "$SCRIPT_DIR/outputs" "$SCRIPT_DIR/data"
 
 # Join ai-net: ComfyUI is a container on it now, reached by name at comfyui:8188.
 # Required now, not optional: comfyui:8188 only resolves on this network.
@@ -47,6 +47,7 @@ podman run -d \
   -e COMFY_PORT=8188 \
   -e PORT=7862 \
   -v "$SCRIPT_DIR/outputs:/app/outputs:z" \
+  -v "$SCRIPT_DIR/data:/app/data:z" \
   "$IMAGE"
 
 echo ""

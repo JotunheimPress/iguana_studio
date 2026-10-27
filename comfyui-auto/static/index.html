@@ -173,6 +173,19 @@
   }
   .extra-prompt:focus { border-color: var(--accent); }
 
+  /* saved prompts: a picker + two small buttons under the Prompt heading */
+  .saved-row { display: flex; gap: 6px; margin: 0 0 8px; }
+  .saved-row select {
+    flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); padding: 5px 6px; font-size: 12px;
+  }
+  .saved-row button {
+    font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 0 9px; cursor: pointer;
+  }
+  .saved-row button:hover:not(:disabled) { border-color: var(--accent); }
+  .saved-row button:disabled { opacity: .4; cursor: default; }
+
   /* ── Main workspace ── */
   .workspace {
     flex: 1;
@@ -692,6 +705,11 @@
         <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
           Prompt
           <button onclick="clearPrompt()" style="font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(224,85,85,.15);border:1px solid rgba(224,85,85,.4);color:#e05555;border-radius:4px;padding:2px 8px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(224,85,85,.3)'" onmouseout="this.style.background='rgba(224,85,85,.15)'">Clear</button>
+        </div>
+        <div class="saved-row">
+          <select id="saved-prompts" title="Load a saved prompt"><option value="">Saved prompts…</option></select>
+          <button id="sp-save" onclick="savePrompt()" title="Save the sidebar (text, dropdowns, negative) under a name">Save</button>
+          <button id="sp-del" onclick="deleteSavedPrompt()" title="Delete the selected saved prompt" disabled>✕</button>
         </div>
         <textarea class="extra-prompt" id="f-extra" rows="7" placeholder="Describe the subject — this is the prompt. The dropdowns below only append modifiers."></textarea>
 
@@ -1460,6 +1478,82 @@ const PROMPT_FIELDS = [
   'f-clothing','f-setting','f-lighting','f-style','f-camera',
   'f-pose','f-focus',
 ];
+
+// ── Saved prompts ──────────────────────────────────────────────────────────
+// What a saved prompt holds: the sidebar (text + modifiers) and the negative. Not the
+// checkpoint or sampler numbers — reloading a prompt shouldn't swap the model.
+const SAVED_PROMPT_FIELDS = [...PROMPT_FIELDS, 'neg-prompt'];
+let savedPrompts = [];
+
+function currentPromptFields() {
+  const out = {};
+  for (const id of SAVED_PROMPT_FIELDS) out[id] = document.getElementById(id)?.value || '';
+  return out;
+}
+
+function renderSavedPrompts(select = '') {
+  const sel = document.getElementById('saved-prompts');
+  sel.replaceChildren(new Option(savedPrompts.length ? 'Saved prompts…' : 'No saved prompts yet', ''));
+  for (const p of savedPrompts) sel.add(new Option(p.name, p.name));
+  sel.value = select;
+  document.getElementById('sp-del').disabled = !sel.value;
+}
+
+async function loadSavedPrompts(select = '') {
+  try {
+    savedPrompts = (await fetch('/prompts').then(r => r.json())).prompts || [];
+  } catch (e) { savedPrompts = []; }
+  renderSavedPrompts(select);
+}
+
+function applySavedPrompt(name) {
+  const p = savedPrompts.find(x => x.name === name);
+  if (!p) return;
+  const now = currentPromptFields();
+  const dirty = PROMPT_FIELDS.some(id => now[id]) &&
+                SAVED_PROMPT_FIELDS.some(id => (now[id] || '') !== (p.fields[id] || ''));
+  if (dirty && !confirm(`Replace the current prompt with "${p.name}"?`)) {
+    renderSavedPrompts('');
+    return;
+  }
+  for (const id of SAVED_PROMPT_FIELDS) {
+    const el = document.getElementById(id);
+    // A saved dropdown value that no longer exists falls back to "—" rather than
+    // leaving the select on whatever it showed before.
+    if (el) el.value = p.fields[id] ?? '';
+    if (el && el.tagName === 'SELECT' && el.value !== (p.fields[id] ?? '')) el.value = '';
+  }
+  updatePreview();
+  document.getElementById('sp-del').disabled = false;
+}
+
+async function savePrompt() {
+  const fields = currentPromptFields();
+  if (!PROMPT_FIELDS.some(id => fields[id])) { alert('There is no prompt to save yet.'); return; }
+  const current = document.getElementById('saved-prompts').value;
+  const suggestion = current || fields['f-extra'].split(/[,.\n]/)[0].trim().slice(0, 50);
+  const name = (prompt('Save this prompt as:', suggestion) || '').trim();
+  if (!name) return;
+  if (name !== current && savedPrompts.some(p => p.name === name) &&
+      !confirm(`A saved prompt called "${name}" already exists. Overwrite it?`)) return;
+  const r = await fetch('/prompts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ name, fields }) });
+  if (!r.ok) { alert('Could not save: ' + ((await r.json().catch(() => ({}))).detail || r.status)); return; }
+  await loadSavedPrompts(name);
+}
+
+async function deleteSavedPrompt() {
+  const name = document.getElementById('saved-prompts').value;
+  if (!name || !confirm(`Delete the saved prompt "${name}"? The current text stays as it is.`)) return;
+  const r = await fetch('/prompts/' + encodeURIComponent(name), { method: 'DELETE' });
+  if (!r.ok && r.status !== 404) { alert('Could not delete: ' + r.status); return; }
+  await loadSavedPrompts('');
+}
+
+document.getElementById('saved-prompts').addEventListener('change', e => {
+  if (e.target.value) applySavedPrompt(e.target.value);
+  else document.getElementById('sp-del').disabled = true;
+});
 
 function clearPrompt() {
   for (const id of PROMPT_FIELDS) {
@@ -2493,6 +2587,7 @@ checkComfy();
 setInterval(checkComfy, 10000);
 loadCheckpoints();
 loadLoras();
+loadSavedPrompts();
 loadGallery();
 </script>
 </body>

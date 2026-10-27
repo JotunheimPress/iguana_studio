@@ -25,9 +25,14 @@ BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 TEMP_DIR   = BASE_DIR / "temp"
 STATIC_DIR = BASE_DIR / "static"
+# Durable app data (bind-mounted like outputs/, so it survives a rebuild). Not outputs/:
+# that folder is the gallery, and a settings file has no business sitting in it.
+DATA_DIR   = BASE_DIR / "data"
+PROMPTS_FILE = DATA_DIR / "saved-prompts.json"
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(exist_ok=True)
 
 # What counts as a generated file — shared by /gallery and the delete endpoint so
 # the two can't disagree about what's listable vs. deletable.
@@ -392,6 +397,74 @@ def delete_output(filename: str):
 
 
 # ── entry point ──────────────────────────────────────────────────────────────
+
+
+# ── saved prompts ────────────────────────────────────────────────────────────
+# A saved prompt is the sidebar: the manual text, the modifier dropdowns, and the
+# negative prompt — keyed by a name the user picks. Not the checkpoint, LoRAs or
+# sampler numbers: those belong to a mode, and reloading a prompt shouldn't silently
+# swap the model out from under it. Stored server-side rather than in localStorage so
+# they outlive a cleared browser and are the same in every browser.
+# The page decides which field ids exist; the server only bounds sizes and shapes.
+_prompts_lock = threading.Lock()
+PROMPT_NAME_MAX = 80
+PROMPT_FIELD_MAX = 4000
+PROMPT_FIELDS_MAX = 40
+
+
+def _read_prompts() -> list[dict]:
+    try:
+        data = json.loads(PROMPTS_FILE.read_text())
+        return data if isinstance(data, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def _write_prompts(items: list[dict]) -> None:
+    # Atomic: a torn write would lose every saved prompt, not just the new one.
+    tmp = PROMPTS_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(items, indent=1))
+    tmp.replace(PROMPTS_FILE)
+
+
+@app.get("/prompts")
+def list_prompts():
+    """Saved prompts, most recently saved first."""
+    return {"prompts": sorted(_read_prompts(), key=lambda p: p.get("saved", 0), reverse=True)}
+
+
+@app.post("/prompts")
+def save_prompt(body: dict):
+    """Save (or overwrite, by name) one prompt: {name, fields: {id: value}}."""
+    name = str(body.get("name") or "").strip()
+    fields = body.get("fields")
+    if not name or len(name) > PROMPT_NAME_MAX:
+        raise HTTPException(status_code=400, detail=f"A name is required (up to {PROMPT_NAME_MAX} characters).")
+    if not isinstance(fields, dict) or len(fields) > PROMPT_FIELDS_MAX:
+        raise HTTPException(status_code=400, detail="fields must be an object of field id → value.")
+    clean = {}
+    for k, v in fields.items():
+        if not isinstance(k, str) or not isinstance(v, str) or len(k) > 40 or len(v) > PROMPT_FIELD_MAX:
+            raise HTTPException(status_code=400, detail=f"Bad field: {str(k)[:40]!r}")
+        clean[k] = v
+    entry = {"name": name, "fields": clean, "saved": time.time()}
+    with _prompts_lock:
+        items = [p for p in _read_prompts() if p.get("name") != name]
+        items.append(entry)
+        _write_prompts(items)
+    return {"ok": True, "prompt": entry}
+
+
+@app.delete("/prompts/{name}")
+def delete_prompt(name: str):
+    with _prompts_lock:
+        items = _read_prompts()
+        kept = [p for p in items if p.get("name") != name]
+        if len(kept) == len(items):
+            raise HTTPException(status_code=404, detail="No saved prompt by that name.")
+        _write_prompts(kept)
+    return {"ok": True}
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "7862"))

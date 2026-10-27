@@ -91,7 +91,7 @@ comfyui-auto/
 │   ├── photomaker.py    # person from reference photos  ← see Known broken
 │   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
 │   └── video.py         # WAN 2.2 image→video + text→video
-├── outputs/             # generated files (volume-mounted, gitignored)
+├── outputs/             # generated files (volume-mounted, gitignored); .thumbs/ = gallery WebPs
 ├── data/                # saved-prompts.json (volume-mounted, gitignored)
 ├── temp/                # uploads (up-<hex>.png), deleted after each job / swept after 1 h
 ├── Containerfile        # python:3.13-slim amd64 + wapyt wheel stages, HEALTHCHECK /api/health
@@ -133,6 +133,16 @@ What changed on purpose (details in `PYTINCTURE_PLAN.md`):
 - **The item menu is built from escaped `data-` attributes** read by delegated listeners (no
   inline handlers, no closures over names) — still no way for a quote in a filename to break out.
 - wapyt's layout chrome is overridden (`.wapyt-layout`, `.wapyt-cell`) to keep Iguana's look.
+
+**Gallery thumbnails** (`server.thumb_path` / `get_thumb` / `warm_thumbs`): tiles load a 280 px
+WebP (short side, for the 140 px cover-cropped tile; ~7.5 KB vs a ~1.1 MB PNG), made on first
+request and cached in `outputs/.thumbs/` (hidden from the gallery listing; survives rebuilds;
+rebuilt when the source is newer; deleted with it). `warm_thumbs()` runs once in the background
+at start and for each job's outputs as it finishes, because on-demand is ~126 ms each and a
+first fling through 2,000 uncached tiles queued 1,400 of them behind the ones in view.
+Measured at 2,000 tiles: scroll p95 **16.7 ms, 0 frames > 50 ms** (full PNGs: 66.6 ms, 30), and
+in-view tiles painted 0.1 s after scrolling stops. Videos keep `<video preload=metadata>` (no
+ffmpeg in the image). Clicking a tile still opens the full image.
 
 Traps: BFF modules are re-executed per call (state lives in `services/*`); a `js.window.__x`
 inside a class is name-mangled by Python; `float("140px")` fails where JS `parseFloat` works
@@ -673,6 +683,7 @@ Plain HTTP (everything else is BFF — `/iguana/bff-docs` lists those):
 | GET | `/api/health` | `{"ok": true}` — `stack status`, the container HEALTHCHECK |
 | POST | `/upload` | Multipart `files` → `{"ids": [...]}` in `temp/`; ≤ 40 MB each, images only |
 | GET | `/outputs/{filename}` | Serves one generated file |
+| GET | `/thumbs/{filename}?v=<mtime>` | Gallery tile: 280 px WebP of an output image, cached in `outputs/.thumbs/`; immutable-cacheable with `v` |
 | GET | `/debug/nodes` | Every node class ComfyUI knows — useful for the breakage above |
 | POST | `/debug/workflow` | Dry-run a graph and return the JSON without queueing |
 

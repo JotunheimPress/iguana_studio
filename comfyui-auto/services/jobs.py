@@ -101,6 +101,9 @@ def _run(
         paths = client.run_workflow(workflow, save_dir=OUTPUT_DIR, timeout=timeout,
                                     on_progress=on_progress)
         JOBS[job_id].update(status="done", files=[p.name for p in paths])
+        # The gallery's tiles for these, made now rather than on first view (server.warm_thumbs).
+        import server
+        server.warm_thumbs([p.name for p in paths])
     except Exception as e:
         JOBS[job_id].update(status="error", message=str(e))
     finally:

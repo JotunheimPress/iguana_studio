@@ -258,12 +258,16 @@ class GalleryView:
         self.key = key
         inner.style.gridTemplateColumns = f"repeat({cols}, {tile}px)"
         inner.style.transform = f"translateY({first * row_h}px)"
-        inner.innerHTML = "".join(self._tile(it["name"]) for it in self.items[start:end])
+        inner.innerHTML = "".join(self._tile(it) for it in self.items[start:end])
 
-    def _tile(self, name: str) -> str:
+    def _tile(self, item: dict) -> str:
+        name = item["name"]
         url = esc(out_url(name))
+        # Images load a small cached WebP (server.get_thumb); ?v=mtime makes it cacheable for
+        # good and changes when the file does. Clicking still opens the full image.
+        thumb = esc(f"/thumbs/{js.encodeURIComponent(name)}?v={int(item.get('mtime') or 0)}")
         media = (f'<video class="gthumb" src="{url}" data-url="{url}" muted preload="metadata" title="{esc(name)}"></video>'
                  if is_video(name) else
-                 f'<img class="gthumb" src="{url}" data-url="{url}" alt="{esc(name)}" title="{esc(name)}" loading="lazy">')
+                 f'<img class="gthumb" src="{thumb}" data-url="{url}" alt="{esc(name)}" title="{esc(name)}" loading="lazy" decoding="async">')
         return (f'<div class="gallery-item" data-file="{esc(name)}">{media}'
                 f'<span class="gname">{esc(name)}</span>{menu_button(name)}</div>')

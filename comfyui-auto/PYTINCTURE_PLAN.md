@@ -340,8 +340,11 @@ settings and saved prompts from the classic page are still there.
 
 ## Follow-ups (not in this migration)
 
-- **Gallery thumbnails** — a cached small WebP/JPEG per output. Phase 4 showed the scroll
-  stutter at 2,000 items is full-size PNG decoding on both the old and new page, not the grid.
+- ✅ **Gallery thumbnails** (done 2026-10-27) — `GET /thumbs/{f}?v=<mtime>`: a 280 px WebP per
+  output image (~7.5 KB vs ~1.1 MB), cached in `outputs/.thumbs/`, warmed at start and after each
+  job. 2,000 tiles: scroll p95 66.6 → **16.7 ms**, frames > 50 ms 30 → **0**; in-view tiles
+  painted 0.1 s after scrolling stops (warm). Cold-only caveat: flinging through thousands of
+  never-seen files queues their generation (~126 ms each) — which the warming makes rare.
 - **PhotoMaker likeness** is weak on SDXL base with one reference (Phase 3) — more varied
   references or a stronger base; a model question, not a GUI one.
 - **LAN access** (Phase 6 in the table above) only behind auth + TLS, if ever wanted.

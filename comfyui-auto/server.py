@@ -129,6 +129,95 @@ def gallery():
     return files
 
 
+# ── gallery thumbnails ─────────────────────────────────────────────────────────
+# Gallery tiles are 140 px; the outputs are 1024 px+ PNGs. Decoding those to draw tiles was
+# the whole cost of the gallery's scroll stutter (PYTINCTURE_PLAN.md Phase 4: with image
+# loads blocked both pages held 60 fps). So tiles load a small WebP, made on first request
+# and cached next to the originals in outputs/.thumbs/ (hidden; gallery() lists files with a
+# media suffix only). It survives rebuilds because outputs/ is a volume. Rebuilt when the
+# source is newer; deleted with it. Videos keep their <video preload=metadata> tiles — the
+# image has no ffmpeg, and those only fetch metadata anyway.
+THUMB_DIR = OUTPUT_DIR / ".thumbs"
+THUMB_PX = 280                  # short side: sharp at 2x on a 140 px cover-cropped tile
+THUMB_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+
+
+def _thumb_file(src: Path) -> Path:
+    return THUMB_DIR / (src.name + ".webp")
+
+
+def thumb_path(filename: str) -> Path | None:
+    """The cached thumbnail for an output image, made if missing or stale; None if the name
+    isn't an image in outputs/. Raises if the image can't be decoded."""
+    src = OUTPUT_DIR / Path(filename).name
+    if src.suffix.lower() not in THUMB_SUFFIXES or not src.is_file():
+        return None
+    dst = _thumb_file(src)
+    try:
+        if dst.stat().st_mtime >= src.stat().st_mtime:
+            return dst
+    except OSError:
+        pass                                            # not made yet
+    from PIL import Image
+
+    THUMB_DIR.mkdir(exist_ok=True)
+    with Image.open(src) as im:
+        im.draft("RGB", (THUMB_PX, THUMB_PX))           # JPEG: decode at reduced size
+        im = im.convert("RGBA" if "A" in im.getbands() else "RGB")
+        scale = THUMB_PX / min(im.size)
+        if scale < 1:                                   # cover: the SHORT side is THUMB_PX
+            im = im.resize((max(1, round(im.width * scale)), max(1, round(im.height * scale))),
+                           Image.LANCZOS)
+        # Atomic: two tiles asking at once each write their own temp file, last rename wins.
+        tmp = dst.with_name(f"{dst.name}.{threading.get_ident()}.tmp")
+        im.save(tmp, "WEBP", quality=80, method=4)
+    tmp.replace(dst)
+    return dst
+
+
+def warm_thumbs(names=None) -> int:
+    """Make any missing/stale thumbnails — for `names`, or every output newest first.
+    Made on demand otherwise, which is 100+ ms each: a first fling through a big uncached
+    gallery queued 1,400 of them behind the tiles actually in view. Warming means that path
+    is rare: service.py runs this once in the background at start, and jobs.py runs it for
+    each new output as its job finishes. Never raises."""
+    if names is None:
+        try:
+            names = [f["name"] for f in gallery()]
+        except OSError:
+            return 0
+    made = 0
+    for name in names:
+        try:
+            src = OUTPUT_DIR / Path(name).name
+            dst = _thumb_file(src)
+            if src.suffix.lower() in THUMB_SUFFIXES and (
+                    not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime):
+                thumb_path(name)
+                made += 1
+        except Exception:  # noqa: BLE001 - one bad file must not stop the rest
+            pass
+    return made
+
+
+@app.get("/thumbs/{filename}")
+def get_thumb(filename: str, v: str = ""):
+    """A gallery tile's image. With ?v=<mtime> (what the gallery sends) it is cacheable for
+    good — a changed file gets a new v. A file Pillow can't read falls back to the original."""
+    try:
+        path = thumb_path(filename)
+    except Exception:  # noqa: BLE001 - corrupt/odd image: the tile still shows something
+        path = OUTPUT_DIR / Path(filename).name
+        if not path.is_file():
+            path = None
+        else:
+            return FileResponse(path)
+    if path is None:
+        raise HTTPException(status_code=404, detail="No such image")
+    return FileResponse(path, media_type="image/webp", headers={
+        "Cache-Control": "public, max-age=31536000, immutable" if v else "no-cache"})
+
+
 @app.get("/outputs/{filename}")
 def get_output(filename: str):
     # Prevent path traversal — only serve files directly in outputs/
@@ -152,6 +241,7 @@ def delete_output(filename: str):
         path.unlink()
     except OSError as e:
         raise HTTPException(status_code=500, detail=f"Could not delete: {e}")
+    _thumb_file(path).unlink(missing_ok=True)           # its gallery thumbnail goes too
     return {"deleted": path.name}
 
 

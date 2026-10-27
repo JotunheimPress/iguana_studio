@@ -6,3 +6,5 @@ fastapi>=0.110.0
 python-multipart>=0.0.9
 requests>=2.31.0
 websocket-client>=1.7.0
+# Gallery thumbnails (server.thumb_path): WebP from the outputs.
+pillow>=10.0

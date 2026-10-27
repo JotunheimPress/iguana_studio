@@ -140,6 +140,11 @@ def build_app():
 
 app = build_app()
 
+# Fill in any missing gallery thumbnails once, in the background (server.warm_thumbs).
+import threading  # noqa: E402
+
+threading.Thread(target=classic.warm_thumbs, name="warm-thumbs", daemon=True).start()
+
 
 if __name__ == "__main__":
     import uvicorn

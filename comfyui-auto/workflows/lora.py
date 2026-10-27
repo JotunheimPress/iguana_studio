@@ -14,10 +14,10 @@ what makes one function cover text2img, img2img, photomaker and both FLUX builde
 
 The VAE edge, `[ckpt, 2]`, is deliberately left alone: LoRAs do not patch the VAE.
 
-Only checkpoint-based graphs are supported. Kontext and video load their UNet through
-`UnetLoaderGGUF` / `UNETLoader` with the text encoder coming from a separate node, so
-they have no single MODEL+CLIP source to splice into and would need `LoraLoaderModelOnly`
-wired by hand.
+Split graphs work too when the caller names the CLIP source: the GGUF FLUX path loads
+MODEL from `UnetLoaderGGUF` and CLIP from a `DualCLIPLoader`, and a `LoraLoader` happily
+takes its two inputs from two different nodes. `apply(..., clip_ref=["1c", 0])` covers
+that. Kontext and video still don't take LoRAs — nothing here wires them.
 """
 
 # Node ids are strings in the ComfyUI API format, and builders use plain numerals ("1",
@@ -46,23 +46,30 @@ def normalise(loras) -> list[dict]:
     return out
 
 
-def apply(workflow: dict, loras, ckpt_node: str = "1") -> dict:
-    """Splice a LoRA chain into `workflow` between `ckpt_node` and its consumers.
+_SPLIT_LOADERS = ("UnetLoaderGGUF", "UNETLoader")
 
+
+def apply(workflow: dict, loras, ckpt_node: str = "1", clip_ref: list | None = None) -> dict:
+    """Splice a LoRA chain into `workflow` between the model/CLIP sources and their consumers.
+
+    `ckpt_node` supplies MODEL at slot 0. CLIP comes from slot 1 of the same node for a
+    checkpoint, or from `clip_ref` (e.g. `["1c", 0]`) when the model was loaded split.
     Mutates and returns the workflow. A falsy or all-empty `loras` is a no-op, so callers
     can pass it through unconditionally.
     """
     loras = normalise(loras)
     if not loras:
         return workflow
-    if workflow.get(ckpt_node, {}).get("class_type") != "CheckpointLoaderSimple":
+    cls = workflow.get(ckpt_node, {}).get("class_type")
+    if clip_ref is None and cls != "CheckpointLoaderSimple":
         raise ValueError(
-            f"LoRAs need a CheckpointLoaderSimple at node {ckpt_node!r}; "
-            f"found {workflow.get(ckpt_node, {}).get('class_type')!r}"
-        )
+            f"LoRAs need a CheckpointLoaderSimple at node {ckpt_node!r}; found {cls!r}")
+    if clip_ref is not None and cls not in _SPLIT_LOADERS + ("CheckpointLoaderSimple",):
+        raise ValueError(f"LoRAs can't attach to a {cls!r} at node {ckpt_node!r}")
 
     model_src = [ckpt_node, 0]
-    clip_src = [ckpt_node, 1]
+    clip_src = list(clip_ref) if clip_ref is not None else [ckpt_node, 1]
+    orig_clip = list(clip_src)
     chain = {}
     for i, lora in enumerate(loras):
         node_id = _ID.format(i)
@@ -85,11 +92,12 @@ def apply(workflow: dict, loras, ckpt_node: str = "1") -> dict:
     # checkpoint. Slot 2 (VAE) is skipped: LoRAs do not touch it.
     for node in workflow.values():
         for key, value in node.get("inputs", {}).items():
-            if isinstance(value, list) and len(value) == 2 and value[0] == ckpt_node:
-                if value[1] == 0:
-                    node["inputs"][key] = list(model_src)
-                elif value[1] == 1:
-                    node["inputs"][key] = list(clip_src)
+            if not (isinstance(value, list) and len(value) == 2):
+                continue
+            if value == [ckpt_node, 0]:
+                node["inputs"][key] = list(model_src)
+            elif value == orig_clip:
+                node["inputs"][key] = list(clip_src)
 
     workflow.update(chain)
     return workflow

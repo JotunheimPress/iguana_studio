@@ -255,7 +255,8 @@ removing a tile shifts every later one into a new grid slot.
 **Checkpoint dropdown** is populated live from `/checkpoints`, which proxies ComfyUI's
 `object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()` and
 grouped into one `<optgroup>` per base (FLUX / SDXL / SD 1.5, `BASE_ORDER`). A base with nothing
-installed is skipped rather than rendered empty, which is why there is no FLUX heading today.
+installed is skipped rather than rendered empty. FLUX GGUFs from `object_info/UnetLoaderGGUF`
+are appended to the same list (base `FLUX`, Kontext excluded) — see FLUX below.
 
 Because that list arrives *after* `loadState()` runs, the checkpoint selects need care that the
 other fields don't — they hold only a `Loading…` placeholder when state is restored, so
@@ -287,7 +288,9 @@ Every checkpoint-based builder publishes the same two edges — `["1", 0]` for M
 for CLIP — so `lora.apply()` chains `LoraLoader` nodes off the checkpoint and repoints those
 edges at the end of the chain. One function therefore covers `text2img`, `img2img`, `photomaker`
 and both FLUX builders, including FLUX's `ModelSamplingFlux`, which sits between the checkpoint
-and the sampler and is rewired like any other MODEL consumer.
+and the sampler and is rewired like any other MODEL consumer. **Split graphs** (the GGUF FLUX
+path: MODEL from `UnetLoaderGGUF` at `"1"`, CLIP from `DualCLIPLoader` at `"1c"`) pass
+`clip_ref=["1c", 0]`; a `LoraLoader` takes its two inputs from two nodes just fine.
 
 Two invariants that must survive any change here:
 
@@ -340,10 +343,16 @@ Live list from ComfyUI (10). "Kind" is what `workflows/defaults.py` infers from 
 | `secuanceDreamDeliberate_v125Main.safetensors` | SD 1.5 | 512², 25 steps, cfg 7 |
 | `v1-5-pruned-emaonly-fp16.safetensors` | SD 1.5 | 512², 20 steps, cfg 7 |
 
-**No FLUX checkpoint is installed.** `flux.py` is complete and wired in, but only activates when
-a checkpoint filename contains `flux`, so it is currently dead code. Drop a FLUX merged
-checkpoint into `models/checkpoints/` and it lights up automatically (schnell → 4 steps /
-guidance 1.0; dev → 20 steps / guidance 3.5, detected by `schnell` in the name).
+**FLUX text-to-image runs from a GGUF** (since 2026-10-27): `flux1-schnell-Q4_K_S.gguf`
+(6.8 GB, `city96/FLUX.1-schnell-gguf`, Apache 2.0) in `models/unet/`. `flux.py` picks the
+loader by filename: a `.gguf` loads split — `UnetLoaderGGUF` + `DualCLIPLoader`
+(`clip_l` + `t5xxl_fp8_e4m3fn_scaled`, type `flux`) + `VAELoader` (`ae`), the same support
+files as Kontext — and anything else as an all-in-one checkpoint via
+`CheckpointLoaderSimple`. Both Generate and Refine take it, LoRAs included. Why GGUF: an fp8
+all-in-one is ~12 GB of diffusion weights alone, the whole card. Measured with KoboldCPP
+still loaded (9.5 GB): 1024² text2img in **24 s**, Refine in **16 s**, no OOM. Settings
+come from the name (schnell → 4 steps / guidance 1.0; dev → 20 / 3.5). A dev GGUF works
+the same way, but the dev repo is gated (`HF_TOKEN`) and non-commercial.
 
 **Model-type detection has one home: `workflows/defaults.py`.** `is_flux()` / `is_sdxl()` (the
 `_SDXL_NAMES` keyword set) classify a filename, `base_of()` turns that into `"FLUX"` / `"SDXL"` /

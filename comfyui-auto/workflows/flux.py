@@ -11,6 +11,15 @@ Differences from SD/SDXL:
 
 FLUX.1-dev:   guidance=3.5, steps=20
 FLUX.1-schnell: guidance=1.0, steps=4  (distilled, much faster)
+
+Two ways to load the model, chosen by the filename:
+  - an all-in-one checkpoint (models/checkpoints) → CheckpointLoaderSimple, which hands
+    out MODEL, CLIP and VAE from one file;
+  - a GGUF diffusion model (models/unet, e.g. city96's flux1-schnell-Q4_K_S.gguf) →
+    UnetLoaderGGUF + DualCLIPLoader (clip_l + t5xxl) + VAELoader (ae). This is the one that
+    fits a 12 GB card: an fp8 all-in-one is ~12 GB of diffusion weights on its own. Needs
+    the ComfyUI-GGUF custom node and the same three support files Kontext uses.
+Both keep node "1" as the MODEL source, so the rest of each graph is identical.
 """
 
 import random
@@ -18,6 +27,35 @@ import random
 from workflows import lora as lora_chain
 
 DEFAULT_CHECKPOINT = "flux1-dev.safetensors"
+
+# Support files for the split (GGUF) path — the same ones Kontext loads.
+CLIP_L = "clip_l.safetensors"
+T5 = "t5xxl_fp8_e4m3fn_scaled.safetensors"
+VAE = "ae.safetensors"
+
+
+def is_gguf(checkpoint: str) -> bool:
+    return checkpoint.lower().endswith(".gguf")
+
+
+def _loaders(checkpoint: str) -> tuple[dict, list, list, list]:
+    """Loader nodes plus the (model, clip, vae) edges the rest of the graph wires to."""
+    if is_gguf(checkpoint):
+        nodes = {
+            "1": {"class_type": "UnetLoaderGGUF", "inputs": {"unet_name": checkpoint}},
+            "1c": {"class_type": "DualCLIPLoader",
+                   "inputs": {"clip_name1": CLIP_L, "clip_name2": T5, "type": "flux"}},
+            "1v": {"class_type": "VAELoader", "inputs": {"vae_name": VAE}},
+        }
+        return nodes, ["1", 0], ["1c", 0], ["1v", 0]
+    nodes = {"1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": checkpoint}}}
+    return nodes, ["1", 0], ["1", 1], ["1", 2]
+
+
+def _apply_loras(workflow: dict, checkpoint: str, loras) -> dict:
+    if is_gguf(checkpoint):
+        return lora_chain.apply(workflow, loras, ckpt_node="1", clip_ref=["1c", 0])
+    return lora_chain.apply(workflow, loras)
 
 
 def _is_schnell(checkpoint: str) -> bool:
@@ -52,16 +90,14 @@ def build(
         steps = defs["steps"]
     guidance = defs["guidance"] if cfg == -1 else float(cfg)
 
+    loaders, _model, clip, vae = _loaders(checkpoint)
     workflow = {
-        "1": {
-            "class_type": "CheckpointLoaderSimple",
-            "inputs": {"ckpt_name": checkpoint},
-        },
+        **loaders,
         # FLUX positive conditioning — guidance baked in here
         "2": {
             "class_type": "CLIPTextEncodeFlux",
             "inputs": {
-                "clip":     ["1", 1],
+                "clip":     clip,
                 "clip_l":   prompt,
                 "t5xxl":    prompt,
                 "guidance": guidance,
@@ -70,7 +106,7 @@ def build(
         # Empty negative — required by KSampler, but FLUX doesn't use it
         "3": {
             "class_type": "CLIPTextEncode",
-            "inputs": {"text": "", "clip": ["1", 1]},
+            "inputs": {"text": "", "clip": clip},
         },
         # 16-channel latent (SD3/FLUX format)
         "4": {
@@ -105,14 +141,14 @@ def build(
         },
         "7": {
             "class_type": "VAEDecode",
-            "inputs": {"samples": ["6", 0], "vae": ["1", 2]},
+            "inputs": {"samples": ["6", 0], "vae": vae},
         },
         "8": {
             "class_type": "SaveImage",
             "inputs": {"filename_prefix": filename_prefix, "images": ["7", 0]},
         },
     }
-    return lora_chain.apply(workflow, loras)
+    return _apply_loras(workflow, checkpoint, loras)
 
 
 def build_img2img(
@@ -141,15 +177,13 @@ def build_img2img(
 
     server_image = upload_image(image_path)
 
+    loaders, _model, clip, vae = _loaders(checkpoint)
     workflow = {
-        "1": {
-            "class_type": "CheckpointLoaderSimple",
-            "inputs": {"ckpt_name": checkpoint},
-        },
+        **loaders,
         "2": {
             "class_type": "CLIPTextEncodeFlux",
             "inputs": {
-                "clip":     ["1", 1],
+                "clip":     clip,
                 "clip_l":   prompt,
                 "t5xxl":    prompt,
                 "guidance": guidance,
@@ -157,7 +191,7 @@ def build_img2img(
         },
         "3": {
             "class_type": "CLIPTextEncode",
-            "inputs": {"text": "", "clip": ["1", 1]},
+            "inputs": {"text": "", "clip": clip},
         },
         "4": {
             "class_type": "LoadImage",
@@ -165,7 +199,7 @@ def build_img2img(
         },
         "5": {
             "class_type": "VAEEncode",
-            "inputs": {"pixels": ["4", 0], "vae": ["1", 2]},
+            "inputs": {"pixels": ["4", 0], "vae": vae},
         },
         "6": {
             "class_type": "ModelSamplingFlux",
@@ -194,11 +228,11 @@ def build_img2img(
         },
         "8": {
             "class_type": "VAEDecode",
-            "inputs": {"samples": ["7", 0], "vae": ["1", 2]},
+            "inputs": {"samples": ["7", 0], "vae": vae},
         },
         "9": {
             "class_type": "SaveImage",
             "inputs": {"filename_prefix": filename_prefix, "images": ["8", 0]},
         },
     }
-    return lora_chain.apply(workflow, loras)
+    return _apply_loras(workflow, checkpoint, loras)

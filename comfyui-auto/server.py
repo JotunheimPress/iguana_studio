@@ -288,9 +288,22 @@ def list_checkpoints():
         r = req.get(f"{client.COMFY_URL}/object_info/CheckpointLoaderSimple", timeout=5)
         r.raise_for_status()
         names = r.json()["CheckpointLoaderSimple"]["input"]["required"]["ckpt_name"][0]
-        return {"checkpoints": [{"name": n, "base": base_of(n)} for n in sorted(names)]}
+        out = [{"name": n, "base": base_of(n)} for n in names]
     except Exception as e:
         return {"checkpoints": [], "error": str(e)}
+    # GGUF FLUX diffusion models (models/unet) are pickable too: workflows/flux.py loads
+    # a .gguf split, with the shared clip_l/t5xxl/ae files. Kontext is an edit model —
+    # it lives in Edit mode, not in the text-to-image picker. Best-effort: no ComfyUI-GGUF
+    # node simply means no GGUF entries.
+    try:
+        r = req.get(f"{client.COMFY_URL}/object_info/UnetLoaderGGUF", timeout=5)
+        r.raise_for_status()
+        ggufs = r.json()["UnetLoaderGGUF"]["input"]["required"]["unet_name"][0]
+        out += [{"name": n, "base": "FLUX"} for n in ggufs
+                if base_of(n) == "FLUX" and "kontext" not in n.lower()]
+    except Exception:
+        pass
+    return {"checkpoints": sorted(out, key=lambda c: c["name"].lower())}
 
 
 @app.get("/loras")

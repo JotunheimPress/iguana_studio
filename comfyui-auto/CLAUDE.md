@@ -1,9 +1,16 @@
 # Iguana Studio (comfyui-auto) — Project Context
 
 ## What this is
-A Python toolkit + single-page web GUI that drives ComfyUI over its HTTP API.
-No clicking around in ComfyUI's node editor — you write a prompt, the GUI submits a generated
-workflow graph, polls for the result, and saves it.
+A Python toolkit + web GUI that drives ComfyUI over its HTTP API. No clicking around in
+ComfyUI's node editor — you write a prompt, the GUI submits a generated workflow graph,
+follows its progress, and saves the result.
+
+**The GUI is a pytincture + wapyt page since 2026-10-27** (Python in the browser, like
+Pantheon and the AI Ecosystem dashboard). It replaced the 2,594-line `static/index.html` in a
+phased, behaviour-for-behaviour port — plan, measurements and decision log in
+**`PYTINCTURE_PLAN.md`**. Much of the GUI write-up below predates the port and still names the
+old JavaScript functions; the behaviour is the same, and
+[The pytincture page](#the-pytincture-page) maps each old name to its new home.
 
 Facts below were verified against the running stack on **2026-08-10**. Where the code and
 reality disagree, that's called out explicitly under [Known broken / stale](#known-broken--stale).
@@ -32,12 +39,19 @@ stack iguana                 # build on first run, then start on :7862
 # open http://localhost:7862 · logs: podman logs -f iguana · stop: stack down iguana
 ```
 
-**Host dev (venv)** — for the CLI, or to iterate without rebuilding the image:
+**Host dev (`.venv`, Python 3.13)** — iterate without rebuilding the image. 7862 is the
+container's, so use another port; ComfyUI is reached on the host's published 8188:
 ```bash
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-PORT=7862 venv/bin/python server.py        # GUI → http://localhost:7862
-venv/bin/python run.py text2img "a cat"    # CLI (see caveats below)
+uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt pytest \
+    ~/Development/Pytinc/wa_pytincture_widgetset
+PYTHON=$PWD/.venv/bin/python ~/Development/Pytinc/wa_pytincture_widgetset/scripts/dev_wheel.sh appcode
+COMFY_HOST=localhost PORT=7872 .venv/bin/python service.py      # → http://127.0.0.1:7872/
+.venv/bin/python -m pytest -q tests                             # prompt golden test (no browser)
+IGUANA_URL=http://127.0.0.1:7872 CHROME=~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome \
+  [SMOKE_GENERATE=1] uv run --with playwright python tests/smoke.py   # every mode, 0 console errors
+.venv/bin/python run.py text2img "a cat"                        # CLI (see caveats below)
 ```
+The old `venv/` (Python 3.12) only ran the classic page and can be deleted.
 
 ### Environment variables
 | Var | Default (container) | Purpose |
@@ -45,6 +59,8 @@ venv/bin/python run.py text2img "a cat"    # CLI (see caveats below)
 | `COMFY_HOST` | `comfyui` | ComfyUI hostname |
 | `COMFY_PORT` | `8188` | ComfyUI port |
 | `PORT` | `7862` | Port the GUI binds |
+| `IGUANA_HOST` | `0.0.0.0` in the container, `127.0.0.1` on the host | Bind address. The container is published on **`127.0.0.1` only**, and pytincture's `allowed_hosts` answers any Host other than 127.0.0.1/localhost/::1 with 400 — **there is no login**, so Iguana must never be reachable from the LAN (it was, on `0.0.0.0:7862`, until the switch-over). |
+| `IGUANA_STREAM_BUDGET` | `240` | Seconds a progress stream runs before it hands over to a fresh one (pytincture caps streams at 300 s). |
 
 The startup banner derives its printed URL from the same `PORT` value it binds, so the two can't
 drift apart. (It used to hardcode 7861 — the **companion** app's port; iguana is 7862.)
@@ -52,7 +68,18 @@ drift apart. (It used to hardcode 7861 — the **companion** app's port; iguana 
 ## Project structure
 ```
 comfyui-auto/
-├── server.py            # FastAPI web GUI — the main entry point
+├── service.py           # THE server: pytincture app + plain routes (/upload, /api/health)
+├── server.py            # server-side functions the BFFs call + GET /outputs/{f}, /debug/*
+├── services/
+│   ├── jobs.py          # job table, threads, params_for(), progress view/ETA (was in server.py)
+│   └── models.py        # per-checkpoint recommended steps/CFG/size (was the page's CKPT_CONFIGS)
+├── appcode/             # pytincture modules_path — the page
+│   ├── iguana.py        #   shell: top bar, layout, mode tabs, generate/upload, wiring
+│   ├── ui/              #   browser-only modules (see "The pytincture page")
+│   ├── bff/             #   studio.py (models, jobs, progress stream) · prompts.py · gallery.py
+│   ├── static/iguana.css#   served at /istatic
+│   └── wapyt-*.whl      #   the BROWSER's wapyt (git-ignored; dev_wheel.sh / the Containerfile)
+├── tests/               # test_prompt.py + prompt_golden.json · smoke.py (Playwright)
 ├── run.py               # CLI alternative (text2img / img2img / video only)
 ├── client.py            # ComfyUI API client: queue, poll /history, download /view
 ├── workflows/
@@ -64,12 +91,52 @@ comfyui-auto/
 │   ├── photomaker.py    # person from reference photos  ← see Known broken
 │   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
 │   └── video.py         # WAN 2.2 image→video + text→video
-├── static/index.html    # entire frontend, ~1500 lines, no build step
 ├── outputs/             # generated files (volume-mounted, gitignored)
-├── temp/                # uploaded images, deleted after each job
-├── Containerfile        # python:3.12-slim + requirements, HEALTHCHECK on /
-└── run-podman.sh        # build + run on ai-net
+├── data/                # saved-prompts.json (volume-mounted, gitignored)
+├── temp/                # uploads (up-<hex>.png), deleted after each job / swept after 1 h
+├── Containerfile        # python:3.13-slim amd64 + wapyt wheel stages, HEALTHCHECK /api/health
+└── run-podman.sh        # build (amd64) + run on ai-net, published on 127.0.0.1
 ```
+
+## The pytincture page
+
+`service.py` builds the pytincture app and puts its few plain routes **in front of**
+pytincture's own (pytincture registers a catch-all `/{application}` that would swallow
+one-segment paths). `/` redirects to `/iguana/`. Everything request/response goes through
+BFF classes; binary stays plain HTTP (`POST /upload`, `GET /outputs/{f}`).
+
+| Classic (`index.html`) | Now |
+|---|---|
+| `buildPrompt()` / `activePrompt()` | `appcode/ui/prompt.py` `build_prompt()` / `active_prompt()` — guarded by `tests/test_prompt.py` against 200 outputs captured from the classic page |
+| the 9 modifier `<select>`s (220 options) | `appcode/ui/modifiers.py` — data, generated from the old markup; **add options here** |
+| sidebar, saved prompts | `appcode/ui/sidebar.py` (+ `bff/prompts.py`) |
+| LoRA stack (`renderLoras`, `activeLoras`, `LORA_MODES`) | `appcode/ui/loras.py` |
+| control bars, `applyCheckpointUI/Config`, `loadCheckpoints`, source pickers, Person dropzone, `updateAnimateLength` | `appcode/ui/panels.py` (`_apply_ui` / `_apply_config`, `snap_length`) |
+| `CKPT_CONFIGS`, `_fluxConfig` | `services/models.py` `config_for()` (server-side; `Studio.checkpoints()` returns it) |
+| `generate()`, `pollJob`, job card, `showOutputs`, `showError` | `appcode/iguana.py` `generate()` + `appcode/ui/jobs.py` (progress **streamed**, see below) |
+| gallery (`galleryItems`, `renderGalleryWindow`), `openItemMenu`, `deleteOutput` | `appcode/ui/gallery.py` (`GalleryView`, `ItemMenu`) + `bff/gallery.py` |
+| `set*FromGallery` (fetch blob → re-upload) | `Panels.set_from_output()` → `Studio.from_output()` copies the output into `temp/` server-side |
+| `PERSIST_IDS`, `saveState/loadState` | `ui/common.py` `load_state/save_state` (same `studio_v1` key, merging writes) + each module's own ids |
+| `/generate`, `/job/{id}`, `/checkpoints`, `/loras`, `/gallery`, `/prompts`, `/comfy-status` | BFF methods (`Studio`, `Prompts`, `Gallery`); those routes are gone |
+
+What changed on purpose (details in `PYTINCTURE_PLAN.md`):
+- **Progress is streamed** (`Studio.follow()`, a `@bff_stream`): state on change plus a 5 s
+  heartbeat; the stream ends itself after `IGUANA_STREAM_BUDGET` with `{"type":"continue"}` and
+  the page calls it again — that is how a 30-min video gets past pytincture's 300 s stream cap.
+  The running job id is in `sessionStorage`, so **a reload mid-job reconnects**.
+- **Animate sends an empty negative**, so `video.NEGATIVE_VIDEO` applies. The classic page sent
+  the Generate panel's image negative to video jobs, silently overriding the tuned one.
+- **Previews are `data:` URLs** (FileReader): pytincture's CSP has no `blob:` in `img-src`.
+- **Uploads go one file per request**; pytincture caps request bodies — 48 MiB here via
+  `PytinctureConfig(max_request_body_bytes=…)` (the `MAX_REQUEST_BODY_BYTES` env var does *not*
+  change it). `/upload` takes ≤ 40 MB per image.
+- **The item menu is built from escaped `data-` attributes** read by delegated listeners (no
+  inline handlers, no closures over names) — still no way for a quote in a filename to break out.
+- wapyt's layout chrome is overridden (`.wapyt-layout`, `.wapyt-cell`) to keep Iguana's look.
+
+Traps: BFF modules are re-executed per call (state lives in `services/*`); a `js.window.__x`
+inside a class is name-mangled by Python; `float("140px")` fails where JS `parseFloat` works
+(`gallery.px()`); never destroy a proxy inside its own callback.
 
 ## The GUI
 
@@ -144,14 +211,15 @@ The `<optgroup>` labels need explicit colours (`.field select optgroup`): the se
 browser defaults — dark text on the dark theme, i.e. invisible.
 
 **The app is named "Iguana Studio"** (it was generically "Character Studio" until 2026-08-11). The
-name is written out in three places that must be changed together: `<title>` and the topbar `<h1>`
-in `static/index.html`, and `FastAPI(title=...)` in `server.py` (which surfaces at `/docs`). The
-`<h1>` deliberately keeps the second word in a `<span>` — `.topbar h1 span` renders it muted
-against the accented first word, so any rename should stay two words to preserve that.
-The `localStorage` key stays `studio_v1` (renaming it discards saved state) — dropping fields from
-`PERSIST_IDS` is enough, since stale keys in a saved blob are simply ignored on load.
+name is written out in two places that must be changed together: `js.document.title` and the
+topbar `<h1>` in `appcode/iguana.py` (`load_ui`). The `<h1>` deliberately keeps the second word
+in a `<span>` — `.topbar h1 span` renders it muted against the accented first word, so any
+rename should stay two words to preserve that. (The pytincture application *id* `iguana` — the
+`/iguana/` path, `APP_ENTRYPOINT`, the `iguana` cookie namespace — is an identifier, not the name.)
+The `localStorage` key stays `studio_v1` (renaming it discards saved state) — writes merge, and
+stale keys in a saved blob are simply ignored on load.
 
-**Four modes** (`static/index.html:838`), which map onto backend tasks:
+**Five modes** (`MODES` / `TASK` in `appcode/iguana.py`), which map onto backend tasks:
 
 | Mode | Task sent | Controls | Notes |
 |---|---|---|---|
@@ -181,7 +249,8 @@ showing (offsets are 0 while `display: none`), right-aligns to the trigger, and 
 there's no room below. It closes on outside click, Escape, gallery/output scroll, and resize —
 `position: fixed` against a button that scrolls away underneath it would otherwise drift.
 
-Menu items are built with **DOM calls and closures, not an innerHTML string**. The old inline
+*(Classic page — the new page uses escaped `data-` attributes and delegated listeners instead;
+see The pytincture page.)* Menu items were built with **DOM calls and closures, not an innerHTML string**. The old inline
 `onclick="setRefineFromGallery('${safeName}', …)"` handlers needed hand-rolled quote escaping to
 survive a filename with an apostrophe in it; passing the name through a closure removes that class
 of bug outright. `galleryTile()` and `showOutputs()` are built the same way for the same reason —
@@ -264,8 +333,8 @@ would be generated behind a covering panel.
 It then filters the name out of `galleryItems`, takes the count from *that*, and re-renders —
 removing a tile shifts every later one into a new grid slot.
 
-**Checkpoint dropdown** is populated live from `/checkpoints`, which proxies ComfyUI's
-`object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()` and
+**Checkpoint dropdown** is populated live from `Studio.checkpoints()` (BFF), which proxies
+ComfyUI's `object_info/CheckpointLoaderSimple`. Filenames are prettified for display by `ckptLabel()` and
 grouped into one `<optgroup>` per base (FLUX / SDXL / SD 1.5, `BASE_ORDER`). A base with nothing
 installed is skipped rather than rendered empty. FLUX GGUFs from `object_info/UnetLoaderGGUF`
 are appended to the same list (base `FLUX`, Kontext excluded) — see FLUX below.
@@ -342,7 +411,7 @@ is; that is on the LoRA's model card.
 
 Live list from ComfyUI (10). "Kind" is what `workflows/defaults.py` infers from the filename:
 
-| Checkpoint | Kind | Tuned defaults (frontend) |
+| Checkpoint | Kind | Tuned defaults (`services/models.py`) |
 |---|---|---|
 | `sd_xl_base_1.0.safetensors` | SDXL | 1024², 25 steps, cfg 7 |
 | `juggernautXL_ragnarokBy.safetensors` | SDXL | 1024², 35 steps, cfg 7 |
@@ -380,7 +449,7 @@ checkpoint had to be taught to both. Now a new checkpoint only needs `_SDXL_NAME
 tests only for the window before `/checkpoints` has answered.
 
 Adding a **new base family** means: teach `defaults.py` to detect it, add it to `BASES`, and add
-it to `BASE_ORDER` in `index.html` — the picker appends unknown bases after the known ones rather
+it to `BASE_ORDER` in `appcode/ui/panels.py` — the picker appends unknown bases after the known ones rather
 than dropping them, so a missed `BASE_ORDER` entry degrades to bad ordering, not a missing group.
 
 ## Flux Kontext (Edit mode) — how it's wired
@@ -488,7 +557,7 @@ from the CLI too (any name containing `flux` switches workflow). Still missing: 
 subcommand, and none of the GUI's per-checkpoint step/CFG tuning, so lightning models need an
 explicit `--steps 6 --cfg 2`.
 
-**2. Jobs are in-memory only.** `jobs: dict` in `server.py` has no eviction and no persistence:
+**2. Jobs are in-memory only.** `JOBS` in `services/jobs.py` has no eviction and no persistence:
 it grows for the process lifetime and every job is lost on restart. This bites harder since Animate
 landed — losing a 3 s still is nothing, losing a several-minute video job is not.
 
@@ -554,8 +623,9 @@ Measured on this box: 25 frames at 960×544, 20 steps → **41 s**; 81 frames at
 ## Live progress + ETA
 
 "Running…" is adequate for a 4-second still and useless for a 3-minute video, where the
-only question is whether it is 40% done or hung. `/job/{id}` now carries `phase`,
-`progress {value, max}` and `eta`, and the browser renders a bar beside the spinner.
+only question is whether it is 40% done or hung. `jobs.view()` carries `phase`,
+`progress {value, max}` and `eta`; the page receives it over `Studio.follow()` (streamed,
+not polled since the pytincture switch-over) and renders a bar beside the spinner.
 
 - **The websocket is the only source.** `/api/jobs/{id}` (new in v0.31.1) reports a status
   and a duration but no step counter, and there is no REST progress route — checked. So
@@ -595,31 +665,34 @@ later, 55 s total including decode and mux.
 ## API endpoints
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/` | Serves the web GUI |
-| GET | `/comfy-status` | `{"running": bool}` — polled by the status dot |
-| POST | `/generate` | Multipart form; starts a job, returns `{"job_id": ...}` |
-| GET | `/job/{id}` | `{status, files, message, phase, progress, eta}`; status ∈ pending/running/done/error/not_found |
-| GET | `/checkpoints` | Installed checkpoints as `[{name, base}]`, sorted by name |
-| GET | `/loras` | Sorted LoRA filenames from ComfyUI |
-| GET | `/prompts` | Saved prompts `[{name, fields, saved}]`, newest first |
-| POST | `/prompts` | JSON `{name, fields}` — save, or overwrite by name |
-| DELETE | `/prompts/{name}` | Delete one saved prompt (404 if none) |
-| GET | `/gallery` | All output files, newest first, with mtime + size |
+Plain HTTP (everything else is BFF — `/iguana/bff-docs` lists those):
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/` | Redirects to `/iguana/`, the page |
+| GET | `/api/health` | `{"ok": true}` — `stack status`, the container HEALTHCHECK |
+| POST | `/upload` | Multipart `files` → `{"ids": [...]}` in `temp/`; ≤ 40 MB each, images only |
 | GET | `/outputs/{filename}` | Serves one generated file |
-| DELETE | `/outputs/{filename}` | Deletes one generated file (no trash — it's gone) |
 | GET | `/debug/nodes` | Every node class ComfyUI knows — useful for the breakage above |
 | POST | `/debug/workflow` | Dry-run a graph and return the JSON without queueing |
 
+BFF: `Studio` (`checkpoints`, `loras`, `comfy_status`, `generate(task, fields, upload_ids)`,
+`from_output`, `job`, `follow` — the stream), `Prompts` (`all`, `save`, `delete`), `Gallery`
+(`items`, `delete`). `generate()` coerces numbers itself (no `Form()` anymore).
+
 ## Key design decisions
-- **The browser polls; `client.py` uses a websocket.** The page still polls `/job/{id}` every
-  2s — simple, survives a reload, and needs no connection state. Toward ComfyUI it is now a
-  websocket, because step-level progress is exposed nowhere else, with the `/history`
-  polling loop kept as the fallback when the socket can't be had.
+- **The page streams; `client.py` uses a websocket.** The page follows a job over
+  `Studio.follow()` (a BFF stream that reconnects by job id, so it also survives a reload).
+  Toward ComfyUI it is a websocket, because step-level progress is exposed nowhere else, with
+  the `/history` polling loop kept as the fallback when the socket can't be had.
 - **Threading** — each generation runs in a `daemon=True` thread; no queue, no worker pool.
-- **No build step** — the frontend is one self-contained HTML file with inline CSS/JS.
-- **Path traversal protection** — both `/outputs/{filename}` routes apply `Path(filename).name` to
-  strip any directory part. DELETE additionally refuses anything outside `MEDIA_SUFFIXES`, the same
-  set `/gallery` lists by, so the two can't disagree about what's deletable.
+- **No JS build step** — the page is Python modules under `appcode/` that pytincture ships to
+  Pyodide, plus one stylesheet.
+- **Path traversal protection** — `GET /outputs/{filename}` and `server.delete_output()` apply
+  `Path(filename).name` to strip any directory part. Delete additionally refuses anything outside
+  `MEDIA_SUFFIXES`, the same set `server.gallery()` lists by. Uploads are named by the server
+  (`up-<hex>.<ext>`); the BFF only accepts ids matching that pattern, and `from_output()` only
+  basenames of images already in `outputs/`.
 - **Uploads are ephemeral** — temp files are unlinked in the job's `finally` block.
 - **Per-model defaults are a UX affordance, not a constraint** — switching checkpoint overwrites
   the steps/cfg/resolution boxes, and for FLUX relabels CFG → Guidance and hides the negative

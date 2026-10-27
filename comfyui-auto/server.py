@@ -1,22 +1,27 @@
-"""FastAPI web GUI for ComfyUI automation."""
+"""Iguana Studio's server-side functions, plus the two plain routes that are still HTTP.
 
-import os
+Since the pytincture switch-over (PYTINCTURE_PLAN.md Phase 5) the page is `appcode/` and
+the server is `service.py`. What lives here:
+  * functions the BFFs call — list_checkpoints(), list_loras(), gallery(), delete_output(),
+    list_prompts()/save_prompt()/delete_prompt() — plain functions, no routes;
+  * routes that stay plain HTTP: GET /outputs/{f} (images belong in <img src>, not JSON),
+    and the /debug tools. service.py copies them in front of pytincture's own routes.
+The classic page (static/index.html) and its JSON routes (/generate, /job, /checkpoints,
+/loras, /gallery, /prompts, /comfy-status) are gone. `python server.py` runs service.py.
+"""
+
 import sys
 import json
 import time
-import uuid
-import shutil
 import threading
 from pathlib import Path
-from typing import Optional
 
-from fastapi import FastAPI, UploadFile, Form, File, HTTPException
+from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
-import uvicorn
 
 sys.path.insert(0, str(Path(__file__).parent))
 import client
-from workflows import text2img, img2img, video, photomaker, kontext
+from workflows import text2img
 from workflows.defaults import base_of
 
 app = FastAPI(title="Iguana Studio")
@@ -24,7 +29,6 @@ app = FastAPI(title="Iguana Studio")
 BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 TEMP_DIR   = BASE_DIR / "temp"
-STATIC_DIR = BASE_DIR / "static"
 # Durable app data (bind-mounted like outputs/, so it survives a rebuild). Not outputs/:
 # that folder is the gallery, and a settings file has no business sitting in it.
 DATA_DIR   = BASE_DIR / "data"
@@ -38,250 +42,8 @@ DATA_DIR.mkdir(exist_ok=True)
 # the two can't disagree about what's listable vs. deletable.
 MEDIA_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4"}
 
-# A 121-frame WAN clip runs well past the 600 s client default, and a job that finished
-# but got reported as a timeout is the worst of both outcomes — it burned the GPU time and
-# threw the result away. Video tasks get their own budget.
-VIDEO_TIMEOUT = 1800
-VIDEO_TASKS = {"img2vid", "video"}
-
-# ComfyUI names the running node; the browser wants a phase. Keyed by class_type, which
-# the workflow dict already carries, so this works for every task without each builder
-# having to describe itself. Unknown classes fall through to their own name — wrong-looking
-# is better than a blank status bar with no clue what it is doing.
-PHASES = {
-    "UNETLoader": "loading model", "UnetLoaderGGUF": "loading model",
-    "CheckpointLoaderSimple": "loading model", "ImageOnlyCheckpointLoader": "loading model",
-    "CLIPLoader": "loading text encoder", "DualCLIPLoader": "loading text encoder",
-    "VAELoader": "loading VAE",
-    "LoraLoader": "applying LoRA",
-    "CLIPTextEncode": "encoding prompt", "CLIPTextEncodeSDXL": "encoding prompt",
-    "CLIPTextEncodeFlux": "encoding prompt",
-    "LoadImage": "reading source image", "VAEEncode": "encoding source image",
-    "Wan22ImageToVideoLatent": "preparing frames",
-    "KSampler": "sampling", "SamplerCustom": "sampling",
-    "VAEDecode": "decoding", "CreateVideo": "encoding video",
-    "SaveVideo": "saving", "SaveImage": "saving",
-}
-
-jobs: dict[str, dict] = {}
-
-
-# ── background job runner ────────────────────────────────────────────────────
-
-def _run_job(
-    job_id: str,
-    task: str,
-    params: dict,
-    image_path: Optional[Path] = None,
-    image_paths: Optional[list[Path]] = None,
-):
-    jobs[job_id]["status"] = "running"
-    try:
-        if task == "text2img":
-            workflow = text2img.build(**params)
-        elif task == "img2img":
-            workflow = img2img.build(image_path=image_path, **params)
-        elif task == "img2vid":
-            workflow = video.build_i2v(image_path=image_path, **params)
-        elif task == "video":
-            workflow = video.build_t2v(**params)
-        elif task == "photomaker":
-            workflow = photomaker.build(image_paths=image_paths, **params)
-        elif task == "kontext":
-            workflow = kontext.build(image_path=image_path, **params)
-        else:
-            raise ValueError(f"Unknown task: {task}")
-
-        job = jobs[job_id]
-
-        def on_progress(value, maximum, node):
-            """Called from the websocket watcher. Only ever writes whole values into the
-            job dict — the poll route reads it from another thread and a half-updated
-            progress block would render as a bar jumping backwards."""
-            if node is not None:
-                cls = (workflow.get(str(node)) or {}).get("class_type", "")
-                job["phase"] = PHASES.get(cls, cls or "working")
-            if value is None or not maximum:
-                return
-            # Timing starts at the first step SEEN, and records the step number as well as
-            # the time. ComfyUI throttles these messages, so the first one can already say
-            # "step 18" — anchoring on time alone then divides a near-zero elapsed by 18
-            # and reports 0s remaining for the rest of the run.
-            if job.get("step_t0") is None:
-                job["step_t0"] = (time.time(), int(value))
-            job["progress"] = {"value": int(value), "max": int(maximum)}
-
-        timeout = VIDEO_TIMEOUT if task in VIDEO_TASKS else 600
-        paths = client.run_workflow(workflow, save_dir=OUTPUT_DIR, timeout=timeout,
-                                    on_progress=on_progress)
-        jobs[job_id].update(status="done", files=[p.name for p in paths])
-    except Exception as e:
-        jobs[job_id].update(status="error", message=str(e))
-    finally:
-        if image_path and image_path.exists():
-            image_path.unlink(missing_ok=True)
-        for p in (image_paths or []):
-            if p.exists():
-                p.unlink(missing_ok=True)
-
-
 # ── routes ───────────────────────────────────────────────────────────────────
 
-@app.get("/")
-def index():
-    return FileResponse(STATIC_DIR / "index.html")
-
-
-@app.get("/comfy-status")
-def comfy_status():
-    return {"running": client.is_running()}
-
-
-@app.post("/generate")
-async def generate(
-    task: str = Form(...),
-    prompt: str = Form(...),
-    negative: str = Form(""),
-    checkpoint: str = Form("sd_xl_base_1.0.safetensors"),
-    width: int = Form(1024),
-    height: int = Form(1024),
-    steps: int = Form(25),
-    cfg: float = Form(7.0),
-    seed: int = Form(-1),
-    denoise: float = Form(0.75),
-    length: int = Form(81),
-    fps: int = Form(24),
-    shift: float = Form(8.0),
-    pm_width: int = Form(1024),
-    pm_height: int = Form(1024),
-    pm_model: str = Form("photomaker-v2.bin"),
-    # JSON array of {name, strength}, in application order. A string rather than repeated
-    # form fields because the two values have to stay paired and ordered — a LoRA stack is
-    # a chain, and "second at 0.4" means nothing once the pairing is lost.
-    loras: str = Form("[]"),
-    image: Optional[UploadFile] = File(None),
-    images: list[UploadFile] = File(default=[]),
-):
-    if task in ("img2img", "kontext", "img2vid") and (not image or not image.filename):
-        raise HTTPException(status_code=400, detail="A source image is required for this mode.")
-    if task == "photomaker" and not any(f.filename for f in images):
-        raise HTTPException(status_code=400, detail="At least one reference photo is required.")
-
-    try:
-        lora_stack = json.loads(loras) if loras else []
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Malformed loras field: {e}")
-    if not isinstance(lora_stack, list):
-        raise HTTPException(status_code=400, detail="loras must be a JSON array")
-
-    job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "pending", "files": [], "message": "",
-                    "phase": "queued", "progress": None, "step_t0": None}
-
-    # Single image (img2img)
-    image_path = None
-    if image and image.filename:
-        suffix = Path(image.filename).suffix or ".png"
-        image_path = TEMP_DIR / f"{job_id}{suffix}"
-        with open(image_path, "wb") as f:
-            shutil.copyfileobj(image.file, f)
-
-    # Multiple images (photomaker)
-    image_paths = []
-    for i, upload in enumerate(images):
-        if upload.filename:
-            suffix = Path(upload.filename).suffix or ".png"
-            p = TEMP_DIR / f"{job_id}_{i}{suffix}"
-            with open(p, "wb") as f:
-                shutil.copyfileobj(upload.file, f)
-            image_paths.append(p)
-
-    if task == "text2img":
-        params = dict(
-            prompt=prompt,
-            negative_prompt=negative or text2img.DEFAULT_NEGATIVE,
-            checkpoint=checkpoint,
-            width=width, height=height, steps=steps, cfg=cfg, seed=seed,
-            loras=lora_stack,
-        )
-    elif task == "img2img":
-        params = dict(
-            prompt=prompt,
-            negative_prompt=negative or img2img.DEFAULT_NEGATIVE,
-            checkpoint=checkpoint,
-            denoise=denoise, steps=steps, cfg=cfg, seed=seed,
-            loras=lora_stack,
-        )
-    elif task in VIDEO_TASKS:
-        # img2vid and video take identical params — the only difference is the source
-        # image, which rides the same upload path as img2img and is applied by the
-        # dispatcher, not here.
-        params = dict(
-            prompt=prompt,
-            negative_prompt=negative or video.DEFAULT_NEGATIVE,
-            width=width, height=height, length=length,
-            steps=steps, cfg=cfg, seed=seed, fps=fps, shift=shift,
-        )
-    elif task == "photomaker":
-        params = dict(
-            prompt=prompt,
-            negative_prompt=negative or photomaker.DEFAULT_NEGATIVE,
-            width=pm_width, height=pm_height, steps=steps, cfg=cfg, seed=seed,
-            photomaker_model=pm_model,
-            loras=lora_stack,
-        )
-    elif task == "kontext":
-        # No negative prompt, no width/height and no denoise: Kontext zeroes its own
-        # negative, and the output size is derived from the source by
-        # FluxKontextImageScale. Guidance rides in on the `cfg` field so the frontend
-        # can reuse the existing slider — it is NOT sampler CFG, which is pinned to 1.
-        params = dict(
-            prompt=prompt,
-            guidance=cfg,
-            steps=steps,
-            seed=seed,
-        )
-    else:
-        params = {}
-
-    thread = threading.Thread(
-        target=_run_job,
-        args=(job_id, task, params, image_path, image_paths or None),
-        daemon=True,
-    )
-    thread.start()
-    return {"job_id": job_id}
-
-
-@app.get("/job/{job_id}")
-def get_job(job_id: str):
-    """Job state, plus a step counter and an ETA while it is sampling.
-
-    The ETA is measured, not modelled: elapsed-per-completed-step extrapolated over the
-    steps left. That means it needs no calibration constant and cannot go stale when the
-    model, precision or driver changes — and it corrects itself as the run proceeds.
-    It is deliberately timed from the *first step* rather than from submission, because
-    the model load in front of it is a fixed cost that would otherwise inflate every
-    estimate on a cold start.
-    """
-    job = jobs.get(job_id)
-    if job is None:
-        return {"status": "not_found"}
-
-    out = {k: v for k, v in job.items() if k != "step_t0"}
-    p, anchor = job.get("progress"), job.get("step_t0")
-    if p and anchor and p["max"] > p["value"]:
-        t0, v0 = anchor
-        done = p["value"] - v0
-        # No ETA until a second step has been observed: one sample gives no rate, and a
-        # made-up number here is worse than none.
-        if done > 0:
-            per_step = (time.time() - t0) / done
-            out["eta"] = int(per_step * (p["max"] - p["value"]))
-    return out
-
-
-@app.get("/checkpoints")
 def list_checkpoints():
     """Return installed checkpoints as [{name, base}], sorted alphabetically.
 
@@ -311,7 +73,6 @@ def list_checkpoints():
     return {"checkpoints": sorted(out, key=lambda c: c["name"].lower())}
 
 
-@app.get("/loras")
 def list_loras():
     """Return LoRA filenames available in ComfyUI, sorted alphabetically.
 
@@ -358,7 +119,6 @@ async def debug_workflow(
         return {"error": str(e)}
 
 
-@app.get("/gallery")
 def gallery():
     """Return all output files sorted newest-first."""
     files = []
@@ -378,7 +138,6 @@ def get_output(filename: str):
     return FileResponse(path)
 
 
-@app.delete("/outputs/{filename}")
 def delete_output(filename: str):
     """Delete one generated file. Irreversible — there is no trash."""
     # Same Path(filename).name guard as the GET: strip any directory part so a
@@ -427,13 +186,11 @@ def _write_prompts(items: list[dict]) -> None:
     tmp.replace(PROMPTS_FILE)
 
 
-@app.get("/prompts")
 def list_prompts():
     """Saved prompts, most recently saved first."""
     return {"prompts": sorted(_read_prompts(), key=lambda p: p.get("saved", 0), reverse=True)}
 
 
-@app.post("/prompts")
 def save_prompt(body: dict):
     """Save (or overwrite, by name) one prompt: {name, fields: {id: value}}."""
     name = str(body.get("name") or "").strip()
@@ -455,7 +212,6 @@ def save_prompt(body: dict):
     return {"ok": True, "prompt": entry}
 
 
-@app.delete("/prompts/{name}")
 def delete_prompt(name: str):
     with _prompts_lock:
         items = _read_prompts()
@@ -467,7 +223,7 @@ def delete_prompt(name: str):
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "7862"))
-    print("Iguana Studio starting...")
-    print(f"Open http://localhost:{port} in your browser\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
+    # Kept for muscle memory: the server is service.py now (pytincture + these routes).
+    import runpy
+
+    runpy.run_path(str(BASE_DIR / "service.py"), run_name="__main__")

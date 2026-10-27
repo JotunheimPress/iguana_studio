@@ -1,8 +1,56 @@
 # syntax=docker/dockerfile:1
-FROM python:3.12-slim
+# Iguana Studio — pytincture + wapyt since 2026-10-27 (PYTINCTURE_PLAN.md).
+#
+# pytincture needs Python 3.13+. wapyt, the widgetset, is not on PyPI, so the first stages
+# fetch it from GitHub at a pinned commit and build the two wheels a pytincture app needs
+# (same recipe as ai-stack/stack-ui and Basilisk):
+#   * wapyt 0.2.0    — installed into the server's Python, where pytincture's widgetset
+#                      discovery reads it;
+#   * wapyt 99.99.99 — the development wheel the BROWSER installs from appcode/, with its
+#                      asset manifest regenerated for that version (pytincture hash-checks
+#                      every widget asset).
+#
+# amd64 on purpose: the image used to be built from a cached python:3.12-slim that was the
+# arm64 variant, so the container ran under emulation. run-podman.sh passes
+# --platform linux/amd64 as well; this default covers a plain `podman build`.
+#
+# To build against a local wapyt checkout instead:
+#   podman build --format docker --build-context wapyt-src=../../../Pytinc/wa_pytincture_widgetset .
+
+ARG PYTHON_IMAGE=docker.io/library/python:3.13-slim
+
+# ── wapyt source, from GitHub ────────────────────────────────────────────────
+FROM --platform=linux/amd64 ${PYTHON_IMAGE} AS wapyt-git
+ARG WAPYT_REPO=https://github.com/WAwesome-AI/wa_pytincture_widgetset.git
+# wapyt 0.2.0 + #75 (pytincture 1.0.0) — the commit stack-ui and Basilisk pin. Bump deliberately.
+ARG WAPYT_REF=0457960bca1481ffee0c4e778128e5e4a4f295b5
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --filter=blob:none "$WAPYT_REPO" /src \
+    && git -C /src checkout --quiet "$WAPYT_REF" \
+    && rm -rf /src/.git
+
+FROM scratch AS wapyt-src
+COPY --from=wapyt-git /src /
+
+# ── the two wapyt wheels ─────────────────────────────────────────────────────
+FROM --platform=linux/amd64 ${PYTHON_IMAGE} AS wapyt-wheels
+COPY --from=wapyt-src / /wapyt
+RUN set -eu; \
+    pip wheel --no-cache-dir --no-deps /wapyt -w /wheels/server; \
+    cp -r /wapyt /dev-src; \
+    sed -i 's/^version = ".*"$/version = "99.99.99"/' /dev-src/pyproject.toml; \
+    grep -q "pytincture-assets.json" /dev-src/MANIFEST.in \
+        || sed -i '1i include wapyt/pytincture-assets.json' /dev-src/MANIFEST.in; \
+    python /wapyt/scripts/generate_assets_manifest.py /dev-src; \
+    pip wheel --no-cache-dir --no-deps /dev-src -w /wheels/browser; \
+    ls /wheels/server/wapyt-*.whl /wheels/browser/wapyt-99.99.99-py3-none-any.whl
+
+# ── the app ──────────────────────────────────────────────────────────────────
+FROM --platform=linux/amd64 ${PYTHON_IMAGE}
 
 LABEL org.opencontainers.image.title="iguana ComfyUI GUI"
-LABEL org.opencontainers.image.description="FastAPI web GUI for ComfyUI automation (text2img/img2img/img2vid/photomaker)"
+LABEL org.opencontainers.image.description="Iguana Studio — pytincture GUI for ComfyUI (text2img/img2img/photomaker/kontext/img2vid)"
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
@@ -12,24 +60,31 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY client.py server.py run.py ./
+COPY --from=wapyt-wheels /wheels/server/ /tmp/wapyt/
+RUN pip install --no-cache-dir /tmp/wapyt/wapyt-*.whl && rm -rf /tmp/wapyt
+
+COPY client.py server.py service.py run.py ./
 COPY workflows/ ./workflows/
-COPY static/ ./static/
+COPY services/ ./services/
+COPY appcode/ ./appcode/
+COPY --from=wapyt-wheels /wheels/browser/wapyt-99.99.99-py3-none-any.whl appcode/
 
-RUN mkdir -p /app/outputs /app/temp
+RUN mkdir -p /app/outputs /app/temp /app/data
 
-# Reach ComfyUI on the host (it runs in the comfyui distrobox on host networking).
+# ComfyUI by name on ai-net. IGUANA_HOST=0.0.0.0 is the bind INSIDE the container; the
+# port is published on 127.0.0.1 only (run-podman.sh), and pytincture's allowed_hosts
+# answers any Host other than 127.0.0.1/localhost/::1 with 400 — there is no login.
 ENV COMFY_HOST=comfyui \
     COMFY_PORT=8188 \
-    PORT=7862
-# COMFY_BASE is gone: it existed only for the old AnimateDiff pre-flight file check, which
-# went with that workflow. ComfyUI validates its own model files and reports them back.
+    PORT=7862 \
+    IGUANA_HOST=0.0.0.0 \
+    PYTHONUNBUFFERED=1
 
 EXPOSE 7862
 
 # HEALTHCHECK is a docker-format field with no OCI slot, so podman drops it unless the build
 # passes --format docker (run-podman.sh does). Without that flag this block is silently inert.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -fs http://localhost:7862/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fs http://127.0.0.1:7862/api/health || exit 1
 
-CMD ["python", "server.py"]
+CMD ["python", "service.py"]

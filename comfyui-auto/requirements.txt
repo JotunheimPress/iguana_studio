@@ -1,5 +1,8 @@
-requests>=2.31.0
+# Server-side only. The browser gets Pyodide and the wapyt wheel through pytincture;
+# wapyt itself is installed from a wheel built in the Containerfile (it is not on PyPI).
+pytincture==1.0.0
+uvicorn[standard]>=0.30.0
 fastapi>=0.110.0
-uvicorn>=0.27.0
 python-multipart>=0.0.9
+requests>=2.31.0
 websocket-client>=1.7.0

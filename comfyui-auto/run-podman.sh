@@ -22,7 +22,8 @@ done
 
 if [[ "$REBUILD" -eq 1 ]] || ! podman image exists "$IMAGE"; then
   echo "==> Building image $IMAGE …"
-  podman build --format docker -t "$IMAGE" -f "$SCRIPT_DIR/Containerfile" "$SCRIPT_DIR"
+  # amd64 explicitly: a cached arm64 python base once had this image running under emulation.
+  podman build --format docker --platform linux/amd64 -t "$IMAGE" -f "$SCRIPT_DIR/Containerfile" "$SCRIPT_DIR"
 fi
 
 if podman container exists "$CONTAINER"; then
@@ -42,15 +43,16 @@ podman run -d \
   --name "$CONTAINER" \
   --restart unless-stopped \
   $NET_ARG \
-  -p "${PORT}:7862" \
+  -p "127.0.0.1:${PORT}:7862" \
   -e COMFY_HOST=comfyui \
   -e COMFY_PORT=8188 \
   -e PORT=7862 \
+  -e IGUANA_HOST=0.0.0.0 \
   -v "$SCRIPT_DIR/outputs:/app/outputs:z" \
   -v "$SCRIPT_DIR/data:/app/data:z" \
   "$IMAGE"
 
 echo ""
 echo "✓  iguana ComfyUI GUI is running."
-echo "   Open: http://localhost:${PORT}"
+echo "   Open: http://localhost:${PORT}   (this computer only — no login, so never published on the LAN)"
 echo "   Logs: podman logs -f $CONTAINER"

@@ -1,0 +1,3805 @@
+{
+ "source": "classic static/index.html buildPrompt()/activePrompt(), captured 2026-10-27 before its deletion",
+ "cases": [
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "jeans and a t-shirt",
+    "f-setting": "",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "jumping",
+    "f-focus": "hands focus",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "wearing jeans and a t-shirt, bioluminescent glow, jumping, hands focus",
+   "preview": "wearing jeans and a t-shirt, bioluminescent glow, jumping, hands focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "serious",
+    "f-clothing": "partially undressed",
+    "f-setting": "",
+    "f-lighting": "colored gel lighting",
+    "f-style": "pencil sketch",
+    "f-camera": "telephoto compression",
+    "f-pose": "dancing",
+    "f-focus": "full body",
+    "f-extra": "a red fox",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img a red fox, serious, wearing partially undressed, colored gel lighting, pencil sketch, telephoto compression, dancing, full body",
+   "preview": "img a red fox, serious, wearing partially undressed, colored gel lighting, pencil sketch, telephoto compression, dancing, full body"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "a sports bra and leggings",
+    "f-setting": "by a lake",
+    "f-lighting": "",
+    "f-style": "35mm film photography",
+    "f-camera": "upper body shot",
+    "f-pose": "stretching",
+    "f-focus": "pussy focus",
+    "f-extra": "a red fox",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img a red fox, wearing a sports bra and leggings, by a lake, 35mm film photography, upper body shot, stretching, pussy focus",
+   "preview": "img a red fox, wearing a sports bra and leggings, by a lake, 35mm film photography, upper body shot, stretching, pussy focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "sad",
+    "f-clothing": "jeans and a t-shirt",
+    "f-setting": "in a kitchen",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "",
+    "f-camera": "macro shot",
+    "f-pose": "sitting cross-legged",
+    "f-focus": "thigh focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "ünïcödé — dash, sad, wearing jeans and a t-shirt, in a kitchen, harsh midday sunlight, macro shot, sitting cross-legged, thigh focus",
+   "preview": "ünïcödé — dash, sad, wearing jeans and a t-shirt, in a kitchen, harsh midday sunlight, macro shot, sitting cross-legged, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "flirty",
+    "f-clothing": "",
+    "f-setting": "in a castle hall",
+    "f-lighting": "dramatic lighting",
+    "f-style": "analog photograph",
+    "f-camera": "",
+    "f-pose": "on all fours",
+    "f-focus": "legs focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "flirty, in a castle hall, dramatic lighting, analog photograph, on all fours, legs focus",
+   "preview": "flirty, in a castle hall, dramatic lighting, analog photograph, on all fours, legs focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "seductive",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "studio lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "breast focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "a knight, in armour, seductive, studio lighting, breast focus",
+   "preview": "a knight, in armour, seductive, studio lighting, breast focus"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a medieval tavern",
+    "f-lighting": "firelight",
+    "f-style": "",
+    "f-camera": "dutch angle shot",
+    "f-pose": "walking",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "comma, separated, words,, dark brown eyes, in a medieval tavern, firelight, dutch angle shot, walking",
+   "preview": "comma, separated, words,, dark brown eyes, in a medieval tavern, firelight, dutch angle shot, walking"
+  },
+  {
+   "state": {
+    "f-eyes": "silver",
+    "f-expression": "smug",
+    "f-clothing": "",
+    "f-setting": "in a neon-lit cyberpunk alley",
+    "f-lighting": "",
+    "f-style": "pencil sketch",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "",
+    "f-focus": "hands focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, smug, silver eyes, in a neon-lit cyberpunk alley, pencil sketch, extreme close-up shot, hands focus",
+   "preview": "ünïcödé — dash, smug, silver eyes, in a neon-lit cyberpunk alley, pencil sketch, extreme close-up shot, hands focus"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "rim lighting",
+    "f-style": "photorealistic",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "lips focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "dark brown eyes, rim lighting, photorealistic, lips focus",
+   "preview": "dark brown eyes, rim lighting, photorealistic, lips focus"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a narrow alleyway",
+    "f-lighting": "",
+    "f-style": "pencil sketch",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "hair focus",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "hazel",
+    "f-expression": "",
+    "f-clothing": "a maid outfit",
+    "f-setting": "",
+    "f-lighting": "natural lighting",
+    "f-style": "cel shaded",
+    "f-camera": "over-the-shoulder shot",
+    "f-pose": "dancing",
+    "f-focus": "hands focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "surprised",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "in a snowy landscape",
+    "f-lighting": "",
+    "f-style": "oil painting",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, surprised, heterochromia eyes, wearing a one-piece swimsuit, in a snowy landscape, oil painting",
+   "preview": "comma, separated, words,, surprised, heterochromia eyes, wearing a one-piece swimsuit, in a snowy landscape, oil painting"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "grinning",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "high key lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "looking over shoulder",
+    "f-focus": "thigh focus",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "angry",
+    "f-clothing": "",
+    "f-setting": "in a snowy landscape",
+    "f-lighting": "rim lighting",
+    "f-style": "35mm film photography",
+    "f-camera": "",
+    "f-pose": "prone",
+    "f-focus": "lips focus",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, angry, in a snowy landscape, rim lighting, 35mm film photography, prone, lips focus",
+   "preview": "a red fox, angry, in a snowy landscape, rim lighting, 35mm film photography, prone, lips focus"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "ring light",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "backlit silhouette",
+    "f-style": "oil painting",
+    "f-camera": "portrait shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img brown eyes, backlit silhouette, oil painting, portrait shot",
+   "preview": "img brown eyes, backlit silhouette, oil painting, portrait shot"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "rim lighting",
+    "f-style": "ink drawing",
+    "f-camera": "shallow depth of field",
+    "f-pose": "lying on stomach",
+    "f-focus": "face focus",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, rim lighting, ink drawing, shallow depth of field, lying on stomach, face focus",
+   "preview": "a red fox, rim lighting, ink drawing, shallow depth of field, lying on stomach, face focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "serious",
+    "f-clothing": "",
+    "f-setting": "in a snowy landscape",
+    "f-lighting": "",
+    "f-style": "oil painting",
+    "f-camera": "",
+    "f-pose": "legs spread",
+    "f-focus": "hair focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "anime style",
+    "f-camera": "close-up shot",
+    "f-pose": "",
+    "f-focus": "lips focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "grinning",
+    "f-clothing": "",
+    "f-setting": "in an enchanted forest",
+    "f-lighting": "warm candlelight",
+    "f-style": "anime style",
+    "f-camera": "overhead shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, grinning, in an enchanted forest, warm candlelight, anime style, overhead shot",
+   "preview": "a red fox, grinning, in an enchanted forest, warm candlelight, anime style, overhead shot"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "bikini",
+    "f-setting": "on a beach",
+    "f-lighting": "studio lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "prone ass up",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, dark brown eyes, wearing bikini, on a beach, studio lighting, prone ass up",
+   "preview": "img portrait of \"Ada\"\nsecond line, dark brown eyes, wearing bikini, on a beach, studio lighting, prone ass up"
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in an enchanted forest",
+    "f-lighting": "ring light",
+    "f-style": "pencil sketch",
+    "f-camera": "over-the-shoulder shot",
+    "f-pose": "bent over",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "comma, separated, words,, light blue eyes, in an enchanted forest, ring light, pencil sketch, over-the-shoulder shot, bent over",
+   "preview": "comma, separated, words,, light blue eyes, in an enchanted forest, ring light, pencil sketch, over-the-shoulder shot, bent over"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "bored",
+    "f-clothing": "",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "blue hour lighting",
+    "f-style": "black and white photography",
+    "f-camera": "",
+    "f-pose": "mid-turn",
+    "f-focus": "back focus",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, bored, in a gothic cathedral, blue hour lighting, black and white photography, mid-turn, back focus",
+   "preview": "a red fox, bored, in a gothic cathedral, blue hour lighting, black and white photography, mid-turn, back focus"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "dramatic lighting",
+    "f-style": "",
+    "f-camera": "dutch angle shot",
+    "f-pose": "stretching",
+    "f-focus": "pussy focus",
+    "f-extra": "a red fox",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, light green eyes, dramatic lighting, dutch angle shot, stretching, pussy focus",
+   "preview": "a red fox, light green eyes, dramatic lighting, dutch angle shot, stretching, pussy focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "athletic wear",
+    "f-setting": "",
+    "f-lighting": "underwater caustic light",
+    "f-style": "",
+    "f-camera": "eye level shot",
+    "f-pose": "running",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img comma, separated, words,, wearing athletic wear, underwater caustic light, eye level shot, running",
+   "preview": "img comma, separated, words,, wearing athletic wear, underwater caustic light, eye level shot, running"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "flirty",
+    "f-clothing": "a witch costume",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "prone ass up",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "sad",
+    "f-clothing": "nude",
+    "f-setting": "in a cafe",
+    "f-lighting": "",
+    "f-style": "editorial fashion photography",
+    "f-camera": "",
+    "f-pose": "leaning against wall",
+    "f-focus": "legs focus",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img a red fox, sad, emerald green eyes, wearing nude, in a cafe, editorial fashion photography, leaning against wall, legs focus",
+   "preview": "img a red fox, sad, emerald green eyes, wearing nude, in a cafe, editorial fashion photography, leaning against wall, legs focus"
+  },
+  {
+   "state": {
+    "f-eyes": "silver",
+    "f-expression": "bored",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "cinematic",
+    "f-camera": "",
+    "f-pose": "prone arched back",
+    "f-focus": "breast focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, bored, silver eyes, cinematic, prone arched back, breast focus",
+   "preview": "ünïcödé — dash, bored, silver eyes, cinematic, prone arched back, breast focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "fearful",
+    "f-clothing": "a summer dress",
+    "f-setting": "in a castle hall",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "black and white photography",
+    "f-camera": "upper body shot",
+    "f-pose": "prone ass up",
+    "f-focus": "hands focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, fearful, wearing a summer dress, in a castle hall, Rembrandt lighting, black and white photography, upper body shot, prone ass up, hands focus",
+   "preview": "img portrait of \"Ada\"\nsecond line, fearful, wearing a summer dress, in a castle hall, Rembrandt lighting, black and white photography, upper body shot, prone ass up, hands focus"
+  },
+  {
+   "state": {
+    "f-eyes": "violet",
+    "f-expression": "",
+    "f-clothing": "athletic wear",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "dramatic lighting",
+    "f-style": "35mm film photography",
+    "f-camera": "portrait shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "fearful",
+    "f-clothing": "fantasy armor",
+    "f-setting": "in a subway station",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "low angle shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "ünïcödé — dash, fearful, wearing fantasy armor, in a subway station, low angle shot",
+   "preview": "ünïcödé — dash, fearful, wearing fantasy armor, in a subway station, low angle shot"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "by a lake",
+    "f-lighting": "neon lighting",
+    "f-style": "cinematic",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "surprised",
+    "f-clothing": "a babydoll nightie",
+    "f-setting": "in a castle hall",
+    "f-lighting": "ring light",
+    "f-style": "comic book art",
+    "f-camera": "overhead shot",
+    "f-pose": "arms raised",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img ünïcödé — dash, surprised, wearing a babydoll nightie, in a castle hall, ring light, comic book art, overhead shot, arms raised",
+   "preview": "img ünïcödé — dash, surprised, wearing a babydoll nightie, in a castle hall, ring light, comic book art, overhead shot, arms raised"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "soft smile",
+    "f-clothing": "jeans and a t-shirt",
+    "f-setting": "in a subway station",
+    "f-lighting": "high key lighting",
+    "f-style": "concept art",
+    "f-camera": "",
+    "f-pose": "standing",
+    "f-focus": "hands focus",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img soft smile, wearing jeans and a t-shirt, in a subway station, high key lighting, concept art, standing, hands focus",
+   "preview": "img soft smile, wearing jeans and a t-shirt, in a subway station, high key lighting, concept art, standing, hands focus"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "determined",
+    "f-clothing": "stockings and a garter belt",
+    "f-setting": "in an office",
+    "f-lighting": "sodium streetlight glow",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "feet focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, determined, heterochromia eyes, wearing stockings and a garter belt, in an office, sodium streetlight glow, feet focus",
+   "preview": "portrait of \"Ada\"\nsecond line, determined, heterochromia eyes, wearing stockings and a garter belt, in an office, sodium streetlight glow, feet focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "ring light",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "dramatic lighting",
+    "f-style": "manga",
+    "f-camera": "wide angle shot",
+    "f-pose": "running",
+    "f-focus": "legs focus",
+    "f-extra": "   ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "emerald green eyes, in a gothic cathedral, dramatic lighting, manga, wide angle shot, running, legs focus",
+   "preview": "emerald green eyes, in a gothic cathedral, dramatic lighting, manga, wide angle shot, running, legs focus"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "",
+    "f-clothing": "a summer dress",
+    "f-setting": "",
+    "f-lighting": "sodium streetlight glow",
+    "f-style": "",
+    "f-camera": "close-up shot",
+    "f-pose": "jumping",
+    "f-focus": "thigh focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "biting lip",
+    "f-clothing": "topless",
+    "f-setting": "on a neon-lit street at night",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "thigh focus",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "biting lip, wearing topless, on a neon-lit street at night, Rembrandt lighting, thigh focus",
+   "preview": "biting lip, wearing topless, on a neon-lit street at night, Rembrandt lighting, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "content",
+    "f-clothing": "a medieval gown",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "35mm film photography",
+    "f-camera": "body shot",
+    "f-pose": "sitting cross-legged",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "comma, separated, words,, content, wearing a medieval gown, 35mm film photography, body shot, sitting cross-legged",
+   "preview": "comma, separated, words,, content, wearing a medieval gown, 35mm film photography, body shot, sitting cross-legged"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "smug",
+    "f-clothing": "",
+    "f-setting": "by a swimming pool",
+    "f-lighting": "",
+    "f-style": "black and white photography",
+    "f-camera": "portrait shot",
+    "f-pose": "walking",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "orgasmic",
+    "f-clothing": "bikini",
+    "f-setting": "",
+    "f-lighting": "rim lighting",
+    "f-style": "editorial fashion photography",
+    "f-camera": "",
+    "f-pose": "mid-turn",
+    "f-focus": "feet focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img a knight, in armour, orgasmic, brown eyes, wearing bikini, rim lighting, editorial fashion photography, mid-turn, feet focus",
+   "preview": "img a knight, in armour, orgasmic, brown eyes, wearing bikini, rim lighting, editorial fashion photography, mid-turn, feet focus"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "",
+    "f-clothing": "nude",
+    "f-setting": "in a kitchen",
+    "f-lighting": "firelight",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "dancing",
+    "f-focus": "eye focus",
+    "f-extra": "   ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "pensive",
+    "f-clothing": "a hoodie and jeans",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "stretching",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "aboard a spaceship",
+    "f-lighting": "low key lighting",
+    "f-style": "cel shaded",
+    "f-camera": "",
+    "f-pose": "jumping",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, aboard a spaceship, low key lighting, cel shaded, jumping",
+   "preview": "a red fox, aboard a spaceship, low key lighting, cel shaded, jumping"
+  },
+  {
+   "state": {
+    "f-eyes": "deep blue",
+    "f-expression": "determined",
+    "f-clothing": "sheer lingerie",
+    "f-setting": "",
+    "f-lighting": "warm candlelight",
+    "f-style": "pencil sketch",
+    "f-camera": "wide angle shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "determined",
+    "f-clothing": "",
+    "f-setting": "on a city rooftop",
+    "f-lighting": "",
+    "f-style": "ink drawing",
+    "f-camera": "eye level shot",
+    "f-pose": "",
+    "f-focus": "navel focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "orgasmic",
+    "f-clothing": "a sweater and skirt",
+    "f-setting": "in a flower meadow",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "crouching",
+    "f-focus": "lips focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "determined",
+    "f-clothing": "a witch costume",
+    "f-setting": "on an urban street",
+    "f-lighting": "chiaroscuro lighting",
+    "f-style": "cinematic",
+    "f-camera": "over-the-shoulder shot",
+    "f-pose": "",
+    "f-focus": "eye focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, determined, light green eyes, wearing a witch costume, on an urban street, chiaroscuro lighting, cinematic, over-the-shoulder shot, eye focus",
+   "preview": "portrait of \"Ada\"\nsecond line, determined, light green eyes, wearing a witch costume, on an urban street, chiaroscuro lighting, cinematic, over-the-shoulder shot, eye focus"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "smug",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "",
+    "f-camera": "high angle shot",
+    "f-pose": "prone ass up",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, smug, amber eyes, bioluminescent glow, high angle shot, prone ass up",
+   "preview": "comma, separated, words,, smug, amber eyes, bioluminescent glow, high angle shot, prone ass up"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "content",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "high key lighting",
+    "f-style": "",
+    "f-camera": "body shot",
+    "f-pose": "doggie style",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "",
+    "f-clothing": "bikini",
+    "f-setting": "in a living room",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "sad",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "ink drawing",
+    "f-camera": "",
+    "f-pose": "standing in contrapposto",
+    "f-focus": "full body",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "comma, separated, words,, sad, ink drawing, standing in contrapposto, full body",
+   "preview": "comma, separated, words,, sad, ink drawing, standing in contrapposto, full body"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "concept art",
+    "f-camera": "three-quarter shot",
+    "f-pose": "dancing",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "playful wink",
+    "f-clothing": "",
+    "f-setting": "on an urban street",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "medium shot",
+    "f-pose": "",
+    "f-focus": "pussy focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "a knight, in armour, playful wink, emerald green eyes, on an urban street, medium shot, pussy focus",
+   "preview": "a knight, in armour, playful wink, emerald green eyes, on an urban street, medium shot, pussy focus"
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "against a plain studio backdrop",
+    "f-lighting": "ring light",
+    "f-style": "35mm film photography",
+    "f-camera": "three-quarter shot",
+    "f-pose": "",
+    "f-focus": "feet focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img light blue eyes, against a plain studio backdrop, ring light, 35mm film photography, three-quarter shot, feet focus",
+   "preview": "img light blue eyes, against a plain studio backdrop, ring light, 35mm film photography, three-quarter shot, feet focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "bored",
+    "f-clothing": "",
+    "f-setting": "in a narrow alleyway",
+    "f-lighting": "blue hour lighting",
+    "f-style": "ink drawing",
+    "f-camera": "",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "on a beach",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "",
+    "f-focus": "hands focus",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "bikini",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "deep blue",
+    "f-expression": "",
+    "f-clothing": "an oversized shirt",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "",
+    "f-style": "digital art",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "thigh focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, deep blue eyes, wearing an oversized shirt, in a gothic cathedral, digital art, thigh focus",
+   "preview": "portrait of \"Ada\"\nsecond line, deep blue eyes, wearing an oversized shirt, in a gothic cathedral, digital art, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "confident",
+    "f-clothing": "an oversized shirt",
+    "f-setting": "",
+    "f-lighting": "natural lighting",
+    "f-style": "analog photograph",
+    "f-camera": "high angle shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img ünïcödé — dash, confident, dark brown eyes, wearing an oversized shirt, natural lighting, analog photograph, high angle shot",
+   "preview": "img ünïcödé — dash, confident, dark brown eyes, wearing an oversized shirt, natural lighting, analog photograph, high angle shot"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a luxury hotel room",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "wide angle shot",
+    "f-pose": "standing",
+    "f-focus": "lips focus",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img amber eyes, in a luxury hotel room, wide angle shot, standing, lips focus",
+   "preview": "img amber eyes, in a luxury hotel room, wide angle shot, standing, lips focus"
+  },
+  {
+   "state": {
+    "f-eyes": "violet",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "35mm film photography",
+    "f-camera": "",
+    "f-pose": "hands on hips",
+    "f-focus": "face focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "sheer lingerie",
+    "f-setting": "",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "black and white photography",
+    "f-camera": "over-the-shoulder shot",
+    "f-pose": "",
+    "f-focus": "full body",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "hazel",
+    "f-expression": "smiling",
+    "f-clothing": "a tailored suit",
+    "f-setting": "on a neon-lit street at night",
+    "f-lighting": "",
+    "f-style": "manga",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img smiling, hazel eyes, wearing a tailored suit, on a neon-lit street at night, manga",
+   "preview": "img smiling, hazel eyes, wearing a tailored suit, on a neon-lit street at night, manga"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "a maid outfit",
+    "f-setting": "in a library",
+    "f-lighting": "backlit silhouette",
+    "f-style": "",
+    "f-camera": "dutch angle shot",
+    "f-pose": "",
+    "f-focus": "eye focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, wearing a maid outfit, in a library, backlit silhouette, dutch angle shot, eye focus",
+   "preview": "img portrait of \"Ada\"\nsecond line, wearing a maid outfit, in a library, backlit silhouette, dutch angle shot, eye focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "worried",
+    "f-clothing": "",
+    "f-setting": "in an office",
+    "f-lighting": "blue hour lighting",
+    "f-style": "anime style",
+    "f-camera": "",
+    "f-pose": "from behind",
+    "f-focus": "thigh focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, worried, in an office, blue hour lighting, anime style, from behind, thigh focus",
+   "preview": "portrait of \"Ada\"\nsecond line, worried, in an office, blue hour lighting, anime style, from behind, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "content",
+    "f-clothing": "",
+    "f-setting": "in a luxury hotel room",
+    "f-lighting": "backlit silhouette",
+    "f-style": "concept art",
+    "f-camera": "",
+    "f-pose": "lying on back",
+    "f-focus": "back focus",
+    "f-extra": "",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "content, golden eyes, in a luxury hotel room, backlit silhouette, concept art, lying on back, back focus",
+   "preview": "content, golden eyes, in a luxury hotel room, backlit silhouette, concept art, lying on back, back focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "firelight",
+    "f-style": "concept art",
+    "f-camera": "shallow depth of field",
+    "f-pose": "on all fours",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, firelight, concept art, shallow depth of field, on all fours",
+   "preview": "a red fox, firelight, concept art, shallow depth of field, on all fours"
+  },
+  {
+   "state": {
+    "f-eyes": "silver",
+    "f-expression": "smiling",
+    "f-clothing": "",
+    "f-setting": "in a living room",
+    "f-lighting": "dramatic lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "prone",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "black and white photography",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, wearing a one-piece swimsuit, black and white photography",
+   "preview": "ünïcödé — dash, wearing a one-piece swimsuit, black and white photography"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a luxury hotel room",
+    "f-lighting": "neon lighting",
+    "f-style": "",
+    "f-camera": "portrait shot",
+    "f-pose": "leaning against wall",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, in a luxury hotel room, neon lighting, portrait shot, leaning against wall",
+   "preview": "img portrait of \"Ada\"\nsecond line, in a luxury hotel room, neon lighting, portrait shot, leaning against wall"
+  },
+  {
+   "state": {
+    "f-eyes": "silver",
+    "f-expression": "smug",
+    "f-clothing": "nude",
+    "f-setting": "",
+    "f-lighting": "ring light",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img comma, separated, words,, smug, silver eyes, wearing nude, ring light",
+   "preview": "img comma, separated, words,, smug, silver eyes, wearing nude, ring light"
+  },
+  {
+   "state": {
+    "f-eyes": "deep blue",
+    "f-expression": "soft smile",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "ring light",
+    "f-style": "ink drawing",
+    "f-camera": "",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "smiling",
+    "f-clothing": "sheer lingerie",
+    "f-setting": "in a living room",
+    "f-lighting": "dramatic lighting",
+    "f-style": "digital art",
+    "f-camera": "",
+    "f-pose": "bent over",
+    "f-focus": "hair focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "anime style",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "ass focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a neon-lit cyberpunk alley",
+    "f-lighting": "",
+    "f-style": "candid snapshot",
+    "f-camera": "telephoto compression",
+    "f-pose": "standing",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, in a neon-lit cyberpunk alley, candid snapshot, telephoto compression, standing",
+   "preview": "a red fox, in a neon-lit cyberpunk alley, candid snapshot, telephoto compression, standing"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "",
+    "f-clothing": "a medieval gown",
+    "f-setting": "in a desert",
+    "f-lighting": "",
+    "f-style": "digital art",
+    "f-camera": "macro shot",
+    "f-pose": "kneeling",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, golden eyes, wearing a medieval gown, in a desert, digital art, macro shot, kneeling",
+   "preview": "comma, separated, words,, golden eyes, wearing a medieval gown, in a desert, digital art, macro shot, kneeling"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "orgasmic",
+    "f-clothing": "thong",
+    "f-setting": "on a balcony overlooking the city",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "thigh focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, orgasmic, golden eyes, wearing thong, on a balcony overlooking the city, harsh midday sunlight, thigh focus",
+   "preview": "portrait of \"Ada\"\nsecond line, orgasmic, golden eyes, wearing thong, on a balcony overlooking the city, harsh midday sunlight, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "confident",
+    "f-clothing": "",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "",
+    "f-style": "manga",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,",
+   "preview": "comma, separated, words,"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "on a balcony overlooking the city",
+    "f-lighting": "",
+    "f-style": "photorealistic",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "a knight, in armour, on a balcony overlooking the city, photorealistic",
+   "preview": "a knight, in armour, on a balcony overlooking the city, photorealistic"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "a witch costume",
+    "f-setting": "",
+    "f-lighting": "low key lighting",
+    "f-style": "black and white photography",
+    "f-camera": "fisheye lens",
+    "f-pose": "jumping",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img a knight, in armour, wearing a witch costume, low key lighting, black and white photography, fisheye lens, jumping",
+   "preview": "img a knight, in armour, wearing a witch costume, low key lighting, black and white photography, fisheye lens, jumping"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a subway station",
+    "f-lighting": "neon lighting",
+    "f-style": "pencil sketch",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "brown eyes, in a subway station, neon lighting, pencil sketch",
+   "preview": "brown eyes, in a subway station, neon lighting, pencil sketch"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "smug",
+    "f-clothing": "",
+    "f-setting": "on a city rooftop",
+    "f-lighting": "",
+    "f-style": "concept art",
+    "f-camera": "eye level shot",
+    "f-pose": "running",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "smug, on a city rooftop, concept art, eye level shot, running",
+   "preview": "smug, on a city rooftop, concept art, eye level shot, running"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "sad",
+    "f-clothing": "",
+    "f-setting": "in a narrow alleyway",
+    "f-lighting": "chiaroscuro lighting",
+    "f-style": "cel shaded",
+    "f-camera": "telephoto compression",
+    "f-pose": "mid-turn",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, sad, amber eyes, in a narrow alleyway, chiaroscuro lighting, cel shaded, telephoto compression, mid-turn",
+   "preview": "a red fox, sad, amber eyes, in a narrow alleyway, chiaroscuro lighting, cel shaded, telephoto compression, mid-turn"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "fearful",
+    "f-clothing": "",
+    "f-setting": "against a plain studio backdrop",
+    "f-lighting": "",
+    "f-style": "cinematic",
+    "f-camera": "high angle shot",
+    "f-pose": "dancing",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "confident",
+    "f-clothing": "",
+    "f-setting": "in the mountains",
+    "f-lighting": "firelight",
+    "f-style": "oil painting",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "smug",
+    "f-clothing": "only panties",
+    "f-setting": "in an office",
+    "f-lighting": "",
+    "f-style": "black and white photography",
+    "f-camera": "fisheye lens",
+    "f-pose": "on all fours",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, smug, wearing only panties, in an office, black and white photography, fisheye lens, on all fours",
+   "preview": "portrait of \"Ada\"\nsecond line, smug, wearing only panties, in an office, black and white photography, fisheye lens, on all fours"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "",
+    "f-clothing": "a witch costume",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "black and white photography",
+    "f-camera": "wide angle shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img a knight, in armour, amber eyes, wearing a witch costume, black and white photography, wide angle shot",
+   "preview": "img a knight, in armour, amber eyes, wearing a witch costume, black and white photography, wide angle shot"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "a summer dress",
+    "f-setting": "by a swimming pool",
+    "f-lighting": "",
+    "f-style": "ink drawing",
+    "f-camera": "overhead shot",
+    "f-pose": "legs spread",
+    "f-focus": "legs focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, wearing a summer dress, by a swimming pool, ink drawing, overhead shot, legs spread, legs focus",
+   "preview": "portrait of \"Ada\"\nsecond line, wearing a summer dress, by a swimming pool, ink drawing, overhead shot, legs spread, legs focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "grinning",
+    "f-clothing": "",
+    "f-setting": "in the mountains",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "shallow depth of field",
+    "f-pose": "",
+    "f-focus": "back focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "biting lip",
+    "f-clothing": "only panties",
+    "f-setting": "",
+    "f-lighting": "colored gel lighting",
+    "f-style": "candid snapshot",
+    "f-camera": "close-up shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "",
+    "f-clothing": "a cocktail dress",
+    "f-setting": "in a futuristic city",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "thigh focus",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "a silk kimono",
+    "f-setting": "in an office",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "macro shot",
+    "f-pose": "prone ass up",
+    "f-focus": "hands focus",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "dark brown eyes, wearing a silk kimono, in an office, macro shot, prone ass up, hands focus",
+   "preview": "dark brown eyes, wearing a silk kimono, in an office, macro shot, prone ass up, hands focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "neutral",
+    "f-clothing": "a babydoll nightie",
+    "f-setting": "in a desert",
+    "f-lighting": "warm candlelight",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "confident",
+    "f-clothing": "a medieval gown",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "dutch angle shot",
+    "f-pose": "standing",
+    "f-focus": "feet focus",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, confident, light green eyes, wearing a medieval gown, dutch angle shot, standing, feet focus",
+   "preview": "comma, separated, words,, confident, light green eyes, wearing a medieval gown, dutch angle shot, standing, feet focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "pensive",
+    "f-clothing": "",
+    "f-setting": "in an enchanted forest",
+    "f-lighting": "soft diffused lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "pensive, in an enchanted forest, soft diffused lighting",
+   "preview": "pensive, in an enchanted forest, soft diffused lighting"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "only panties",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "candid snapshot",
+    "f-camera": "eye level shot",
+    "f-pose": "",
+    "f-focus": "hands focus",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "wearing only panties, in a gothic cathedral, bioluminescent glow, candid snapshot, eye level shot, hands focus",
+   "preview": "wearing only panties, in a gothic cathedral, bioluminescent glow, candid snapshot, eye level shot, hands focus"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "stockings and a garter belt",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "35mm film photography",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img a knight, in armour, green eyes, wearing stockings and a garter belt, 35mm film photography",
+   "preview": "img a knight, in armour, green eyes, wearing stockings and a garter belt, 35mm film photography"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "confident",
+    "f-clothing": "a sweater and skirt",
+    "f-setting": "on a balcony overlooking the city",
+    "f-lighting": "ring light",
+    "f-style": "digital art",
+    "f-camera": "",
+    "f-pose": "dancing",
+    "f-focus": "pussy focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "sultry gaze",
+    "f-clothing": "fantasy armor",
+    "f-setting": "on a beach",
+    "f-lighting": "moonlight",
+    "f-style": "concept art",
+    "f-camera": "medium shot",
+    "f-pose": "on all fours",
+    "f-focus": "pussy focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "serious",
+    "f-clothing": "athletic wear",
+    "f-setting": "in a kitchen",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, serious, wearing athletic wear, in a kitchen, hands on hips",
+   "preview": "comma, separated, words,, serious, wearing athletic wear, in a kitchen, hands on hips"
+  },
+  {
+   "state": {
+    "f-eyes": "gray",
+    "f-expression": "grinning",
+    "f-clothing": "a medieval gown",
+    "f-setting": "on a beach",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "running",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, grinning, gray eyes, wearing a medieval gown, on a beach, extreme close-up shot, running",
+   "preview": "portrait of \"Ada\"\nsecond line, grinning, gray eyes, wearing a medieval gown, on a beach, extreme close-up shot, running"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "fearful",
+    "f-clothing": "a cocktail dress",
+    "f-setting": "in a luxury hotel room",
+    "f-lighting": "soft diffused lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "sitting cross-legged",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "fearful",
+    "f-clothing": "a tailored suit",
+    "f-setting": "in a cafe",
+    "f-lighting": "golden hour lighting",
+    "f-style": "analog photograph",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "legs focus",
+    "f-extra": "",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "violet",
+    "f-expression": "",
+    "f-clothing": "an oversized shirt",
+    "f-setting": "on a beach",
+    "f-lighting": "",
+    "f-style": "concept art",
+    "f-camera": "high angle shot",
+    "f-pose": "leaning against wall",
+    "f-focus": "feet focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img violet eyes, wearing an oversized shirt, on a beach, concept art, high angle shot, leaning against wall, feet focus",
+   "preview": "img violet eyes, wearing an oversized shirt, on a beach, concept art, high angle shot, leaning against wall, feet focus"
+  },
+  {
+   "state": {
+    "f-eyes": "silver",
+    "f-expression": "biting lip",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "moonlight",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "crouching",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "worried",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "watercolor painting",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "full body",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img a red fox, worried, watercolor painting, full body",
+   "preview": "img a red fox, worried, watercolor painting, full body"
+  },
+  {
+   "state": {
+    "f-eyes": "gray",
+    "f-expression": "seductive",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "high key lighting",
+    "f-style": "oil painting",
+    "f-camera": "dutch angle shot",
+    "f-pose": "",
+    "f-focus": "lips focus",
+    "f-extra": "",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "manga",
+    "f-camera": "upper body shot",
+    "f-pose": "looking over shoulder",
+    "f-focus": "breast focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, manga, upper body shot, looking over shoulder, breast focus",
+   "preview": "ünïcödé — dash, manga, upper body shot, looking over shoulder, breast focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "sad",
+    "f-clothing": "a cocktail dress",
+    "f-setting": "in a cafe",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "leaning against wall",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "seductive",
+    "f-clothing": "a maid outfit",
+    "f-setting": "by a swimming pool",
+    "f-lighting": "",
+    "f-style": "photorealistic",
+    "f-camera": "",
+    "f-pose": "sitting cross-legged",
+    "f-focus": "full body",
+    "f-extra": "   ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "seductive, emerald green eyes, wearing a maid outfit, by a swimming pool, photorealistic, sitting cross-legged, full body",
+   "preview": "seductive, emerald green eyes, wearing a maid outfit, by a swimming pool, photorealistic, sitting cross-legged, full body"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "",
+    "f-clothing": "topless",
+    "f-setting": "",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "pencil sketch",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "breast focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "amber eyes, wearing topless, Rembrandt lighting, pencil sketch, breast focus",
+   "preview": "amber eyes, wearing topless, Rembrandt lighting, pencil sketch, breast focus"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "smiling",
+    "f-clothing": "tanktop and shorts",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "cinematic",
+    "f-camera": "",
+    "f-pose": "crouching",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "smiling, heterochromia eyes, wearing tanktop and shorts, cinematic, crouching",
+   "preview": "smiling, heterochromia eyes, wearing tanktop and shorts, cinematic, crouching"
+  },
+  {
+   "state": {
+    "f-eyes": "violet",
+    "f-expression": "determined",
+    "f-clothing": "fantasy armor",
+    "f-setting": "in a kitchen",
+    "f-lighting": "golden hour lighting",
+    "f-style": "manga",
+    "f-camera": "overhead shot",
+    "f-pose": "lying on back",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "",
+    "f-clothing": "an oversized shirt",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "pencil sketch",
+    "f-camera": "",
+    "f-pose": "mid-turn",
+    "f-focus": "face focus",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, light green eyes, wearing an oversized shirt, pencil sketch, mid-turn, face focus",
+   "preview": "a red fox, light green eyes, wearing an oversized shirt, pencil sketch, mid-turn, face focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "sci-fi suit",
+    "f-setting": "in a subway station",
+    "f-lighting": "low key lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "",
+    "f-clothing": "athletic wear",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "stretching",
+    "f-focus": "feet focus",
+    "f-extra": "",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "",
+    "f-clothing": "a medieval gown",
+    "f-setting": "by a swimming pool",
+    "f-lighting": "dramatic lighting",
+    "f-style": "watercolor painting",
+    "f-camera": "overhead shot",
+    "f-pose": "arms raised",
+    "f-focus": "legs focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "bikini",
+    "f-setting": "in a forest",
+    "f-lighting": "low key lighting",
+    "f-style": "",
+    "f-camera": "eye level shot",
+    "f-pose": "prone",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, wearing bikini, in a forest, low key lighting, eye level shot, prone",
+   "preview": "portrait of \"Ada\"\nsecond line, wearing bikini, in a forest, low key lighting, eye level shot, prone"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "crying",
+    "f-clothing": "",
+    "f-setting": "in a futuristic city",
+    "f-lighting": "",
+    "f-style": "ink drawing",
+    "f-camera": "headshot",
+    "f-pose": "prone ass up",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "a sheer bodysuit",
+    "f-setting": "in a forest",
+    "f-lighting": "studio lighting",
+    "f-style": "",
+    "f-camera": "fisheye lens",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "fearful",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "3D render",
+    "f-camera": "shallow depth of field",
+    "f-pose": "legs spread",
+    "f-focus": "hands focus",
+    "f-extra": "a red fox",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "against a plain studio backdrop",
+    "f-lighting": "colored gel lighting",
+    "f-style": "photorealistic",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "",
+    "f-focus": "breast focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, golden eyes, against a plain studio backdrop, colored gel lighting, photorealistic, extreme close-up shot, breast focus",
+   "preview": "img portrait of \"Ada\"\nsecond line, golden eyes, against a plain studio backdrop, colored gel lighting, photorealistic, extreme close-up shot, breast focus"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "",
+    "f-clothing": "a silk robe",
+    "f-setting": "",
+    "f-lighting": "neon lighting",
+    "f-style": "",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img comma, separated, words,, golden eyes, wearing a silk robe, neon lighting, extreme close-up shot",
+   "preview": "img comma, separated, words,, golden eyes, wearing a silk robe, neon lighting, extreme close-up shot"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "",
+    "f-clothing": "a cocktail dress",
+    "f-setting": "aboard a spaceship",
+    "f-lighting": "warm candlelight",
+    "f-style": "candid snapshot",
+    "f-camera": "overhead shot",
+    "f-pose": "dancing",
+    "f-focus": "eye focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img brown eyes, wearing a cocktail dress, aboard a spaceship, warm candlelight, candid snapshot, overhead shot, dancing, eye focus",
+   "preview": "img brown eyes, wearing a cocktail dress, aboard a spaceship, warm candlelight, candid snapshot, overhead shot, dancing, eye focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "playful wink",
+    "f-clothing": "",
+    "f-setting": "by a swimming pool",
+    "f-lighting": "studio lighting",
+    "f-style": "",
+    "f-camera": "upper body shot",
+    "f-pose": "running",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, playful wink, by a swimming pool, studio lighting, upper body shot, running",
+   "preview": "a red fox, playful wink, by a swimming pool, studio lighting, upper body shot, running"
+  },
+  {
+   "state": {
+    "f-eyes": "deep blue",
+    "f-expression": "surprised",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "high key lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "running",
+    "f-focus": "pussy focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "flirty",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "on an urban street",
+    "f-lighting": "firelight",
+    "f-style": "",
+    "f-camera": "body shot",
+    "f-pose": "lying on stomach",
+    "f-focus": "thigh focus",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a castle hall",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "running",
+    "f-focus": "face focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "photorealistic",
+    "f-camera": "macro shot",
+    "f-pose": "straddling",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "angry",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "on an urban street",
+    "f-lighting": "volumetric god rays",
+    "f-style": "pencil sketch",
+    "f-camera": "high angle shot",
+    "f-pose": "standing in contrapposto",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "comma, separated, words,, angry, wearing a one-piece swimsuit, on an urban street, volumetric god rays, pencil sketch, high angle shot, standing in contrapposto",
+   "preview": "comma, separated, words,, angry, wearing a one-piece swimsuit, on an urban street, volumetric god rays, pencil sketch, high angle shot, standing in contrapposto"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "content",
+    "f-clothing": "a sports bra and leggings",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "concept art",
+    "f-camera": "",
+    "f-pose": "leaning against wall",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "ünïcödé — dash, content, wearing a sports bra and leggings, concept art, leaning against wall",
+   "preview": "ünïcödé — dash, content, wearing a sports bra and leggings, concept art, leaning against wall"
+  },
+  {
+   "state": {
+    "f-eyes": "blue",
+    "f-expression": "soft smile",
+    "f-clothing": "partially undressed",
+    "f-setting": "",
+    "f-lighting": "rim lighting",
+    "f-style": "ink drawing",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "soft smile, blue eyes, wearing partially undressed, rim lighting, ink drawing, extreme close-up shot, hands on hips",
+   "preview": "soft smile, blue eyes, wearing partially undressed, rim lighting, ink drawing, extreme close-up shot, hands on hips"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "partially undressed",
+    "f-setting": "in a luxury hotel room",
+    "f-lighting": "",
+    "f-style": "concept art",
+    "f-camera": "eye level shot",
+    "f-pose": "prone ass up",
+    "f-focus": "breast focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, wearing partially undressed, in a luxury hotel room, concept art, eye level shot, prone ass up, breast focus",
+   "preview": "img portrait of \"Ada\"\nsecond line, wearing partially undressed, in a luxury hotel room, concept art, eye level shot, prone ass up, breast focus"
+  },
+  {
+   "state": {
+    "f-eyes": "violet",
+    "f-expression": "",
+    "f-clothing": "topless",
+    "f-setting": "in a medieval tavern",
+    "f-lighting": "",
+    "f-style": "black and white photography",
+    "f-camera": "overhead shot",
+    "f-pose": "stretching",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "flirty",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "dutch angle shot",
+    "f-pose": "hands on hips",
+    "f-focus": "pussy focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "a knight, in armour, flirty, dutch angle shot, hands on hips, pussy focus",
+   "preview": "a knight, in armour, flirty, dutch angle shot, hands on hips, pussy focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "pensive",
+    "f-clothing": "",
+    "f-setting": "in a bedroom",
+    "f-lighting": "moonlight",
+    "f-style": "candid snapshot",
+    "f-camera": "headshot",
+    "f-pose": "from behind",
+    "f-focus": "full body",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "silver",
+    "f-expression": "playful wink",
+    "f-clothing": "",
+    "f-setting": "in an office",
+    "f-lighting": "warm candlelight",
+    "f-style": "",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, playful wink, silver eyes, in an office, warm candlelight, extreme close-up shot",
+   "preview": "img portrait of \"Ada\"\nsecond line, playful wink, silver eyes, in an office, warm candlelight, extreme close-up shot"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "biting lip",
+    "f-clothing": "a sports bra and leggings",
+    "f-setting": "in a flower meadow",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "comic book art",
+    "f-camera": "wide angle shot",
+    "f-pose": "walking",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img a knight, in armour, biting lip, dark brown eyes, wearing a sports bra and leggings, in a flower meadow, harsh midday sunlight, comic book art, wide angle shot, walking",
+   "preview": "img a knight, in armour, biting lip, dark brown eyes, wearing a sports bra and leggings, in a flower meadow, harsh midday sunlight, comic book art, wide angle shot, walking"
+  },
+  {
+   "state": {
+    "f-eyes": "brown",
+    "f-expression": "orgasmic",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "overhead shot",
+    "f-pose": "",
+    "f-focus": "lips focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "ünïcödé — dash, orgasmic, brown eyes, overhead shot, lips focus",
+   "preview": "ünïcödé — dash, orgasmic, brown eyes, overhead shot, lips focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "",
+    "f-camera": "full body shot",
+    "f-pose": "stretching",
+    "f-focus": "hair focus",
+    "f-extra": "   ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "bioluminescent glow, full body shot, stretching, hair focus",
+   "preview": "bioluminescent glow, full body shot, stretching, hair focus"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "",
+    "f-clothing": "nude",
+    "f-setting": "in a castle hall",
+    "f-lighting": "neon lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "prone arched back",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, emerald green eyes, wearing nude, in a castle hall, neon lighting, prone arched back",
+   "preview": "ünïcödé — dash, emerald green eyes, wearing nude, in a castle hall, neon lighting, prone arched back"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "pensive",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "medium shot",
+    "f-pose": "",
+    "f-focus": "lips focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "a knight, in armour, pensive, wearing a one-piece swimsuit, medium shot, lips focus",
+   "preview": "a knight, in armour, pensive, wearing a one-piece swimsuit, medium shot, lips focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "determined",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "",
+    "f-lighting": "natural lighting",
+    "f-style": "pencil sketch",
+    "f-camera": "dutch angle shot",
+    "f-pose": "",
+    "f-focus": "pussy focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "smiling",
+    "f-clothing": "a hoodie and jeans",
+    "f-setting": "in a living room",
+    "f-lighting": "rim lighting",
+    "f-style": "comic book art",
+    "f-camera": "",
+    "f-pose": "bent over",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "an evening gown",
+    "f-setting": "on a beach",
+    "f-lighting": "moonlight",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "crouching",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "person"
+   },
+   "active_prompt": "img dark brown eyes, wearing an evening gown, on a beach, moonlight, crouching",
+   "preview": "img dark brown eyes, wearing an evening gown, on a beach, moonlight, crouching"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "seductive",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "extreme close-up shot",
+    "f-pose": "reclining on a couch",
+    "f-focus": "thigh focus",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, seductive, light green eyes, extreme close-up shot, reclining on a couch, thigh focus",
+   "preview": "comma, separated, words,, seductive, light green eyes, extreme close-up shot, reclining on a couch, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "golden",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "comic book art",
+    "f-camera": "full body shot",
+    "f-pose": "lying on stomach",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "comma, separated, words,, golden eyes, comic book art, full body shot, lying on stomach",
+   "preview": "comma, separated, words,, golden eyes, comic book art, full body shot, lying on stomach"
+  },
+  {
+   "state": {
+    "f-eyes": "violet",
+    "f-expression": "surprised",
+    "f-clothing": "",
+    "f-setting": "on an urban street",
+    "f-lighting": "bioluminescent glow",
+    "f-style": "",
+    "f-camera": "shallow depth of field",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "on an urban street",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "high angle shot",
+    "f-pose": "prone ass up",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, light blue eyes, on an urban street, high angle shot, prone ass up",
+   "preview": "a red fox, light blue eyes, on an urban street, high angle shot, prone ass up"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "bored",
+    "f-clothing": "",
+    "f-setting": "in an enchanted forest",
+    "f-lighting": "chiaroscuro lighting",
+    "f-style": "candid snapshot",
+    "f-camera": "overhead shot",
+    "f-pose": "crouching",
+    "f-focus": "thigh focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, bored, light green eyes, in an enchanted forest, chiaroscuro lighting, candid snapshot, overhead shot, crouching, thigh focus",
+   "preview": "portrait of \"Ada\"\nsecond line, bored, light green eyes, in an enchanted forest, chiaroscuro lighting, candid snapshot, overhead shot, crouching, thigh focus"
+  },
+  {
+   "state": {
+    "f-eyes": "hazel",
+    "f-expression": "",
+    "f-clothing": "a hoodie and jeans",
+    "f-setting": "in a gothic cathedral",
+    "f-lighting": "rim lighting",
+    "f-style": "oil painting",
+    "f-camera": "macro shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "amber",
+    "f-expression": "",
+    "f-clothing": "a tailored suit",
+    "f-setting": "",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "candid snapshot",
+    "f-camera": "",
+    "f-pose": "standing",
+    "f-focus": "hair focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, amber eyes, wearing a tailored suit, Rembrandt lighting, candid snapshot, standing, hair focus",
+   "preview": "ünïcödé — dash, amber eyes, wearing a tailored suit, Rembrandt lighting, candid snapshot, standing, hair focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "playful wink",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "telephoto compression",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "a knight, in armour, playful wink, telephoto compression",
+   "preview": "a knight, in armour, playful wink, telephoto compression"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "",
+    "f-clothing": "a summer dress",
+    "f-setting": "",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "pencil sketch",
+    "f-camera": "",
+    "f-pose": "arms crossed",
+    "f-focus": "",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "a silk robe",
+    "f-setting": "in a narrow alleyway",
+    "f-lighting": "",
+    "f-style": "photorealistic",
+    "f-camera": "eye level shot",
+    "f-pose": "",
+    "f-focus": "hands focus",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "animate"
+   },
+   "active_prompt": "she waves",
+   "preview": "she waves"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "playful wink",
+    "f-clothing": "",
+    "f-setting": "in a library",
+    "f-lighting": "",
+    "f-style": "editorial fashion photography",
+    "f-camera": "",
+    "f-pose": "looking over shoulder",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, playful wink, light green eyes, in a library, editorial fashion photography, looking over shoulder",
+   "preview": "ünïcödé — dash, playful wink, light green eyes, in a library, editorial fashion photography, looking over shoulder"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "sad",
+    "f-clothing": "",
+    "f-setting": "aboard a spaceship",
+    "f-lighting": "low key lighting",
+    "f-style": "digital art",
+    "f-camera": "high angle shot",
+    "f-pose": "reclining on a couch",
+    "f-focus": "hair focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "a knight, in armour, sad, dark brown eyes, aboard a spaceship, low key lighting, digital art, high angle shot, reclining on a couch, hair focus",
+   "preview": "a knight, in armour, sad, dark brown eyes, aboard a spaceship, low key lighting, digital art, high angle shot, reclining on a couch, hair focus"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a luxury hotel room",
+    "f-lighting": "backlit silhouette",
+    "f-style": "editorial fashion photography",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "emerald green eyes, in a luxury hotel room, backlit silhouette, editorial fashion photography",
+   "preview": "emerald green eyes, in a luxury hotel room, backlit silhouette, editorial fashion photography"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "worried",
+    "f-clothing": "a summer dress",
+    "f-setting": "in a subway station",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "macro shot",
+    "f-pose": "prone",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "worried, wearing a summer dress, in a subway station, macro shot, prone",
+   "preview": "worried, wearing a summer dress, in a subway station, macro shot, prone"
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a narrow alleyway",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "over-the-shoulder shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, light blue eyes, in a narrow alleyway, over-the-shoulder shot",
+   "preview": "a red fox, light blue eyes, in a narrow alleyway, over-the-shoulder shot"
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "",
+    "f-clothing": "a one-piece swimsuit",
+    "f-setting": "",
+    "f-lighting": "soft overcast light",
+    "f-style": "",
+    "f-camera": "eye level shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "soft overcast light",
+    "f-style": "black and white photography",
+    "f-camera": "full body shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, soft overcast light, black and white photography, full body shot",
+   "preview": "portrait of \"Ada\"\nsecond line, soft overcast light, black and white photography, full body shot"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a castle hall",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "eye level shot",
+    "f-pose": "",
+    "f-focus": "lips focus",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "make it winter",
+   "preview": "make it winter"
+  },
+  {
+   "state": {
+    "f-eyes": "gray",
+    "f-expression": "",
+    "f-clothing": "a babydoll nightie",
+    "f-setting": "on a balcony overlooking the city",
+    "f-lighting": "studio lighting",
+    "f-style": "concept art",
+    "f-camera": "",
+    "f-pose": "walking",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "gray eyes, wearing a babydoll nightie, on a balcony overlooking the city, studio lighting, concept art, walking",
+   "preview": "gray eyes, wearing a babydoll nightie, on a balcony overlooking the city, studio lighting, concept art, walking"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "sheer lingerie",
+    "f-setting": "",
+    "f-lighting": "blue hour lighting",
+    "f-style": "oil painting",
+    "f-camera": "dutch angle shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "wearing sheer lingerie, blue hour lighting, oil painting, dutch angle shot",
+   "preview": "wearing sheer lingerie, blue hour lighting, oil painting, dutch angle shot"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a library",
+    "f-lighting": "",
+    "f-style": "black and white photography",
+    "f-camera": "",
+    "f-pose": "sitting",
+    "f-focus": "full body",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "hazel",
+    "f-expression": "surprised",
+    "f-clothing": "",
+    "f-setting": "in a bedroom",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "dutch angle shot",
+    "f-pose": "",
+    "f-focus": "back focus",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "person"
+   },
+   "active_prompt": "img a red fox, surprised, hazel eyes, in a bedroom, dutch angle shot, back focus",
+   "preview": "img a red fox, surprised, hazel eyes, in a bedroom, dutch angle shot, back focus"
+  },
+  {
+   "state": {
+    "f-eyes": "heterochromia",
+    "f-expression": "playful wink",
+    "f-clothing": "bikini",
+    "f-setting": "",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "",
+    "f-camera": "overhead shot",
+    "f-pose": "",
+    "f-focus": "legs focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "smug",
+    "f-clothing": "",
+    "f-setting": "in a flower meadow",
+    "f-lighting": "",
+    "f-style": "editorial fashion photography",
+    "f-camera": "eye level shot",
+    "f-pose": "arms raised",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img smug, in a flower meadow, editorial fashion photography, eye level shot, arms raised",
+   "preview": "img smug, in a flower meadow, editorial fashion photography, eye level shot, arms raised"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "flirty",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "Rembrandt lighting",
+    "f-style": "digital art",
+    "f-camera": "eye level shot",
+    "f-pose": "from behind",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "playful wink",
+    "f-clothing": "",
+    "f-setting": "in an enchanted forest",
+    "f-lighting": "blue hour lighting",
+    "f-style": "oil painting",
+    "f-camera": "",
+    "f-pose": "prone",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "hair focus",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "hair focus",
+   "preview": "hair focus"
+  },
+  {
+   "state": {
+    "f-eyes": "light green",
+    "f-expression": "",
+    "f-clothing": "business attire",
+    "f-setting": "in an office",
+    "f-lighting": "golden hour lighting",
+    "f-style": "photorealistic",
+    "f-camera": "headshot",
+    "f-pose": "",
+    "f-focus": "legs focus",
+    "f-extra": "a red fox",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "a red fox, light green eyes, wearing business attire, in an office, golden hour lighting, photorealistic, headshot, legs focus",
+   "preview": "a red fox, light green eyes, wearing business attire, in an office, golden hour lighting, photorealistic, headshot, legs focus"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "a medieval gown",
+    "f-setting": "in a snowy landscape",
+    "f-lighting": "neon lighting",
+    "f-style": "concept art",
+    "f-camera": "wide angle shot",
+    "f-pose": "stretching",
+    "f-focus": "hair focus",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "generate"
+   },
+   "active_prompt": "a knight, in armour, green eyes, wearing a medieval gown, in a snowy landscape, neon lighting, concept art, wide angle shot, stretching, hair focus",
+   "preview": "a knight, in armour, green eyes, wearing a medieval gown, in a snowy landscape, neon lighting, concept art, wide angle shot, stretching, hair focus"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "determined",
+    "f-clothing": "a sheer bodysuit",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "concept art",
+    "f-camera": "portrait shot",
+    "f-pose": "",
+    "f-focus": "back focus",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "stockings and a garter belt",
+    "f-setting": "by a swimming pool",
+    "f-lighting": "backlit silhouette",
+    "f-style": "",
+    "f-camera": "low angle shot",
+    "f-pose": "kneeling",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "wearing stockings and a garter belt, by a swimming pool, backlit silhouette, low angle shot, kneeling",
+   "preview": "wearing stockings and a garter belt, by a swimming pool, backlit silhouette, low angle shot, kneeling"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "a corset",
+    "f-setting": "in a bedroom",
+    "f-lighting": "",
+    "f-style": "pencil sketch",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "full body",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img portrait of \"Ada\"\nsecond line, green eyes, wearing a corset, in a bedroom, pencil sketch, full body",
+   "preview": "img portrait of \"Ada\"\nsecond line, green eyes, wearing a corset, in a bedroom, pencil sketch, full body"
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "sad",
+    "f-clothing": "a lace lingerie set",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "lying on stomach",
+    "f-focus": "lips focus",
+    "f-extra": "a red fox",
+    "k-instruction": "make it winter",
+    "v-motion": "",
+    "mode": "refine"
+   },
+   "active_prompt": "a red fox, sad, dark brown eyes, wearing a lace lingerie set, lying on stomach, lips focus",
+   "preview": "a red fox, sad, dark brown eyes, wearing a lace lingerie set, lying on stomach, lips focus"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "in a library",
+    "f-lighting": "",
+    "f-style": "editorial fashion photography",
+    "f-camera": "",
+    "f-pose": "dancing",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "business attire",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "lying on back",
+    "f-focus": "",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "blue",
+    "f-expression": "bored",
+    "f-clothing": "tanktop and shorts",
+    "f-setting": "",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "black and white photography",
+    "f-camera": "body shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "dark brown",
+    "f-expression": "",
+    "f-clothing": "an evening gown",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "analog photograph",
+    "f-camera": "upper body shot",
+    "f-pose": "reclining on a couch",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "edit"
+   },
+   "active_prompt": "remove the hat",
+   "preview": "remove the hat"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "neutral",
+    "f-clothing": "an oversized shirt",
+    "f-setting": "in a neon-lit cyberpunk alley",
+    "f-lighting": "golden hour lighting",
+    "f-style": "photorealistic",
+    "f-camera": "",
+    "f-pose": "bent over",
+    "f-focus": "legs focus",
+    "f-extra": "   ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "business attire",
+    "f-setting": "",
+    "f-lighting": "high key lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "jumping",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "wearing business attire, high key lighting, jumping",
+   "preview": "wearing business attire, high key lighting, jumping"
+  },
+  {
+   "state": {
+    "f-eyes": "deep blue",
+    "f-expression": "angry",
+    "f-clothing": "elegant dress",
+    "f-setting": "",
+    "f-lighting": "high key lighting",
+    "f-style": "anime style",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "back focus",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "generate"
+   },
+   "active_prompt": "comma, separated, words,, angry, deep blue eyes, wearing elegant dress, high key lighting, anime style, back focus",
+   "preview": "comma, separated, words,, angry, deep blue eyes, wearing elegant dress, high key lighting, anime style, back focus"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "playful wink",
+    "f-clothing": "nude",
+    "f-setting": "in a medieval tavern",
+    "f-lighting": "harsh midday sunlight",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img ünïcödé — dash, playful wink, green eyes, wearing nude, in a medieval tavern, harsh midday sunlight",
+   "preview": "img ünïcödé — dash, playful wink, green eyes, wearing nude, in a medieval tavern, harsh midday sunlight"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "sci-fi suit",
+    "f-setting": "aboard a spaceship",
+    "f-lighting": "backlit silhouette",
+    "f-style": "",
+    "f-camera": "three-quarter shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "gray",
+    "f-expression": "sad",
+    "f-clothing": "",
+    "f-setting": "on a beach",
+    "f-lighting": "backlit silhouette",
+    "f-style": "manga",
+    "f-camera": "overhead shot",
+    "f-pose": "",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "a knight, in armour, sad, gray eyes, on a beach, backlit silhouette, manga, overhead shot",
+   "preview": "a knight, in armour, sad, gray eyes, on a beach, backlit silhouette, manga, overhead shot"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "fantasy armor",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "cel shaded",
+    "f-camera": "",
+    "f-pose": "stretching",
+    "f-focus": "eye focus",
+    "f-extra": "   ",
+    "k-instruction": "make it winter",
+    "v-motion": "she waves",
+    "mode": "refine"
+   },
+   "active_prompt": "wearing fantasy armor, cel shaded, stretching, eye focus",
+   "preview": "wearing fantasy armor, cel shaded, stretching, eye focus"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "grinning",
+    "f-clothing": "a silk kimono",
+    "f-setting": "in a snowy landscape",
+    "f-lighting": "golden hour lighting",
+    "f-style": "concept art",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "full body",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": " slow pan left ",
+    "mode": "animate"
+   },
+   "active_prompt": "slow pan left",
+   "preview": "slow pan left"
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "sultry gaze",
+    "f-clothing": "a medieval gown",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "fisheye lens",
+    "f-pose": "reclining on a couch",
+    "f-focus": "hands focus",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "gray",
+    "f-expression": "",
+    "f-clothing": "a silk kimono",
+    "f-setting": "on a city rooftop",
+    "f-lighting": "moonlight",
+    "f-style": "35mm film photography",
+    "f-camera": "fisheye lens",
+    "f-pose": "looking over shoulder",
+    "f-focus": "",
+    "f-extra": "",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img gray eyes, wearing a silk kimono, on a city rooftop, moonlight, 35mm film photography, fisheye lens, looking over shoulder",
+   "preview": "img gray eyes, wearing a silk kimono, on a city rooftop, moonlight, 35mm film photography, fisheye lens, looking over shoulder"
+  },
+  {
+   "state": {
+    "f-eyes": "emerald green",
+    "f-expression": "",
+    "f-clothing": "fantasy armor",
+    "f-setting": "in an office",
+    "f-lighting": "",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "prone",
+    "f-focus": "hair focus",
+    "f-extra": "ünïcödé — dash",
+    "k-instruction": "make it winter",
+    "v-motion": " slow pan left ",
+    "mode": "refine"
+   },
+   "active_prompt": "ünïcödé — dash, emerald green eyes, wearing fantasy armor, in an office, prone, hair focus",
+   "preview": "ünïcödé — dash, emerald green eyes, wearing fantasy armor, in an office, prone, hair focus"
+  },
+  {
+   "state": {
+    "f-eyes": "green",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "",
+    "f-style": "digital art",
+    "f-camera": "",
+    "f-pose": "hands on hips",
+    "f-focus": "",
+    "f-extra": "  a knight, in armour  ",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "edit"
+   },
+   "active_prompt": "",
+   "preview": "Edit uses the Instruction box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "hazel",
+    "f-expression": "confident",
+    "f-clothing": "casual outfit",
+    "f-setting": "in a narrow alleyway",
+    "f-lighting": "",
+    "f-style": "ink drawing",
+    "f-camera": "upper body shot",
+    "f-pose": "kneeling",
+    "f-focus": "legs focus",
+    "f-extra": "portrait of \"Ada\"\nsecond line",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "she waves",
+    "mode": "generate"
+   },
+   "active_prompt": "portrait of \"Ada\"\nsecond line, confident, hazel eyes, wearing casual outfit, in a narrow alleyway, ink drawing, upper body shot, kneeling, legs focus",
+   "preview": "portrait of \"Ada\"\nsecond line, confident, hazel eyes, wearing casual outfit, in a narrow alleyway, ink drawing, upper body shot, kneeling, legs focus"
+  },
+  {
+   "state": {
+    "f-eyes": "light blue",
+    "f-expression": "sad",
+    "f-clothing": "a cocktail dress",
+    "f-setting": "",
+    "f-lighting": "underwater caustic light",
+    "f-style": "",
+    "f-camera": "portrait shot",
+    "f-pose": "standing in contrapposto",
+    "f-focus": "full body",
+    "f-extra": "comma, separated, words,",
+    "k-instruction": "  remove the hat ",
+    "v-motion": "",
+    "mode": "animate"
+   },
+   "active_prompt": "",
+   "preview": "Animate uses the Motion box — the sidebar is not used."
+  },
+  {
+   "state": {
+    "f-eyes": "",
+    "f-expression": "",
+    "f-clothing": "",
+    "f-setting": "",
+    "f-lighting": "natural lighting",
+    "f-style": "",
+    "f-camera": "",
+    "f-pose": "",
+    "f-focus": "feet focus",
+    "f-extra": "a red fox",
+    "k-instruction": "",
+    "v-motion": "",
+    "mode": "person"
+   },
+   "active_prompt": "img a red fox, natural lighting, feet focus",
+   "preview": "img a red fox, natural lighting, feet focus"
+  }
+ ]
+}

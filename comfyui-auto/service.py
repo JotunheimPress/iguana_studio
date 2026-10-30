@@ -9,6 +9,8 @@ Plain routes, not BFF, for binary: `POST /upload` stores files into temp/ and ha
 ids the BFF's generate() takes — photos are megabytes, and the BFF is JSON.
 
 Loopback only: `allowed_hosts` answers any other Host with 400, and there is no login.
+`IGUANA_ALLOWED_HOSTS` (comma-separated) adds names to that list: ai-stack's `stack lan on`
+sets it to the LAN proxy's host name, and that proxy asks for a password first.
 """
 from __future__ import annotations
 
@@ -84,11 +86,17 @@ def _sweep_uploads() -> None:
             pass
 
 
+def _extra_hosts() -> tuple[str, ...]:
+    """Host names the ai-stack LAN proxy forwards with (IGUANA_ALLOWED_HOSTS)."""
+    raw = os.environ.get("IGUANA_ALLOWED_HOSTS", "")
+    return tuple(h.strip() for h in raw.split(",") if h.strip() and "*" not in h)
+
+
 def build_app():
     app = create_app(PytinctureConfig(
         modules_path=str(APPCODE),
         default_application=APPLICATION,
-        allowed_hosts=("127.0.0.1", "localhost", "::1"),
+        allowed_hosts=("127.0.0.1", "localhost", "::1", *_extra_hosts()),
         cookie_namespace="iguana",
         # pytincture caps EVERY request body at 16 MiB, ahead of any route — an 18 MB photo
         # was refused before reaching /upload. The env var MAX_REQUEST_BODY_BYTES does NOT

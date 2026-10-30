@@ -59,7 +59,7 @@ The old `venv/` (Python 3.12) only ran the classic page and can be deleted.
 | `COMFY_HOST` | `comfyui` | ComfyUI hostname |
 | `COMFY_PORT` | `8188` | ComfyUI port |
 | `PORT` | `7862` | Port the GUI binds |
-| `IGUANA_HOST` | `0.0.0.0` in the container, `127.0.0.1` on the host | Bind address. The container is published on **`127.0.0.1` only**, and pytincture's `allowed_hosts` answers any Host other than 127.0.0.1/localhost/::1 with 400 — **there is no login**, so Iguana must never be reachable from the LAN (it was, on `0.0.0.0:7862`, until the switch-over). |
+| `IGUANA_HOST` | `0.0.0.0` in the container, `127.0.0.1` on the host | Bind address. The container is published on **`127.0.0.1` only**, and pytincture's `allowed_hosts` answers any Host other than 127.0.0.1/localhost/::1 with 400 — **there is no login**, so Iguana must never be reachable from the LAN directly (it was, on `0.0.0.0:7862`, until the switch-over). Other devices go through ai-stack's HTTPS proxy, which asks for a password; `stack lan on` sets `IGUANA_ALLOWED_HOSTS` to the proxy's name so the Host check admits it. |
 | `IGUANA_STREAM_BUDGET` | `240` | Seconds a progress stream runs before it hands over to a fresh one (pytincture caps streams at 300 s). |
 
 The startup banner derives its printed URL from the same `PORT` value it binds, so the two can't

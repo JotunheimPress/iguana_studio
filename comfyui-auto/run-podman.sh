@@ -38,30 +38,21 @@ mkdir -p "$SCRIPT_DIR/outputs" "$SCRIPT_DIR/data"
 podman network exists "$NETWORK" || podman network create "$NETWORK" >/dev/null
 NET_ARG="--network=$NETWORK"
 
-# LAN: ai-stack's `stack lan on` exports the proxy's host name so the Host check admits it.
-# The port stays on loopback either way; only the proxy (with its password) reaches it.
-LAN_ARG=()
-if [[ -n "${IGUANA_ALLOWED_HOSTS:-}" ]]; then
-  LAN_ARG=(-e "IGUANA_ALLOWED_HOSTS=${IGUANA_ALLOWED_HOSTS}")
-  echo "==> LAN proxy host(s) allowed: ${IGUANA_ALLOWED_HOSTS}"
-fi
-
 echo "==> Starting $CONTAINER on port $PORT …"
 podman run -d \
   --name "$CONTAINER" \
   --restart unless-stopped \
   $NET_ARG \
-  -p "127.0.0.1:${PORT}:7862" \
+  -p "${PORT}:7862" \
   -e COMFY_HOST=comfyui \
   -e COMFY_PORT=8188 \
   -e PORT=7862 \
   -e IGUANA_HOST=0.0.0.0 \
-  "${LAN_ARG[@]}" \
   -v "$SCRIPT_DIR/outputs:/app/outputs:z" \
   -v "$SCRIPT_DIR/data:/app/data:z" \
   "$IMAGE"
 
 echo ""
 echo "✓  iguana ComfyUI GUI is running."
-echo "   Open: http://localhost:${PORT}   (this computer only — no login, so never published on the LAN)"
+echo "   Open: http://localhost:${PORT}   (other devices: http://$(hostname -s).local:${PORT})"
 echo "   Logs: podman logs -f $CONTAINER"

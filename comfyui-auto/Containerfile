@@ -72,8 +72,8 @@ COPY --from=wapyt-wheels /wheels/browser/wapyt-99.99.99-py3-none-any.whl appcode
 RUN mkdir -p /app/outputs /app/temp /app/data
 
 # ComfyUI by name on ai-net. IGUANA_HOST=0.0.0.0 is the bind INSIDE the container; the
-# port is published on 127.0.0.1 only (run-podman.sh), and pytincture's allowed_hosts
-# answers any Host other than 127.0.0.1/localhost/::1 with 400 — there is no login.
+# port is published on all interfaces (run-podman.sh). There is no login, but the Host
+# check answers any name other than loopback and IGUANA_ALLOWED_HOSTS with 400.
 ENV COMFY_HOST=comfyui \
     COMFY_PORT=8188 \
     PORT=7862 \

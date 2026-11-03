@@ -8,7 +8,11 @@ one-segment paths. History: PYTINCTURE_PLAN.md (the classic page was deleted in 
 Plain routes, not BFF, for binary: `POST /upload` stores files into temp/ and hands back
 ids the BFF's generate() takes — photos are megabytes, and the BFF is JSON.
 
-Any device on the LAN, no login: Iguana is a local tool for whoever installs it.
+Any device on the LAN, no login: Iguana is a local tool for whoever installs it. There is
+still a Host check: without one, any web page the user visits could DNS-rebind its own name
+to this machine and drive the GUI from their browser (run jobs, read or delete outputs).
+`allowed_hosts` admits loopback plus IGUANA_ALLOWED_HOSTS (comma-separated), which
+run-podman.sh fills with this machine's names and LAN addresses; anything else gets 400.
 """
 from __future__ import annotations
 
@@ -84,10 +88,21 @@ def _sweep_uploads() -> None:
             pass
 
 
+LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+def allowed_hosts() -> tuple[str, ...]:
+    """Loopback plus IGUANA_ALLOWED_HOSTS. No wildcards: "*" would switch the check off."""
+    raw = os.environ.get("IGUANA_ALLOWED_HOSTS", "")
+    extra = (h.strip().lower() for h in raw.split(","))
+    return tuple(dict.fromkeys((*LOOPBACK_HOSTS, *(h for h in extra if h and "*" not in h))))
+
+
 def build_app():
     app = create_app(PytinctureConfig(
         modules_path=str(APPCODE),
         default_application=APPLICATION,
+        allowed_hosts=allowed_hosts(),
         cookie_namespace="iguana",
         # pytincture caps EVERY request body at 16 MiB, ahead of any route — an 18 MB photo
         # was refused before reaching /upload. The env var MAX_REQUEST_BODY_BYTES does NOT

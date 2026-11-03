@@ -59,7 +59,8 @@ The old `venv/` (Python 3.12) only ran the classic page and can be deleted.
 | `COMFY_HOST` | `comfyui` | ComfyUI hostname |
 | `COMFY_PORT` | `8188` | ComfyUI port |
 | `PORT` | `7862` | Port the GUI binds |
-| `IGUANA_HOST` | `0.0.0.0` in the container, `127.0.0.1` on the host | Bind address. The container is published on **all interfaces** with no host check and no login: Iguana is a local tool for whoever installs it, so any device on the LAN opens `http://<host>.local:7862`. |
+| `IGUANA_HOST` | `0.0.0.0` in the container, `127.0.0.1` on the host | Bind address. The container is published on **all interfaces** with no login: Iguana is a local tool for whoever installs it, so any device on the LAN opens `http://<host>.local:7862`. |
+| `IGUANA_ALLOWED_HOSTS` | set by `run-podman.sh` | Host names the GUI answers to besides loopback; anything else gets 400. This blocks DNS rebinding (a web page pointing its own name at this machine to drive the GUI from the user's browser). `run-podman.sh` sets it to `<host>`, `<host>.local`, `iguana` and the machine's IPv4 addresses, plus any names you export in `IGUANA_ALLOWED_HOSTS`. A new LAN address needs a re-run. No wildcards. |
 | `IGUANA_STREAM_BUDGET` | `240` | Seconds a progress stream runs before it hands over to a fresh one (pytincture caps streams at 300 s). |
 
 The startup banner derives its printed URL from the same `PORT` value it binds, so the two can't

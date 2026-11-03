@@ -38,6 +38,17 @@ mkdir -p "$SCRIPT_DIR/outputs" "$SCRIPT_DIR/data"
 podman network exists "$NETWORK" || podman network create "$NETWORK" >/dev/null
 NET_ARG="--network=$NETWORK"
 
+# Host check (service.py): the GUI answers only to names this machine is really reached by,
+# so a web page can't DNS-rebind its own name here. Add more (a DNS name, a proxy) with
+# IGUANA_ALLOWED_HOSTS=a,b. A new LAN address needs a re-run of this script.
+SHORT="$(hostname -s)"
+HOSTS="${SHORT},${SHORT}.local,iguana"
+for ip in $(hostname -I 2>/dev/null); do
+  [[ "$ip" == *:* ]] || HOSTS+=",${ip}"            # IPv4 only: Starlette can't parse [v6]:port
+done
+[[ -n "${IGUANA_ALLOWED_HOSTS:-}" ]] && HOSTS+=",${IGUANA_ALLOWED_HOSTS}"
+echo "==> Allowed host names: localhost,${HOSTS}"
+
 echo "==> Starting $CONTAINER on port $PORT …"
 podman run -d \
   --name "$CONTAINER" \
@@ -48,6 +59,7 @@ podman run -d \
   -e COMFY_PORT=8188 \
   -e PORT=7862 \
   -e IGUANA_HOST=0.0.0.0 \
+  -e "IGUANA_ALLOWED_HOSTS=${HOSTS}" \
   -v "$SCRIPT_DIR/outputs:/app/outputs:z" \
   -v "$SCRIPT_DIR/data:/app/data:z" \
   "$IMAGE"

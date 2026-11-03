@@ -184,7 +184,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
   transition: border-color .15s, transform .15s; max-width: 480px; }
 .output-card:hover { border-color: var(--accent); transform: scale(1.01); }
 .output-card img, .output-card video { display: block; max-width: 100%; max-height: 480px; width: auto; height: auto; }
-.output-card img { cursor: zoom-in; }
+.output-card img { cursor: pointer; }
 
 .lora-row { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 8px; margin-bottom: 6px; }
 .lora-row-top { display: flex; align-items: center; gap: 6px; }

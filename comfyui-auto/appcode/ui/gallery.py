@@ -7,7 +7,7 @@ this in Python at ~1 ms per render. Tile geometry comes from CSS custom properti
 (--gtile, --gitem-h, --ggap) so restyling keeps the row math right; tiles stay hard-sized.
 
 Viewer (ui/viewer.py): clicking a tile opens the full-screen viewer on that file, with
-previous / next, zoom and the same actions as the menu.
+previous / next, zoom and the same actions as the menu. Result cards open it too (`view`).
 
 Item menu: ONE element on <body>, position: fixed — the gallery clips overflow and
 virtualisation destroys tiles on scroll, so a menu anchored inside a tile would vanish.
@@ -22,7 +22,7 @@ import js
 from wapyt import message
 
 from bff.gallery import Gallery as GalleryApi
-from ui.common import by_id, esc, failed, proxy
+from ui.common import by_id, esc, failed, proxy, spawn, toast
 from ui.viewer import Viewer
 
 VIDEO = (".mp4", ".gif", ".webm")
@@ -174,6 +174,16 @@ class GalleryView:
         if item and not ev.target.closest(".item-menu-btn"):
             self.viewer.open(str(item.getAttribute("data-file")))
 
+    async def view(self, name: str) -> None:
+        """Open the viewer on `name`. A result card's file may be newer than the list
+        (the refresh after a job is still in flight), so reload once if it is missing."""
+        if not any(it.get("name") == name for it in self.items):
+            await self.load()
+        if not any(it.get("name") == name for it in self.items):
+            toast(f"{name} is no longer in outputs/.", kind="error")
+            return
+        self.viewer.open(name)
+
     # --- open / close -----------------------------------------------------------------
     def toggle(self) -> None:
         self.is_open = not self.is_open
@@ -184,7 +194,6 @@ class GalleryView:
         self.on_toggle(self.is_open)
         if self.is_open:
             self.key = ""
-            from ui.common import spawn
             spawn(self.load(), "gallery")
 
     def close(self) -> None:

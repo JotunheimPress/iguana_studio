@@ -334,7 +334,7 @@ Two things to respect when touching it:
 - **The DOM is not the list.** Anything that adds or removes an image must go through
   `galleryItems` and re-render; counting `.gallery-item` elements now only counts what's on screen.
 
-**Viewer** (`appcode/ui/viewer.py`) — clicking a tile opens a full-screen viewer on `<body>`
+**Viewer** (`appcode/ui/viewer.py`) — clicking a tile or a result card's image opens a full-screen viewer on `<body>`
 (z-index 9000: over the "⋯" menu, under wapyt's modals and toasts, so Delete's confirm shows on
 top). It walks `GalleryView.items` by index, read fresh on every move, and `GalleryView.forget()`
 calls `viewer.removed()` so a delete lands on the next image. Zoom is a CSS transform on the

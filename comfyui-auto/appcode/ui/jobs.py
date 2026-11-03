@@ -95,9 +95,9 @@ class JobView:
                 card.innerHTML = (f'<video src="{esc(url)}" autoplay loop muted playsinline '
                                   'controls></video>' + menu_button(name))
             else:
-                card.innerHTML = (f'<a href="{esc(url)}" target="_blank" rel="noopener">'
-                                  f'<img src="{esc(url)}" alt="{esc(name)}" loading="lazy"></a>'
-                                  + menu_button(name))
+                # A click opens the gallery viewer (Studio wires it on #output-area).
+                card.innerHTML = (f'<img class="output-img" src="{esc(url)}" alt="{esc(name)}" '
+                                  'loading="lazy">' + menu_button(name))
             area.prepend(card)
 
     # --- following a job --------------------------------------------------------------

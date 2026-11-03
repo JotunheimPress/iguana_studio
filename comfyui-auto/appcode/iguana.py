@@ -83,6 +83,7 @@ class Iguana(MainWindow):
         self.menu.bind(by_id("output-area"))
         self.gallery = GalleryView()
         self.gallery.mount(self.menu)
+        by_id("output-area").addEventListener("click", proxy(self._on_result_click))
         by_id("mode-tabs").addEventListener("click", proxy(self._on_tab))
         by_id("top-gen-btn").addEventListener("click", proxy(lambda e: spawn(self.generate(), "generate")))
         self._show_mode()
@@ -119,6 +120,13 @@ class Iguana(MainWindow):
         self.panels.set_from_output(mode, name)
         self.switch_mode(mode)
         by_id("ctrl-" + mode).scrollIntoView()
+
+    def _on_result_click(self, ev):
+        """A result card's image → the gallery viewer (videos keep their own controls)."""
+        img = ev.target.closest(".output-img")
+        card = img.closest(".output-card") if img else None
+        if card and not ev.target.closest(".item-menu-btn"):
+            spawn(self.gallery.view(str(card.getAttribute("data-file"))), "view result")
 
     def _delete(self, name: str):
         spawn(self.gallery.delete(name, self._after_delete), "delete output")

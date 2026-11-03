@@ -22,6 +22,37 @@ SHOTS = Path(__file__).resolve().parent / "shots"
 MODES = ["generate", "person", "refine", "edit", "animate"]
 
 
+async def viewer_checks(pg, problems: list[str]) -> None:
+    """Tile click → viewer; → steps; + zooms; 0 fits; Esc closes. Read-only."""
+    first = await pg.get_attribute(".gallery-item >> nth=0", "data-file")
+    await pg.click(".gallery-item >> nth=0 >> .gthumb")
+    if not await pg.is_visible("#iv"):
+        problems.append("viewer did not open on a tile click")
+        return
+    if await pg.text_content("#iv-name") != first:
+        problems.append(f"viewer opened {await pg.text_content('#iv-name')!r}, not {first!r}")
+    await pg.wait_for_function("!document.getElementById('iv-stage').classList.contains('loading')",
+                               timeout=20_000)
+    await pg.screenshot(path=str(SHOTS / "viewer.png"))
+    fit = await pg.text_content("#iv-zoom")
+    await pg.keyboard.press("+")
+    if await pg.text_content("#iv-zoom") == fit:
+        problems.append("viewer: + did not zoom")
+    await pg.keyboard.press("0")
+    if await pg.text_content("#iv-zoom") != fit:
+        problems.append("viewer: 0 did not return to fit")
+    if await pg.locator(".gallery-item").count() > 1:
+        await pg.keyboard.press("ArrowRight")
+        if (await pg.text_content("#iv-count") or "").split(" / ")[0] != "2":
+            problems.append("viewer: → did not move to the next item")
+        await pg.click("#iv .iv-prev")
+        if await pg.text_content("#iv-name") != first:
+            problems.append("viewer: ‹ did not come back")
+    await pg.keyboard.press("Escape")
+    if await pg.is_visible("#iv"):
+        problems.append("viewer did not close on Escape")
+
+
 async def main() -> int:
     SHOTS.mkdir(exist_ok=True)
     problems: list[str] = []
@@ -68,6 +99,7 @@ async def main() -> int:
             await pg.keyboard.press("Escape")
             if await pg.is_visible("#item-menu"):
                 problems.append("item menu did not close on Escape")
+            await viewer_checks(pg, problems)
         await pg.click("#gallery-header")
 
         if os.environ.get("SMOKE_GENERATE"):

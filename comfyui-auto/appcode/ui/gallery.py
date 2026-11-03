@@ -6,6 +6,9 @@ OVERSCAN) are built, so thousands of outputs cost what a few dozen do. Phase 0 m
 this in Python at ~1 ms per render. Tile geometry comes from CSS custom properties
 (--gtile, --gitem-h, --ggap) so restyling keeps the row math right; tiles stay hard-sized.
 
+Viewer (ui/viewer.py): clicking a tile opens the full-screen viewer on that file, with
+previous / next, zoom and the same actions as the menu.
+
 Item menu: ONE element on <body>, position: fixed — the gallery clips overflow and
 virtualisation destroys tiles on scroll, so a menu anchored inside a tile would vanish.
 Right-aligned to its button, flipped above when there is no room below; closes on an
@@ -20,6 +23,7 @@ from wapyt import message
 
 from bff.gallery import Gallery as GalleryApi
 from ui.common import by_id, esc, failed, proxy
+from ui.viewer import Viewer
 
 VIDEO = (".mp4", ".gif", ".webm")
 OVERSCAN = 2
@@ -148,6 +152,7 @@ class GalleryView:
         self.key = ""
         self.pending = False
         self.on_toggle = on_toggle or (lambda is_open: None)
+        self.viewer: Viewer | None = None
 
     def mount(self, menu: ItemMenu) -> None:
         by_id("gallery-header").addEventListener("click", proxy(lambda e: self.toggle()))
@@ -156,6 +161,8 @@ class GalleryView:
         grid.addEventListener("click", proxy(self._on_click))
         js.window.addEventListener("resize", proxy(lambda e: self._on_resize()))
         menu.bind(grid)
+        # The viewer walks this list and reuses the menu's actions (send / delete).
+        self.viewer = Viewer(lambda: self.items, menu.on_send, menu.on_delete)
 
     def _on_resize(self) -> None:
         self.key = ""
@@ -163,8 +170,9 @@ class GalleryView:
 
     def _on_click(self, ev) -> None:
         thumb = ev.target.closest(".gthumb")
-        if thumb and not ev.target.closest(".item-menu-btn"):
-            js.window.open(str(thumb.getAttribute("data-url")), "_blank", "noopener")
+        item = thumb.closest(".gallery-item") if thumb else None
+        if item and not ev.target.closest(".item-menu-btn"):
+            self.viewer.open(str(item.getAttribute("data-file")))
 
     # --- open / close -----------------------------------------------------------------
     def toggle(self) -> None:
@@ -180,6 +188,8 @@ class GalleryView:
             spawn(self.load(), "gallery")
 
     def close(self) -> None:
+        if self.viewer is not None:
+            self.viewer.close()
         if self.is_open:
             self.toggle()
 
@@ -200,6 +210,8 @@ class GalleryView:
         self.items = [it for it in self.items if it.get("name") != name]
         self._count()
         self.render(True)
+        if self.viewer is not None:
+            self.viewer.removed(name)
 
     async def delete(self, name: str, on_removed) -> None:
         if not await message.confirm(
@@ -264,7 +276,7 @@ class GalleryView:
         name = item["name"]
         url = esc(out_url(name))
         # Images load a small cached WebP (server.get_thumb); ?v=mtime makes it cacheable for
-        # good and changes when the file does. Clicking still opens the full image.
+        # good and changes when the file does. Clicking opens the full image in the viewer.
         thumb = esc(f"/thumbs/{js.encodeURIComponent(name)}?v={int(item.get('mtime') or 0)}")
         media = (f'<video class="gthumb" src="{url}" data-url="{url}" muted preload="metadata" title="{esc(name)}"></video>'
                  if is_video(name) else

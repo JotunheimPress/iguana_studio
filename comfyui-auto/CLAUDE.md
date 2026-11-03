@@ -116,7 +116,7 @@ BFF classes; binary stays plain HTTP (`POST /upload`, `GET /outputs/{f}`).
 | control bars, `applyCheckpointUI/Config`, `loadCheckpoints`, source pickers, Person dropzone, `updateAnimateLength` | `appcode/ui/panels.py` (`_apply_ui` / `_apply_config`, `snap_length`) |
 | `CKPT_CONFIGS`, `_fluxConfig` | `services/models.py` `config_for()` (server-side; `Studio.checkpoints()` returns it) |
 | `generate()`, `pollJob`, job card, `showOutputs`, `showError` | `appcode/iguana.py` `generate()` + `appcode/ui/jobs.py` (progress **streamed**, see below) |
-| gallery (`galleryItems`, `renderGalleryWindow`), `openItemMenu`, `deleteOutput` | `appcode/ui/gallery.py` (`GalleryView`, `ItemMenu`) + `bff/gallery.py` |
+| gallery (`galleryItems`, `renderGalleryWindow`), `openItemMenu`, `deleteOutput` | `appcode/ui/gallery.py` (`GalleryView`, `ItemMenu`), `appcode/ui/viewer.py` (`Viewer`) + `bff/gallery.py` |
 | `set*FromGallery` (fetch blob → re-upload) | `Panels.set_from_output()` → `Studio.from_output()` copies the output into `temp/` server-side |
 | `PERSIST_IDS`, `saveState/loadState` | `ui/common.py` `load_state/save_state` (same `studio_v1` key, merging writes) + each module's own ids |
 | `/generate`, `/job/{id}`, `/checkpoints`, `/loras`, `/gallery`, `/prompts`, `/comfy-status` | BFF methods (`Studio`, `Prompts`, `Gallery`); those routes are gone |
@@ -333,6 +333,16 @@ Two things to respect when touching it:
   hover menu.
 - **The DOM is not the list.** Anything that adds or removes an image must go through
   `galleryItems` and re-render; counting `.gallery-item` elements now only counts what's on screen.
+
+**Viewer** (`appcode/ui/viewer.py`) — clicking a tile opens a full-screen viewer on `<body>`
+(z-index 9000: over the "⋯" menu, under wapyt's modals and toasts, so Delete's confirm shows on
+top). It walks `GalleryView.items` by index, read fresh on every move, and `GalleryView.forget()`
+calls `viewer.removed()` so a delete lands on the next image. Zoom is a CSS transform on the
+`<img>` (`translate() scale()`, origin top-left, scale relative to real pixels: 100% = 1:1); wheel
+zooms at the cursor, drag pans once zoomed, double-click toggles fit ↔ 100%. Keys: ← → Home End,
+\+ − 0 (fit) 1 (1:1), Del, Esc — ignored while a `.wapyt-msg-overlay` is up. Refine / Edit /
+Animate / Delete reuse the item menu's callbacks. MP4 / WebM get `<video controls>` and no zoom;
+a GIF is shown as an image. `tests/smoke.py` (`viewer_checks`) drives it.
 
 Opening the gallery hides the output area, so `closeGallery()` runs from `generate()` and from the
 `set*FromGallery()` pickers — otherwise a job's progress, or the controls a pick just filled in,

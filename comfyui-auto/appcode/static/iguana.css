@@ -273,3 +273,55 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
 .item-menu .danger:hover { background: rgba(224,85,85,.15); }
 .item-menu .danger .mi-icon { color: var(--danger); }
 .item-menu .sep { height: 1px; margin: 4px 2px; background: var(--border); }
+
+/* ── gallery viewer (ui/viewer.py) ── */
+/* z-index 9000: over the page and the "⋯" menu (500), under wapyt's modals (9600+) and toasts. */
+body.iv-lock { overflow: hidden; }
+.iv { position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column;
+  background: #08080b; color: var(--text); user-select: none; }
+.iv, .iv * { box-sizing: border-box; }
+.iv[hidden], .iv-btn[hidden] { display: none; }
+.iv-top { display: flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 48px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid rgba(255,255,255,.06); }
+.iv-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.iv-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.iv-dims { font-size: 12px; color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.iv-btn.iv-close { margin-left: auto; font-size: 24px; }
+.iv-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; }
+.iv-stage.pannable { cursor: grab; }
+.iv-stage.dragging { cursor: grabbing; }
+.iv-media { position: absolute; top: 0; left: 0; transform-origin: 0 0; max-width: none; display: block; }
+.iv-stage img.iv-media { image-rendering: auto; }
+.iv.iv-video .iv-media { position: static; width: 100%; height: 100%; object-fit: contain; transform: none; }
+.iv-spin { position: absolute; top: 50%; left: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border: 3px solid rgba(255,255,255,.12); border-top-color: var(--accent); border-radius: 50%;
+  animation: iv-spin .8s linear infinite; display: none; z-index: 1; }
+.iv-stage.loading .iv-spin { display: block; }
+@keyframes iv-spin { to { transform: rotate(360deg); } }
+.iv-btn.iv-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 48px; height: 72px;
+  font-size: 40px; color: rgba(255,255,255,.75); }
+.iv-prev { left: 14px; }
+.iv-next { right: 14px; }
+.iv-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding: 10px 14px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255,255,255,.06); }
+.iv-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.iv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; height: 34px;
+  padding: 0 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font: inherit; font-size: 18px; line-height: 1; text-decoration: none; cursor: pointer;
+  transition: background .15s, border-color .15s; }
+.iv-btn.iv-text { font-size: 12px; padding: 0 11px; }
+.iv-btn:hover { background: #2a2a36; border-color: var(--accent); }
+.iv-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.iv-btn.danger { color: var(--danger); }
+.iv-btn.danger:hover { background: rgba(224,85,85,.15); border-color: var(--danger); }
+.iv-btn.iv-close, .iv-btn.iv-nav { background: transparent; border-color: transparent; }
+.iv-btn.iv-nav:hover { background: rgba(255,255,255,.08); color: #fff; }
+.iv-zoom { min-width: 52px; text-align: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.iv.iv-video .iv-zoom-group, .iv.iv-video .iv-img-only { display: none; }
+@media (max-width: 640px) {
+  .iv-btn.iv-nav { width: 38px; height: 56px; font-size: 32px; }
+  .iv-prev { left: 4px; } .iv-next { right: 4px; }
+  .iv-bar { justify-content: center; }
+  .iv-dims { display: none; }
+}

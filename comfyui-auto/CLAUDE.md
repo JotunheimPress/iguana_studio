@@ -79,15 +79,16 @@ comfyui-auto/
 │   ├── bff/             #   studio.py (models, jobs, progress stream) · prompts.py · gallery.py
 │   ├── static/iguana.css#   served at /istatic
 │   └── wapyt-*.whl      #   the BROWSER's wapyt (git-ignored; dev_wheel.sh / the Containerfile)
-├── tests/               # test_prompt.py + prompt_golden.json · smoke.py (Playwright)
+├── tests/               # test_prompt.py + prompt_golden.json · test_zimage.py · smoke.py (Playwright)
 ├── run.py               # CLI alternative (text2img / img2img / video only)
 ├── client.py            # ComfyUI API client: queue, poll /history, download /view
 ├── workflows/
 │   ├── defaults.py      # shared negative prompts + is_flux() / is_sdxl() detection
 │   ├── lora.py          # splices a LoraLoader chain into any checkpoint-based graph
-│   ├── text2img.py      # text → image; delegates to flux.py when checkpoint is FLUX
-│   ├── img2img.py       # edit an image; also delegates to flux.py
+│   ├── text2img.py      # text → image; delegates to flux.py / zimage.py by base
+│   ├── img2img.py       # edit an image; same delegation
 │   ├── flux.py          # FLUX.1 graphs (build + build_img2img)
+│   ├── zimage.py        # Z-Image graphs, Turbo and base (build + build_img2img)
 │   ├── photomaker.py    # person from reference photos  ← see Known broken
 │   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
 │   └── video.py         # WAN 2.2 image→video + text→video
@@ -445,9 +446,29 @@ still loaded (9.5 GB): 1024² text2img in **24 s**, Refine in **16 s**, no OOM. 
 come from the name (schnell → 4 steps / guidance 1.0; dev → 20 / 3.5). A dev GGUF works
 the same way, but the dev repo is gated (`HF_TOKEN`) and non-commercial.
 
-**Model-type detection has one home: `workflows/defaults.py`.** `is_flux()` / `is_sdxl()` (the
-`_SDXL_NAMES` keyword set) classify a filename, `base_of()` turns that into `"FLUX"` / `"SDXL"` /
-`"SD 1.5"`, and `default_size()` builds on the same pair for `run.py`.
+**Z-Image runs natively** (since 2026-11-03; Tongyi-MAI, Apache 2.0, ComfyUI's own support —
+no custom node). Always a split load, so the files live outside `checkpoints/`:
+
+| File | Goes in | From |
+|---|---|---|
+| `z_image_turbo_bf16.safetensors` (12.3 GB) and/or `z_image_bf16.safetensors` (12.3 GB) | `models/diffusion_models/` | `Comfy-Org/Z-Image-Turbo`, `Comfy-Org/Z-Image` (`split_files/…`) |
+| `qwen_3_4b.safetensors` (8.0 GB) | `models/text_encoders/` | either repo |
+| `ae.safetensors` | `models/vae/` | the FLUX VAE, already installed |
+
+`workflows/zimage.py` follows ComfyUI's templates (`image_z_image_turbo` / `image_z_image`):
+`UNETLoader` + `CLIPLoader` (`qwen_3_4b`, type `lumina2`) + `VAELoader` (`ae`),
+`ModelSamplingAuraFlow` shift 3, `EmptySD3LatentImage`, `res_multistep` + `simple`.
+**Turbo** (name contains `turbo`): 8 steps, CFG 1, negative hidden — at CFG 1 ComfyUI never
+evaluates it, which is what the template's `ConditioningZeroOut` amounts to. **Base**: 25 steps,
+CFG 4, negative used. Generate and Refine both take it, LoRAs included (node `"1"` MODEL, `"1c"`
+CLIP, like the GGUF FLUX path; the shift node is rewired after the chain). The picker lists
+`object_info/UNETLoader` names that `base_of()` calls Z-Image (`z[-_ ]?image`) — that folder
+also holds WAN and ACE-Step, which must not appear. `config_for()` may return `neg: False`;
+`_apply_ui` hides the negative box for it, as it always did for FLUX.
+
+**Model-type detection has one home: `workflows/defaults.py`.** `is_zimage()` / `is_flux()` / `is_sdxl()`
+(the `_SDXL_NAMES` keyword set) classify a filename, `base_of()` turns that into `"Z-Image"` /
+`"FLUX"` / `"SDXL"` / `"SD 1.5"`, and `default_size()` builds on the same pair for `run.py`.
 
 `/checkpoints` returns `[{name, base}]` rather than bare filenames, so the frontend groups the
 picker and picks its config fallback from the server's answer instead of re-deriving one. This
@@ -458,8 +479,10 @@ checkpoint had to be taught to both. Now a new checkpoint only needs `_SDXL_NAME
 `checkpointBase` in the frontend is a cache of that response; `_baseOf()` falls back to substring
 tests only for the window before `/checkpoints` has answered.
 
-Adding a **new base family** means: teach `defaults.py` to detect it, add it to `BASES`, and add
-it to `BASE_ORDER` in `appcode/ui/panels.py` — the picker appends unknown bases after the known ones rather
+Adding a **new base family** means (Z-Image is the worked example): teach `defaults.py` to detect
+it, add it to `BASES`, a builder under `workflows/` that `text2img`/`img2img` delegate to, a
+`config_for()` branch, the loader listing in `server.list_checkpoints()` if it isn't a checkpoint,
+and add it to `BASE_ORDER` in `appcode/ui/panels.py` — the picker appends unknown bases after the known ones rather
 than dropping them, so a missed `BASE_ORDER` entry degrades to bad ordering, not a missing group.
 
 ## Flux Kontext (Edit mode) — how it's wired

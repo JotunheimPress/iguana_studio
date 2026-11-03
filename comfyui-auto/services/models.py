@@ -23,8 +23,16 @@ CKPT_CONFIGS: dict[str, dict] = {
 
 
 def config_for(name: str, base: str | None = None) -> dict:
-    """{steps, cfg, w, h} to stamp on an explicit model change. For FLUX, `cfg` is guidance."""
+    """{steps, cfg, w, h[, neg]} to stamp on an explicit model change. For FLUX, `cfg` is
+    guidance. `neg` False = the model ignores a negative prompt (the page hides the box)."""
     base = base or base_of(name)
+    if base == "Z-Image":
+        # ComfyUI's templates: Turbo is distilled to 8 steps at CFG 1, where the negative
+        # is never evaluated (neg=False hides it); base wants 25 at CFG 4 and uses it.
+        from workflows.zimage import defaults_for, is_turbo
+        d = defaults_for(name)
+        return {"steps": d["steps"], "cfg": d["cfg"], "w": 1024, "h": 1024,
+                "neg": not is_turbo(name)}
     if base == "FLUX":
         # schnell is distilled to 4 steps and ignores guidance; dev wants 20 at 3.5.
         return ({"steps": 4, "cfg": 1.0, "w": 1024, "h": 1024} if "schnell" in name.lower()

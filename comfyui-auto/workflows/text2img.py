@@ -1,8 +1,8 @@
-"""Text-to-image workflow — supports SD 1.5, SDXL, and FLUX."""
+"""Text-to-image workflow — supports SD 1.5, SDXL, FLUX and Z-Image."""
 
 import random
 from workflows import lora as lora_chain
-from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_sdxl
+from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_sdxl, is_zimage
 
 DEFAULT_CHECKPOINT = "sd_xl_base_1.0.safetensors"
 
@@ -21,6 +21,17 @@ def build(
     filename_prefix: str = "text2img",
     loras=None,
 ) -> dict:
+    if is_zimage(checkpoint):
+        # Steps/CFG come from the form as for any model (services/models.py stamps the
+        # recommended ones on a model change); its own sampler and scheduler are fixed.
+        from workflows.zimage import build as zimage_build
+        return zimage_build(
+            width=width, height=height,
+            prompt=prompt, negative_prompt=negative_prompt, checkpoint=checkpoint,
+            steps=steps, cfg=cfg, seed=seed,
+            filename_prefix=filename_prefix, loras=loras,
+        )
+
     if is_flux(checkpoint):
         from workflows.flux import build as flux_build
         return flux_build(

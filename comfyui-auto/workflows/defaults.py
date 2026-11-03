@@ -3,11 +3,19 @@
 
 # ── Model type detection ───────────────────────────────────────────────────────
 
+import re
+
 def is_flux(checkpoint: str) -> bool:
     return "flux" in checkpoint.lower()
 
+# Z-Image (Tongyi-MAI): z_image_turbo_bf16, z_image_bf16, "Z-Image" / "zImage" finetunes.
+_ZIMAGE = re.compile(r"z[-_ ]?image", re.I)
+
+def is_zimage(checkpoint: str) -> bool:
+    return bool(_ZIMAGE.search(checkpoint)) and not is_flux(checkpoint)
+
 def is_sdxl(checkpoint: str) -> bool:
-    if is_flux(checkpoint):
+    if is_flux(checkpoint) or is_zimage(checkpoint):
         return False
     name = checkpoint.lower()
     _SDXL_NAMES = {"crealism", "mirabilis", "juggernaut", "dreamshaper", "realvis", "pony"}
@@ -17,7 +25,7 @@ def is_sdxl(checkpoint: str) -> bool:
 # Display order for grouped checkpoint lists, newest architecture first. Groups with no
 # installed members are skipped by the frontend, so this order costs nothing when a family
 # is absent.
-BASES = ("FLUX", "SDXL", "SD 1.5")
+BASES = ("Z-Image", "FLUX", "SDXL", "SD 1.5")
 
 
 def base_of(checkpoint: str) -> str:
@@ -28,6 +36,8 @@ def base_of(checkpoint: str) -> str:
     has no "xl" in its name — and meant every new checkpoint had to be taught to two
     separate lists. /checkpoints now reports the base so there is only one.
     """
+    if is_zimage(checkpoint):
+        return "Z-Image"
     if is_flux(checkpoint):
         return "FLUX"
     if is_sdxl(checkpoint):
@@ -40,10 +50,11 @@ def default_size(checkpoint: str) -> tuple[int, int]:
     Native training resolution for the checkpoint's family.
 
     Callers that have no explicit size should ask for this rather than assuming a
-    fixed default: SDXL and FLUX are trained at 1024², and running them at 512²
+    fixed default: SDXL, FLUX and Z-Image are trained at 1024², and running them at 512²
     degrades output badly (soft, malformed, duplicated subjects).
     """
-    return (1024, 1024) if is_sdxl(checkpoint) or is_flux(checkpoint) else (512, 512)
+    big = is_sdxl(checkpoint) or is_flux(checkpoint) or is_zimage(checkpoint)
+    return (1024, 1024) if big else (512, 512)
 
 
 # ── Negative prompts ───────────────────────────────────────────────────────────

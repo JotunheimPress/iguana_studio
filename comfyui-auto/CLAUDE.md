@@ -79,15 +79,16 @@ comfyui-auto/
 │   ├── bff/             #   studio.py (models, jobs, progress stream) · prompts.py · gallery.py
 │   ├── static/iguana.css#   served at /istatic
 │   └── wapyt-*.whl      #   the BROWSER's wapyt (git-ignored; dev_wheel.sh / the Containerfile)
-├── tests/               # test_prompt.py + prompt_golden.json · test_zimage.py · smoke.py (Playwright)
+├── tests/               # test_prompt.py + prompt_golden.json · test_zimage.py · test_flux2.py · smoke.py (Playwright)
 ├── run.py               # CLI alternative (text2img / img2img / video only)
 ├── client.py            # ComfyUI API client: queue, poll /history, download /view
 ├── workflows/
 │   ├── defaults.py      # shared negative prompts + is_flux() / is_sdxl() detection
 │   ├── lora.py          # splices a LoraLoader chain into any checkpoint-based graph
-│   ├── text2img.py      # text → image; delegates to flux.py / zimage.py by base
+│   ├── text2img.py      # text → image; delegates to flux.py / flux2.py / zimage.py by base
 │   ├── img2img.py       # edit an image; same delegation
 │   ├── flux.py          # FLUX.1 graphs (build + build_img2img)
+│   ├── flux2.py         # FLUX.2 graphs, Dev and Klein (build + build_img2img)
 │   ├── zimage.py        # Z-Image graphs, Turbo and base (build + build_img2img)
 │   ├── photomaker.py    # person from reference photos  ← see Known broken
 │   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
@@ -466,9 +467,32 @@ CLIP, like the GGUF FLUX path; the shift node is rewired after the chain). The p
 also holds WAN and ACE-Step, which must not appear. `config_for()` may return `neg: False`;
 `_apply_ui` hides the negative box for it, as it always did for FLUX.
 
-**Model-type detection has one home: `workflows/defaults.py`.** `is_zimage()` / `is_flux()` / `is_sdxl()`
-(the `_SDXL_NAMES` keyword set) classify a filename, `base_of()` turns that into `"Z-Image"` /
-`"FLUX"` / `"SDXL"` / `"SD 1.5"`, and `default_size()` builds on the same pair for `run.py`.
+**FLUX.2 runs natively** (since 2026-11-03; no custom node), as its own base **`FLUX.2`** —
+`is_flux2()` (`flux[-_. ]?2`) is checked first and `is_flux()` means FLUX.1 only, because
+the graph is different: no KSampler but `RandomNoise` + guider + `KSamplerSelect(euler)` +
+`Flux2Scheduler` into `SamplerCustomAdvanced`, on `EmptyFlux2LatentImage`, with the FLUX.2 VAE
+and a `CLIPLoader` of type `flux2`. `workflows/flux2.py` follows ComfyUI's templates
+(`image_flux2_text_to_image`, `image_flux2_klein_text_to_image`, `…_text_to_image_9b`):
+
+| Variant (by file name) | Text encoder | Graph | Defaults |
+|---|---|---|---|
+| Klein distilled (`flux-2-klein-4b`, `-9b`) | `qwen_3_4b` (the Z-Image file) / `qwen_3_8b` | `CFGGuider` + `ConditioningZeroOut` | 4 steps, CFG 1, negative hidden |
+| Klein base (`…-klein-base-…`) | same | `CFGGuider` + negative `CLIPTextEncode` | 20 steps, CFG 5 |
+| Dev (`flux2_dev_…`, 32B) | `mistral_3_small_flux2_*` | `BasicGuider` on `FluxGuidance` | 20 steps, guidance 4 (box relabelled) |
+
+Text encoders and VAEs come in several precisions, so `pick()` takes the first **installed**
+name from a preference list (`object_info`), falling back to the first name when ComfyUI is
+unreachable. Refine VAE-encodes the source and samples `SplitSigmasDenoise`'s low half of a
+`steps/denoise` schedule, so the requested step count is what runs; `Flux2Scheduler` gets the
+source's real size (`GetImageSize`) because it shifts by resolution. LoRAs splice as for
+Z-Image. FLUX.1 LoRAs do not fit FLUX.2. Files (`Comfy-Org/Flux-2-Klein-4B`, Apache 2.0):
+`flux-2-klein-4b.safetensors` / `flux-2-klein-base-4b.safetensors` (7.75 GB each) in
+`diffusion_models/`, `flux2-vae.safetensors` in `vae/`. Klein 9B and Dev are non-commercial
+(9B is gated at `black-forest-labs/FLUX.2-klein-9B`); Dev is 35.5 GB + an 18 GB fp8 encoder.
+
+**Model-type detection has one home: `workflows/defaults.py`.** `is_flux2()` / `is_zimage()` / `is_flux()` /
+`is_sdxl()` (the `_SDXL_NAMES` keyword set) classify a filename, `base_of()` turns that into
+`"FLUX.2"` / `"Z-Image"` / `"FLUX"` / `"SDXL"` / `"SD 1.5"`, and `default_size()` builds on the same pair for `run.py`.
 
 `/checkpoints` returns `[{name, base}]` rather than bare filenames, so the frontend groups the
 picker and picks its config fallback from the server's answer instead of re-deriving one. This

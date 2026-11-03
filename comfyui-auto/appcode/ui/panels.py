@@ -24,7 +24,7 @@ import js
 from bff.studio import Studio
 from ui.common import by_id, esc, load_state, proxy, save_state
 
-BASE_ORDER = ["Z-Image", "FLUX", "SDXL", "SD 1.5"]
+BASE_ORDER = ["FLUX.2", "Z-Image", "FLUX", "SDXL", "SD 1.5"]
 NUMERIC = {
     "g": ["g-width", "g-height", "g-steps", "g-cfg"],
     "r": ["r-steps", "r-cfg"],
@@ -241,16 +241,20 @@ class Panels:
         if c:
             return c["base"]
         low = ckpt.lower()
+        if "flux2" in low or "flux-2" in low or "flux.2" in low or "flux_2" in low:
+            return "FLUX.2"
         if "z_image" in low or "zimage" in low or "z-image" in low:
             return "Z-Image"
         return "FLUX" if "flux" in low else "SDXL" if "xl" in low else "SD 1.5"
 
     def _apply_ui(self, ckpt: str, prefix: str) -> None:
         flux = self.base_of(ckpt) == "FLUX"
-        by_id(f"{prefix}-cfg-label").textContent = "Guidance" if flux else "CFG"
+        conf = (self.ckpts.get(ckpt) or {}).get("config") or {}
+        by_id(f"{prefix}-cfg-label").textContent = (
+            "Guidance" if flux else conf.get("cfg_label") or "CFG")
         if prefix == "g":
-            # FLUX never takes a negative; others say so in their config (Z-Image Turbo).
-            conf = (self.ckpts.get(ckpt) or {}).get("config") or {}
+            # FLUX never takes a negative; others say so in their config (Z-Image Turbo,
+            # FLUX.2 Dev and Klein distilled).
             by_id("neg-group").classList.toggle("hidden", flux or conf.get("neg") is False)
 
     def _apply_config(self, ckpt: str, prefix: str) -> None:

@@ -24,8 +24,19 @@ CKPT_CONFIGS: dict[str, dict] = {
 
 def config_for(name: str, base: str | None = None) -> dict:
     """{steps, cfg, w, h[, neg]} to stamp on an explicit model change. For FLUX, `cfg` is
-    guidance. `neg` False = the model ignores a negative prompt (the page hides the box)."""
+    guidance. `neg` False = the model ignores a negative prompt (the page hides the box);
+    `cfg_label` renames the CFG box (FLUX.2 Dev: it is guidance there)."""
     base = base or base_of(name)
+    if base == "FLUX.2":
+        # ComfyUI's templates: Klein distilled 4 steps / CFG 1 (negative unused), Klein
+        # base 20 / CFG 5, Dev 20 at FluxGuidance 4 (cfg_label: the box means guidance).
+        from workflows import flux2
+        d = flux2.defaults_for(name)
+        conf = {"steps": d["steps"], "cfg": d["cfg"], "w": 1024, "h": 1024,
+                "neg": flux2.uses_negative(name)}
+        if flux2.variant(name) == "dev":
+            conf["cfg_label"] = "Guidance"
+        return conf
     if base == "Z-Image":
         # ComfyUI's templates: Turbo is distilled to 8 steps at CFG 1, where the negative
         # is never evaluated (neg=False hides it); base wants 25 at CFG 4 and uses it.

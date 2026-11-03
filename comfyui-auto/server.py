@@ -70,14 +70,16 @@ def list_checkpoints():
                 if base_of(n) == "FLUX" and "kontext" not in n.lower()]
     except Exception:
         pass
-    # Z-Image diffusion models (models/diffusion_models): UNETLoader lists them, and
-    # workflows/zimage.py loads them with qwen_3_4b + ae. Only Z-Image names: the same list
-    # holds WAN, ACE-Step and others that are no text-to-image model for this picker.
+    # Z-Image and FLUX.2 diffusion models (models/diffusion_models): UNETLoader lists them,
+    # and workflows/zimage.py / flux2.py load them with their text encoder and VAE. Only
+    # those names: the same list holds WAN, ACE-Step and others that are no text-to-image
+    # model for this picker.
     try:
         r = req.get(f"{client.COMFY_URL}/object_info/UNETLoader", timeout=5)
         r.raise_for_status()
         unets = r.json()["UNETLoader"]["input"]["required"]["unet_name"][0]
-        out += [{"name": n, "base": "Z-Image"} for n in unets if base_of(n) == "Z-Image"]
+        out += [{"name": n, "base": base_of(n)} for n in unets
+                if base_of(n) in ("Z-Image", "FLUX.2")]
     except Exception:
         pass
     return {"checkpoints": sorted(out, key=lambda c: c["name"].lower())}

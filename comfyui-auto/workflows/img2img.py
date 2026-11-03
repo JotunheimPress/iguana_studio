@@ -1,11 +1,11 @@
-"""Image-to-image (edit existing image) workflow — supports SD 1.5, SDXL, FLUX and Z-Image."""
+"""Image-to-image (edit existing image) workflow — supports SD 1.5, SDXL, FLUX, FLUX.2 and Z-Image."""
 
 import random
 from pathlib import Path
 
 from client import upload_image
 from workflows import lora as lora_chain
-from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_sdxl, is_zimage
+from workflows.defaults import NEGATIVE as DEFAULT_NEGATIVE, is_flux, is_flux2, is_sdxl, is_zimage
 
 DEFAULT_CHECKPOINT = "sd_xl_base_1.0.safetensors"
 
@@ -29,6 +29,15 @@ def build(
 
     denoise: 0.0 = keep original, 1.0 = full redraw. 0.6–0.8 recommended for edits.
     """
+    if is_flux2(checkpoint):
+        from workflows.flux2 import build_img2img as flux2_build
+        return flux2_build(
+            image_path=image_path, denoise=denoise,
+            prompt=prompt, negative_prompt=negative_prompt, checkpoint=checkpoint,
+            steps=steps, cfg=cfg, seed=seed,
+            filename_prefix=filename_prefix, loras=loras,
+        )
+
     if is_zimage(checkpoint):
         # Steps/CFG come from the form as for any model (services/models.py stamps the
         # recommended ones on a model change); its own sampler and scheduler are fixed.

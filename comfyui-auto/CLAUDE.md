@@ -34,9 +34,9 @@ old path and no longer applies.)
 **Containerized (default — via the ai-stack launcher).**
 ```bash
 stack up                     # bring up backends (koboldcpp + comfyui) first
-stack iguana                 # build on first run, then start on :7862
+stack iguana_studio          # build on first run, then start on :7862
                              #   (directly: ./run-podman.sh [--rebuild] [--port N])
-# open http://localhost:7862 · logs: podman logs -f iguana · stop: stack down iguana
+# open http://localhost:7862 · logs: podman logs -f iguana · stop: stack down iguana_studio
 ```
 
 **Host dev (`.venv`, Python 3.13)** — iterate without rebuilding the image. 7862 is the

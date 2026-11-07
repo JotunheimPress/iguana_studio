@@ -28,7 +28,7 @@ definitions — become Python data with one home instead of markup and string te
 - The ComfyUI contract, `outputs/` and `data/saved-prompts.json` (same file, same format).
 - The `localStorage` key **`studio_v1`** and its field ids — reused so nobody loses their state at
   switch-over. New-page state reads the same blob.
-- The `iguana` container name, `stack iguana`, the `ai-net` network.
+- The `iguana` container name, `stack iguana_studio` (was `stack iguana` until 2026-11-07), the `ai-net` network.
 
 ## Architecture
 

@@ -1,0 +1,10 @@
+{
+  "repo": "iguana_studio",
+  "brand": "iguana_studio",
+  "description": "ComfyUI image generation GUI",
+  "port": 7862,
+  "health": "http://localhost:7862/api/health",
+  "container": "iguana",
+  "start": "comfyui-auto/run-podman.sh",
+  "icon": "mdi-palette-outline"
+}

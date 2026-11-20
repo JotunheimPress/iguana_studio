@@ -15,7 +15,7 @@
 # --platform linux/amd64 as well; this default covers a plain `podman build`.
 #
 # To build against a local wapyt checkout instead:
-#   podman build --format docker --build-context wapyt-src=../../../Pytinc/wa_pytincture_widgetset .
+#   podman build --format docker --build-context wapyt-src=<path to wa_pytincture_widgetset> .
 
 ARG PYTHON_IMAGE=docker.io/library/python:3.13-slim
 

@@ -331,7 +331,7 @@ Found along the way:
   item menu, zero console errors; `SMOKE_GENERATE=1` adds a real FLUX job (deletes its output).
 
 Verified on the **real container**: `uname -m` → **x86_64** (was aarch64 under emulation),
-Python 3.13.18, port `127.0.0.1:7862` only — `http://192.168.1.50:7862` (the LAN address) is
+Python 3.13.18, port `127.0.0.1:7862` only — the machine's LAN address is
 unreachable; `stack status` shows iguana up; smoke test **PASS** with a FLUX generation in
 5.6 s; no errors in the container log; 201/201 golden prompt tests.
 

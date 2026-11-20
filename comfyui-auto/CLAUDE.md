@@ -21,7 +21,7 @@ reality disagree, that's called out explicitly under [Known broken / stale](#kno
 |---|---|---|
 | **iguana GUI** | Podman container `iguana` on network `ai-net` | host `http://localhost:7862` |
 | **ComfyUI** | Podman container `comfyui` on network `ai-net` | `comfyui:8188` (from inside `ai-net`) |
-| ComfyUI data | bind mounts from `~/Development/ai_ecosystem/ComfyUI/` | `/data/{models,custom_nodes,input,output,user}` |
+| ComfyUI data | bind mounts from `<ecosystem>/ComfyUI/` (AI Ecosystem's ComfyUI state) | `/data/{models,custom_nodes,input,output,user}` |
 | `outputs/` | bind mount from the repo dir | `/app/outputs` |
 | `data/` | bind mount from the repo dir (gitignored) | `/app/data` — `saved-prompts.json` |
 
@@ -31,7 +31,7 @@ old path and no longer applies.)
 
 ## How to run
 
-**Containerized (default — via the ai-stack launcher).**
+**Containerized (default — via AI Ecosystem's `stack` launcher).**
 ```bash
 stack up                     # bring up backends (koboldcpp + comfyui) first
 stack iguana_studio          # build on first run, then start on :7862
@@ -42,9 +42,9 @@ stack iguana_studio          # build on first run, then start on :7862
 **Host dev (`.venv`, Python 3.13)** — iterate without rebuilding the image. 7862 is the
 container's, so use another port; ComfyUI is reached on the host's published 8188:
 ```bash
-uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt pytest \
-    ~/Development/Pytinc/wa_pytincture_widgetset
-PYTHON=$PWD/.venv/bin/python ~/Development/Pytinc/wa_pytincture_widgetset/scripts/dev_wheel.sh appcode
+git clone https://github.com/WAwesome-AI/wa_pytincture_widgetset.git <wapyt>   # once, anywhere
+uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt pytest <wapyt>
+PYTHON=$PWD/.venv/bin/python <wapyt>/scripts/dev_wheel.sh appcode
 COMFY_HOST=localhost PORT=7872 .venv/bin/python service.py      # → http://127.0.0.1:7872/
 .venv/bin/python -m pytest -q tests                             # prompt golden test (no browser)
 IGUANA_URL=http://127.0.0.1:7872 CHROME=~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome \

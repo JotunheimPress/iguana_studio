@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================
-# iguana ComfyUI GUI — Podman run script (mirrors companion/story)
+# Iguana Studio — builds the image if needed and runs it as the container `iguana` on ai-net.
+#   ./run-podman.sh [--rebuild] [--port PORT]   build if missing (or forced), then start
+#   ./run-podman.sh --build-only [--rebuild]    build if missing (or forced), start nothing
+#                                               (`stack frontend add|update` run this)
 # ============================================================
 set -euo pipefail
 
@@ -11,11 +14,13 @@ NETWORK="ai-net"
 PORT="7862"
 
 REBUILD=0
+BUILD_ONLY=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --rebuild|-r) REBUILD=1; shift ;;
+    --build-only) BUILD_ONLY=1; shift ;;
     --port|-p)    PORT="$2"; shift 2 ;;
-    --help|-h)    echo "Usage: $0 [--rebuild] [--port PORT]"; exit 0 ;;
+    --help|-h)    echo "Usage: $0 [--rebuild] [--port PORT] | --build-only [--rebuild]"; exit 0 ;;
     *) echo "Unknown flag: $1"; exit 1 ;;
   esac
 done
@@ -24,6 +29,10 @@ if [[ "$REBUILD" -eq 1 ]] || ! podman image exists "$IMAGE"; then
   echo "==> Building image $IMAGE …"
   # amd64 explicitly: a cached arm64 python base once had this image running under emulation.
   podman build --format docker --platform linux/amd64 -t "$IMAGE" -f "$SCRIPT_DIR/Containerfile" "$SCRIPT_DIR"
+fi
+if [[ "$BUILD_ONLY" -eq 1 ]]; then
+  echo "✓  image $IMAGE is ready (not started: --build-only)"
+  exit 0
 fi
 
 if podman container exists "$CONTAINER"; then
@@ -65,6 +74,6 @@ podman run -d \
   "$IMAGE"
 
 echo ""
-echo "✓  iguana ComfyUI GUI is running."
+echo "✓  Iguana Studio is running."
 echo "   Open: http://localhost:${PORT}   (other devices: http://$(hostname -s).local:${PORT})"
 echo "   Logs: podman logs -f $CONTAINER"

@@ -1,160 +1,119 @@
 # Iguana Studio
 
-A prompt-first web GUI for [ComfyUI](https://github.com/comfyanonymous/ComfyUI). You type a
-prompt, pick a mode, and press Generate — Iguana Studio builds the ComfyUI workflow graph,
-submits it over the HTTP API, polls for the result, and drops it in a gallery. No node editor,
-no wiring, no build step.
+A prompt-first browser GUI for [ComfyUI](https://github.com/comfyanonymous/ComfyUI). You type a
+prompt, pick a mode and press Generate. Iguana Studio builds the ComfyUI workflow graph, submits
+it over ComfyUI's API, shows its progress and drops the result in a gallery. No node editor, no
+wiring.
 
-It's a small FastAPI service plus one self-contained HTML page, designed to sit next to a running
-ComfyUI instance on the same container network.
+It's a frontend for **[AI Ecosystem](https://github.com/JotunheimPress/ai_ecosystem)**, which
+runs ComfyUI (with the custom nodes and patches the modes below need) as a shared backend. The
+page is written in Python and runs in the browser
+([pytincture](https://pypi.org/project/pytincture/) and
+[wapyt](https://github.com/WAwesome-AI/wa_pytincture_widgetset)).
 
 ## Modes
 
 | Mode | What it does |
 |---|---|
-| **Generate** | Text → image. The main path. Per-checkpoint defaults for size, steps and CFG. |
-| **Person** | Images of a specific person from one or more reference photos, via PuLID on FLUX.1-dev. |
-| **Refine** | img2img — re-noise an existing image with a denoise slider. |
-| **Edit** | Instruction-driven editing with Flux Kontext ("change the background to a snowy mountain"). Everything you don't mention is preserved. |
+| **Generate** | Text to image. SD 1.5, SDXL, FLUX.1, FLUX.2 and Z-Image, picked from the model, with per-model defaults for size, steps and CFG/guidance, and a LoRA stack. |
+| **Person** | Images of a specific person from one or more reference photos, with PuLID on FLUX.1-dev. |
+| **Refine** | Image to image: re-noise an existing image with a denoise slider. |
+| **Edit** | Instruction-based editing with Flux Kontext ("change the background to a snowy mountain"). What you don't mention is kept. |
+| **Animate** | Image to video with WAN 2.2 TI2V 5B: describe the motion. |
 
-Any generated image carries **Refine** and **Edit** buttons, so an output can be fed straight back
-into either editing path.
+Any result can be sent straight into Refine, Edit or Animate.
 
-The sidebar is prompt-first: you write the subject in free text, and the dropdowns (Art style,
-Setting, Lighting, Camera, Clothing, Pose, Focus, Expression, Eye colour) only *append* modifiers.
-Every one defaults to off, so a fresh session generates exactly what you typed. The composed
-prompt is shown live in a pinned preview above the modifiers.
-
-State — prompt fields, mode, per-mode generation settings — persists in `localStorage`.
+The sidebar is prompt-first: you write the subject, and the dropdowns (art style, setting,
+lighting, camera, clothing, pose, focus, expression, eye colour) only *add* to it. All are off by
+default, so a fresh session generates exactly what you typed, and the composed prompt is shown
+live. Prompts can be saved and reused; your settings are remembered in the browser.
 
 ## Requirements
 
-- A running **ComfyUI** instance, reachable over HTTP.
-- Python 3.12+ (host dev) or Podman/Docker (containerized).
-- Checkpoints installed in ComfyUI's `models/checkpoints/`. SD 1.5, SDXL and FLUX graphs are all
-  supported and selected automatically from the checkpoint filename.
-- **Edit mode** additionally needs the [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF)
-  custom node plus a Flux Kontext GGUF unet, T5/CLIP text encoders and a VAE (~12.5 GB).
-- **Person mode** additionally needs
-  [ComfyUI_PuLID_Flux_ll](https://github.com/lldacing/ComfyUI_PuLID_Flux_ll) (with ai-stack's patch
-  for ComfyUI 0.31), a FLUX.1-dev model (`flux1-dev-Q8_0.gguf`), the PuLID-FLUX weights, EVA-CLIP,
-  facexlib models and InsightFace `antelopev2`.
-
-See `comfyui-auto/CLAUDE.md` for the exact model files and paths.
+- **AI Ecosystem** (recommended), or any ComfyUI reachable from the container as
+  `comfyui:8188` on the `ai-net` Podman network.
+- **Podman** (rootless). A GPU is ComfyUI's business, not this app's.
+- **Models in ComfyUI**, per mode. AI Ecosystem's `comfyui/INSTALL.md` lists the files and where
+  they go:
+  - Generate and Refine: any SD 1.5, SDXL, FLUX or Z-Image checkpoint.
+  - Person: [ComfyUI_PuLID_Flux_ll](https://github.com/lldacing/ComfyUI_PuLID_Flux_ll) (AI
+    Ecosystem installs it, with its patch for current ComfyUI), FLUX.1-dev (`flux1-dev-Q8_0.gguf`),
+    the PuLID-FLUX weights, EVA-CLIP, facexlib and InsightFace `antelopev2`.
+  - Edit: [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) and a Flux Kontext GGUF, with its
+    text encoders and VAE (about 12.5 GB).
+  - Animate: WAN 2.2 TI2V 5B. ComfyUI supports it natively, so no custom node is needed.
 
 ## Running it
 
-### Container (recommended)
+### With AI Ecosystem
+
+Clone this repo next to `ai-stack/` (or install it with `stack frontend add iguana_studio` once
+it's on the official list), then:
+
+```bash
+stack up                 # the backends, ComfyUI included
+stack iguana_studio      # builds the image on the first start; http://localhost:7862
+stack down iguana_studio
+```
+
+### On its own
 
 ```bash
 cd comfyui-auto
-./run-podman.sh                # builds on first run, then starts on :7862
-./run-podman.sh --rebuild      # rebuild the image
-./run-podman.sh --port 8862    # bind a different host port
-```
-
-The container joins the `ai-net` Podman network and reaches ComfyUI at `comfyui:8188`. That
-network membership is required, not optional — the hostname only resolves there.
-
-```bash
-open http://localhost:7862
+./run-podman.sh                   # build if needed, then start on :7862
+./run-podman.sh --rebuild         # rebuild the image first
+./run-podman.sh --port 8862       # another host port
+./run-podman.sh --build-only      # build, don't start
 podman logs -f iguana
-podman rm -f iguana
 ```
 
-### Host (venv)
+The container joins the `ai-net` network and reaches ComfyUI at `comfyui:8188`. Generated files
+go to `comfyui-auto/outputs/` and saved prompts to `comfyui-auto/data/`; both are kept out of git.
 
-Useful for the CLI, or for iterating on the frontend without rebuilding an image.
+### On your network
 
-```bash
-cd comfyui-auto
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-COMFY_HOST=localhost PORT=7862 venv/bin/python server.py
-```
+**Iguana Studio has no login.** The container is published on all interfaces, so any device on
+your network can open `http://<this-machine>.local:7862` and generate, view and delete images.
+It only answers to this machine's own names and addresses, which stops other web pages from
+reaching it through your browser. `run-podman.sh` works those out at start, and
+`IGUANA_ALLOWED_HOSTS=a,b` adds more. If your network isn't trusted, block port 7862 there.
 
 ### Configuration
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `COMFY_HOST` | `comfyui` | ComfyUI hostname |
-| `COMFY_PORT` | `8188` | ComfyUI port |
-| `PORT` | `7862` | Port the GUI binds |
-| `COMFY_BASE` | *unset* | Host path to the ComfyUI folder; only used for a client-side pre-flight file check, skipped when the path isn't visible |
+| `COMFY_HOST` | `comfyui` | ComfyUI's host name |
+| `COMFY_PORT` | `8188` | ComfyUI's port |
+| `PORT` | `7862` | The port the GUI listens on |
+| `IGUANA_ALLOWED_HOSTS` | set by `run-podman.sh` | Extra host names the GUI answers to |
 
 ## CLI
 
-`run.py` is a thinner alternative to the GUI — `text2img`, `img2img` and `video` only, with no
-Person subcommand and none of the GUI's per-checkpoint tuning.
+`run.py` is a thinner alternative for scripts: `text2img`, `img2img` and `video`, without Person
+mode or the GUI's per-model tuning.
 
 ```bash
-venv/bin/python run.py text2img "a cat on a windowsill, 35mm film photography"
-venv/bin/python run.py img2img photo.png "make it snow" --denoise 0.55
+python run.py text2img "a cat on a windowsill, 35mm film photography"
+python run.py img2img photo.png "make it snow" --denoise 0.55
 ```
 
-Resolution defaults to the checkpoint's native size. Lightning checkpoints need their settings
-passed explicitly: `--steps 6 --cfg 2`.
+Lightning checkpoints need their settings passed explicitly: `--steps 6 --cfg 2`.
 
-## API
+## Development
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/` | The web GUI |
-| `GET` | `/comfy-status` | `{"running": bool}` — polled by the status dot |
-| `POST` | `/generate` | Multipart form; starts a job, returns `{"job_id": ...}` |
-| `GET` | `/job/{id}` | `{status, files, message}` — pending / running / done / error / not_found |
-| `GET` | `/checkpoints` | Checkpoint filenames from ComfyUI, sorted |
-| `GET` | `/gallery` | All outputs, newest first, with mtime and size |
-| `GET` | `/outputs/{filename}` | Serve one generated file |
-| `DELETE` | `/outputs/{filename}` | Delete one generated file (no trash — it's gone) |
-| `GET` | `/debug/nodes` | Every node class ComfyUI knows about |
-| `POST` | `/debug/workflow` | Dry-run a graph, return the JSON without queueing |
-
-Interactive docs at `/docs`.
-
-## Layout
-
-```
-comfyui-auto/
-├── server.py            # FastAPI web GUI — the main entry point
-├── run.py               # CLI alternative
-├── client.py            # ComfyUI API client: queue, poll /history, download /view
-├── workflows/
-│   ├── defaults.py      # shared negatives + is_flux() / is_sdxl() detection
-│   ├── text2img.py      # text → image
-│   ├── img2img.py       # edit an image
-│   ├── flux.py          # FLUX.1 graphs
-│   ├── kontext.py       # Flux Kontext instruction editing
-│   ├── pulid.py         # person from reference photos (PuLID-FLUX)
-│   └── video.py         # AnimateDiff text → video
-├── static/index.html    # the entire frontend — inline CSS/JS, no build step
-├── outputs/             # generated files (gitignored, volume-mounted)
-├── Containerfile
-└── run-podman.sh
-```
-
-## Design notes
-
-- **Polling, not websockets.** The browser polls `/job/{id}` every 2s; the server polls ComfyUI's
-  `/history/{prompt_id}` every 1.5s with a 600s timeout. Simple and reliable.
-- **One thread per generation**, `daemon=True`. No queue, no worker pool.
-- **Jobs are in-memory only** — no persistence, no eviction. Restarting the server loses them.
-- **Uploads are ephemeral**, unlinked in the job's `finally` block.
-- **Per-model defaults are an affordance, not a constraint.** Changing checkpoint overwrites the
-  steps/CFG/resolution boxes; for FLUX it also relabels CFG → Guidance and hides the negative
-  prompt.
+`comfyui-auto/CLAUDE.md` is the developer guide: the layout, how each mode's graph is built,
+running from a virtualenv without rebuilding the image, and the tests (a golden test of the
+prompt composer, per-workflow tests and a Playwright smoke test of every mode).
 
 ## Known limitations
 
-- **Video doesn't work out of the box.** The `video` task needs AnimateDiff-Evolved and
-  VideoHelperSuite installed in ComfyUI, plus a motion module — and there's no GUI mode for it,
-  only `run.py video`.
-- **Flux Kontext and a local LLM won't co-exist on 12 GB of VRAM.** Kontext needs ~7 GB and
-  ComfyUI keeps it resident after the job. Free it with:
-  ```bash
-  curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' \
-       -d '{"unload_models":true,"free_memory":true}'
-  ```
-- **Adding a checkpoint whose filename lacks `xl`** means adding it to both the backend keyword
-  set (`workflows/defaults.py`) and the frontend `CKPT_CONFIGS` map.
-- **Pony Diffusion V6 XL ignores plain style words** — it wants `score_9, score_8_up`-style tags
-  typed into the manual prompt instead.
+- **VRAM is shared.** Flux Kontext, PuLID and WAN each want most of a 12 GB card. Stop the text
+  model first (`stack down koboldcpp`) if a job runs out of memory.
+- **Jobs live in memory.** Restarting the container loses running and finished jobs (not their
+  files).
+- **Pony Diffusion V6 XL ignores plain style words.** Type `score_9, score_8_up`-style tags into
+  the prompt instead.
+
+## License
+
+[MIT](LICENSE).

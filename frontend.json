@@ -1,10 +1,11 @@
 {
   "repo": "iguana_studio",
-  "brand": "iguana_studio",
-  "description": "ComfyUI image generation GUI",
+  "brand": "Iguana Studio",
+  "description": "Prompt-first image and video generation for ComfyUI",
   "port": 7862,
   "health": "http://localhost:7862/api/health",
   "container": "iguana",
   "start": "comfyui-auto/run-podman.sh",
+  "build": "comfyui-auto/run-podman.sh --build-only --rebuild",
   "icon": "mdi-palette-outline"
 }

@@ -11,6 +11,10 @@ page is written in Python and runs in the browser
 ([pytincture](https://pypi.org/project/pytincture/) and
 [wapyt](https://github.com/WAwesome-AI/wa_pytincture_widgetset)).
 
+**Documentation:** the [wiki](https://github.com/JotunheimPress/iguana_studio/wiki) has a user
+guide (the modes, prompts, models, the gallery, troubleshooting) and a developer guide. Its source
+is [`docs/wiki/`](docs/wiki/README.md).
+
 ## Modes
 
 | Mode | What it does |
@@ -47,8 +51,8 @@ live. Prompts can be saved and reused; your settings are remembered in the brows
 
 ### With AI Ecosystem
 
-Clone this repo next to `ai-stack/` (or install it with `stack frontend add iguana_studio` once
-it's on the official list), then:
+Install it from the AI Ecosystem dashboard's Frontends screen, or with
+`stack frontend add iguana_studio` (or clone this repo next to `ai-stack/`), then:
 
 ```bash
 stack up                 # the backends, ComfyUI included
@@ -101,7 +105,7 @@ Lightning checkpoints need their settings passed explicitly: `--steps 6 --cfg 2`
 
 ## Development
 
-`comfyui-auto/CLAUDE.md` is the developer guide: the layout, how each mode's graph is built,
+The wiki's developer guide is the overview. `comfyui-auto/CLAUDE.md` has the full notes: the layout, how each mode's graph is built,
 running from a virtualenv without rebuilding the image, and the tests (a golden test of the
 prompt composer, per-workflow tests and a Playwright smoke test of every mode).
 

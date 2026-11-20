@@ -5,8 +5,8 @@ mode (Generate, Person, Refine, Edit, Animate), the prompt sidebar and its modif
 prompts, the LoRA stack, per-checkpoint tuning, FLUX/GGUF and Kontext, live progress + ETA, and
 the gallery with its send-to-mode menu. What changes is the page: from one 2,594-line
 `static/index.html` (≈675 lines CSS, 63 JS functions, 230 `<option>`s in markup) to a
-**pytincture + wapyt** page (Python in the browser), the same stack as Pantheon, the AI
-Ecosystem dashboard, Basilisk and Calagopus.
+**pytincture + wapyt** page (Python in the browser), the same stack as the AI Ecosystem
+dashboard and other pytincture apps.
 
 Why: one frontend stack across the ecosystem, Python on both sides of the wire, and the parts of
 `index.html` that are really *data* — the modifier lists, per-checkpoint configs, mode
@@ -16,8 +16,8 @@ definitions — become Python data with one home instead of markup and string te
 
 | Question | Recommendation | Why |
 |---|---|---|
-| Structure | **In place, phased.** Same repo, image, container, port 7862. The new page is served beside the old one (`/` stays old, `/iguana/` new) until parity; then the old page is deleted. | Worked for Pantheon (Phases 0–7 in a day) and lets every phase ship without breaking the tool. |
-| Network | **Loopback only** (`127.0.0.1:7862`), like the dashboard. | Today Iguana is published on `0.0.0.0:7862` with **no login** — anyone on the LAN can generate and delete outputs. pytincture's `allowed_hosts` makes that an explicit choice. If LAN use matters, it needs auth first (Pantheon's `services/auth.py` / pytincture's login hook), as a later phase. |
+| Structure | **In place, phased.** Same repo, image, container, port 7862. The new page is served beside the old one (`/` stays old, `/iguana/` new) until parity; then the old page is deleted. | Worked for an earlier pytincture conversion (Phases 0–7 in a day) and lets every phase ship without breaking the tool. |
+| Network | **Loopback only** (`127.0.0.1:7862`), like the dashboard. | Today Iguana is published on `0.0.0.0:7862` with **no login** — anyone on the LAN can generate and delete outputs. pytincture's `allowed_hosts` makes that an explicit choice. If LAN use matters, it needs auth first (pytincture's login hook), as a later phase. |
 | Look | **Keep Iguana's dark violet look**, rebuilt on wapyt widgets and a stylesheet. | It's a tool, not a companion app; users know where things are. Not a redesign. |
 | Progress | **`@bff_stream` instead of 2 s polling.** | Pushes phase/step/ETA as they happen. Needs the stream limits handled for video (see risks). |
 | CLI | `run.py` and `workflows/` untouched. | No business logic moves. |
@@ -69,7 +69,7 @@ browser: appcode/iguana.py (Pyodide + wapyt)
 | Dropzones (Person multi, Refine/Edit/Animate single) | `filetransfer` or a plain drop target → `POST /upload` | Thumbnails via `blob:` URLs. |
 | Job card: spinner, phase, bar, ETA | `progressbar` + status line fed by the stream | Update in place (CLAUDE.md: replacing the card restarts the spinner). |
 | Results + gallery (virtualised grid, "⋯" menu) | gallery grid + `contextmenu` | Virtualisation is the main risk (below). |
-| `alert()`/`confirm()`/`prompt()` | `message.alert/confirm/prompt` | Consistent with Pantheon/dashboard. |
+| `alert()`/`confirm()`/`prompt()` | `message.alert/confirm/prompt` | Consistent with the dashboard. |
 | Status dot (ComfyUI up?) | toolbar status, polled via BFF | 10 s, as today. |
 
 ## Phases
@@ -92,15 +92,15 @@ plus one real generation per affected mode — the way FLUX and saved prompts we
 - **Gallery virtualisation in Pyodide.** Today a `scroll` handler re-renders the visible rows each
   frame (rAF-coalesced). Python ↔ DOM calls per frame may stutter. Measure with 2,000 tiles
   (outputs today: 41, but it is built for thousands). **Fallback:** keep the grid as a small JS
-  island driven from Python by events, as Pantheon did for voice and the avatar.
-- **Stream limits vs video jobs.** pytincture's BFF streams are bounded (Pantheon measured
+  island driven from Python by events, as other pytincture apps do for media widgets.
+- **Stream limits vs video jobs.** pytincture's BFF streams are bounded (measured:
   300 s total / 30 s idle); an Animate job can run 30 min (`VIDEO_TIMEOUT` 1800 s), and model
   loading can be silent for >30 s. Options: raise `BFF_STREAM_*`, send keepalive events from the
   job thread, or **reconnect by job id** (the stream is a view of `services/jobs.py`, so a new
   stream picks up where the last ended). Prefer reconnect — it also survives a page reload.
 - **Thread jobs + event loop.** Jobs run in threads (sync `requests`/`websocket-client`); the
   stream must read their state without blocking the loop. Keep pytincture's default
-  `event-loop` mode (Pantheon: never `worker-thread` / `isolated-process`).
+  `event-loop` mode (never `worker-thread` / `isolated-process`).
 - **Uploads.** Confirm a 10–20 MB multipart upload on a plain route coexists with pytincture's
   middleware (Host/Origin checks), and that `temp/` cleanup still runs per job.
 - **CSP.** Thumbnails from `blob:` URLs and `<video>` playback of `/outputs/*.mp4` under
@@ -111,7 +111,7 @@ plus one real generation per affected mode — the way FLUX and saved prompts we
 
 ## Traps already paid for elsewhere (read before coding)
 
-From Pantheon's and the dashboard's `CLAUDE.md` / `PYTINCTURE_PLAN.md`:
+From earlier pytincture conversions (the AI Ecosystem dashboard's `CLAUDE.md` among them):
 - BFF modules are re-executed per call → state in plain modules; import them *inside* methods;
   never import one BFF from another.
 - Async exports have no `_async` twin; sync ones do.

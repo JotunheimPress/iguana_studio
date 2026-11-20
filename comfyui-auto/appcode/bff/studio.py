@@ -16,7 +16,7 @@ import os
 
 from pytincture.dataclass import backend_for_frontend, bff_stream
 
-TASKS = ("text2img", "img2img", "photomaker", "kontext", "img2vid", "video")
+TASKS = ("text2img", "img2img", "pulid", "kontext", "img2vid", "video")
 
 
 @backend_for_frontend
@@ -60,32 +60,31 @@ class Studio:
             paths.append(p)
         if task in ("img2img", "kontext", "img2vid") and len(paths) != 1:
             return {"ok": False, "error": "this mode needs one source image"}
-        if task == "photomaker" and not paths:
+        if task == "pulid" and not paths:
             return {"ok": False, "error": "add at least one reference photo"}
         f = {"prompt": "", "negative": "", "checkpoint": "", "width": 1024, "height": 1024,
              "steps": 25, "cfg": 7.0, "seed": -1, "denoise": 0.75, "length": 81, "fps": 24,
-             "shift": 8.0, "pm_width": 1024, "pm_height": 1024, "pm_model": "photomaker-v2.bin",
-             "loras": []}
+             "shift": 8.0, "weight": 1.0, "start_at": 0.0, "end_at": 1.0, "loras": []}
         if not isinstance((fields or {}).get("loras", []), list):
             return {"ok": False, "error": "loras must be a list"}
         f.update({k: v for k, v in (fields or {}).items() if k in f})
         # The classic route had FastAPI's Form() coercion; JSON doesn't, so do it here.
         try:
-            for k in ("width", "height", "steps", "seed", "length", "fps", "pm_width", "pm_height"):
+            for k in ("width", "height", "steps", "seed", "length", "fps"):
                 f[k] = int(float(f[k]))
-            for k in ("cfg", "denoise", "shift"):
+            for k in ("cfg", "denoise", "shift", "weight", "start_at", "end_at"):
                 f[k] = float(f[k])
         except (TypeError, ValueError):
             return {"ok": False, "error": f"{k} must be a number"}
-        for k in ("prompt", "negative", "checkpoint", "pm_model"):
+        for k in ("prompt", "negative", "checkpoint"):
             f[k] = str(f[k] or "")
         try:
             params = jobs.params_for(task, f)
         except (KeyError, ValueError, TypeError) as exc:
             return {"ok": False, "error": str(exc)}
         job_id = jobs.new_id()
-        single = paths[0] if task != "photomaker" and paths else None
-        jobs.start(job_id, task, params, single, paths if task == "photomaker" else None)
+        single = paths[0] if task != "pulid" and paths else None
+        jobs.start(job_id, task, params, single, paths if task == "pulid" else None)
         return {"ok": True, "job_id": job_id}
 
     def from_output(self, name: str) -> dict:

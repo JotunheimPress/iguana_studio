@@ -23,7 +23,13 @@ CASES = json.loads((ROOT / "tests" / "prompt_golden.json").read_text())["cases"]
 @pytest.mark.parametrize("case", CASES, ids=[f"{i}-{c['state']['mode']}" for i, c in enumerate(CASES)])
 def test_matches_classic(case):
     state = case["state"]
-    assert active_prompt(state, state["mode"]) == case["active_prompt"]
+    expected = case["active_prompt"]
+    # The one deliberate change since the capture: Person mode moved from PhotoMaker to
+    # PuLID-FLUX (2026-11-05), which has no trigger word, so the classic "img " prefix is gone.
+    if state["mode"] == "person":
+        assert expected.startswith("img ")
+        expected = expected[len("img "):]
+    assert active_prompt(state, state["mode"]) == expected
 
 
 def test_golden_covers_every_mode():

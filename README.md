@@ -13,7 +13,7 @@ ComfyUI instance on the same container network.
 | Mode | What it does |
 |---|---|
 | **Generate** | Text → image. The main path. Per-checkpoint defaults for size, steps and CFG. |
-| **Person** | Identity-preserving portraits from reference photos, via PhotoMaker V2. |
+| **Person** | Images of a specific person from one or more reference photos, via PuLID on FLUX.1-dev. |
 | **Refine** | img2img — re-noise an existing image with a denoise slider. |
 | **Edit** | Instruction-driven editing with Flux Kontext ("change the background to a snowy mountain"). Everything you don't mention is preserved. |
 
@@ -36,8 +36,9 @@ State — prompt fields, mode, per-mode generation settings — persists in `loc
 - **Edit mode** additionally needs the [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF)
   custom node plus a Flux Kontext GGUF unet, T5/CLIP text encoders and a VAE (~12.5 GB).
 - **Person mode** additionally needs
-  [ComfyUI-PhotoMaker-Plus](https://github.com/shiimizu/ComfyUI-PhotoMaker-Plus), a PhotoMaker
-  checkpoint, and InsightFace `buffalo_l` models.
+  [ComfyUI_PuLID_Flux_ll](https://github.com/lldacing/ComfyUI_PuLID_Flux_ll) (with ai-stack's patch
+  for ComfyUI 0.31), a FLUX.1-dev model (`flux1-dev-Q8_0.gguf`), the PuLID-FLUX weights, EVA-CLIP,
+  facexlib models and InsightFace `antelopev2`.
 
 See `comfyui-auto/CLAUDE.md` for the exact model files and paths.
 
@@ -83,7 +84,7 @@ COMFY_HOST=localhost PORT=7862 venv/bin/python server.py
 ## CLI
 
 `run.py` is a thinner alternative to the GUI — `text2img`, `img2img` and `video` only, with no
-PhotoMaker subcommand and none of the GUI's per-checkpoint tuning.
+Person subcommand and none of the GUI's per-checkpoint tuning.
 
 ```bash
 venv/bin/python run.py text2img "a cat on a windowsill, 35mm film photography"
@@ -123,7 +124,7 @@ comfyui-auto/
 │   ├── img2img.py       # edit an image
 │   ├── flux.py          # FLUX.1 graphs
 │   ├── kontext.py       # Flux Kontext instruction editing
-│   ├── photomaker.py    # person from reference photos
+│   ├── pulid.py         # person from reference photos (PuLID-FLUX)
 │   └── video.py         # AnimateDiff text → video
 ├── static/index.html    # the entire frontend — inline CSS/JS, no build step
 ├── outputs/             # generated files (gitignored, volume-mounted)

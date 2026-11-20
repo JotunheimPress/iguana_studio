@@ -80,7 +80,7 @@ comfyui-auto/
 │   ├── bff/             #   studio.py (models, jobs, progress stream) · prompts.py · gallery.py
 │   ├── static/iguana.css#   served at /istatic
 │   └── wapyt-*.whl      #   the BROWSER's wapyt (git-ignored; dev_wheel.sh / the Containerfile)
-├── tests/               # test_prompt.py + prompt_golden.json · test_zimage.py · test_flux2.py · smoke.py (Playwright)
+├── tests/               # test_prompt.py + prompt_golden.json · test_zimage.py · test_flux2.py · test_pulid.py · smoke.py (Playwright)
 ├── run.py               # CLI alternative (text2img / img2img / video only)
 ├── client.py            # ComfyUI API client: queue, poll /history, download /view
 ├── workflows/
@@ -91,7 +91,7 @@ comfyui-auto/
 │   ├── flux.py          # FLUX.1 graphs (build + build_img2img)
 │   ├── flux2.py         # FLUX.2 graphs, Dev and Klein (build + build_img2img)
 │   ├── zimage.py        # Z-Image graphs, Turbo and base (build + build_img2img)
-│   ├── photomaker.py    # person from reference photos  ← see Known broken
+│   ├── pulid.py         # person from reference photos (PuLID-FLUX, Person mode)
 │   ├── kontext.py       # Flux Kontext instruction editing (Edit mode)
 │   └── video.py         # WAN 2.2 image→video + text→video
 ├── outputs/             # generated files (volume-mounted, gitignored); .thumbs/ = gallery WebPs
@@ -237,7 +237,7 @@ stale keys in a saved blob are simply ignored on load.
 | Mode | Task sent | Controls | Notes |
 |---|---|---|---|
 | **Generate** | `text2img` | checkpoint, LoRA stack, w/h, steps, cfg, seed, negative | The main path. Works. |
-| **Person** | `photomaker` | PhotoMaker model, w/h, steps, cfg, multi-photo dropzone | Prepends trigger word `img`. Needs the PhotoMaker-Plus custom node — see below. |
+| **Person** | `pulid` | FLUX.1 model, LoRA stack, w/h, steps, guidance, seed, likeness / identity-from / until sliders, multi-photo dropzone | PuLID-FLUX — see below. No trigger word, no negative. |
 | **Refine** | `img2img` | checkpoint, LoRA stack, denoise slider, steps, cfg, seed, source image | Source can be uploaded or picked from the gallery. |
 | **Edit** | `kontext` | instruction box, guidance slider, steps, seed, source image | Flux Kontext instruction editing — see below. **Ignores the prompt sidebar.** |
 | **Animate** | `img2vid` | source image, **motion box**, length, fps, size, steps, CFG, shift, seed | WAN 2.2 image→video — see below. **Ignores the prompt sidebar**, like Edit. |
@@ -277,7 +277,9 @@ disable, because the menu closes before the confirm opens.
 
 **Prompt composition** (`buildPrompt()`) joins fields in a fixed order, manual text first:
 manual prompt (`f-extra`) → expression → `eyes eyes` → `wearing X` → setting → lighting → style →
-camera → pose → focus. In Person mode the whole thing is prefixed with `img `.
+camera → pose → focus. (Person mode used to prefix `img ` for PhotoMaker; PuLID needs no trigger
+word, so since 2026-11-05 every sidebar mode composes the same text — `test_prompt.py` strips the
+prefix from the golden file's Person cases.)
 
 **Setting values carry their own preposition** (`on a beach`, `by a lake`, `aboard a spaceship`)
 and are pushed verbatim. `buildPrompt()` used to prepend a blanket `in `, which emitted
@@ -390,7 +392,7 @@ it is never standalone and is tied to a base architecture (an SDXL LoRA will not
 **`workflows/lora.py` rewrites a finished graph rather than being threaded through each builder.**
 Every checkpoint-based builder publishes the same two edges — `["1", 0]` for MODEL and `["1", 1]`
 for CLIP — so `lora.apply()` chains `LoraLoader` nodes off the checkpoint and repoints those
-edges at the end of the chain. One function therefore covers `text2img`, `img2img`, `photomaker`
+edges at the end of the chain. One function therefore covers `text2img`, `img2img`, `pulid`
 and both FLUX builders, including FLUX's `ModelSamplingFlux`, which sits between the checkpoint
 and the sampler and is rewired like any other MODEL consumer. **Split graphs** (the GGUF FLUX
 path: MODEL from `UnetLoaderGGUF` at `"1"`, CLIP from `DualCLIPLoader` at `"1c"`) pass
@@ -456,7 +458,8 @@ files as Kontext — and anything else as an all-in-one checkpoint via
 all-in-one is ~12 GB of diffusion weights alone, the whole card. Measured with KoboldCPP
 still loaded (9.5 GB): 1024² text2img in **24 s**, Refine in **16 s**, no OOM. Settings
 come from the name (schnell → 4 steps / guidance 1.0; dev → 20 / 3.5). A dev GGUF works
-the same way, but the dev repo is gated (`HF_TOKEN`) and non-commercial.
+the same way: **`flux1-dev-Q8_0.gguf`** (12.7 GB, `city96/FLUX.1-dev-gguf`, ungated, FLUX.1-dev
+non-commercial licence) is installed since 2026-11-05 for Person mode and shows in the picker too.
 
 **Z-Image runs natively** (since 2026-11-03; Tongyi-MAI, Apache 2.0, ComfyUI's own support —
 no custom node). Always a split load, so the files live outside `checkpoints/`:
@@ -581,47 +584,73 @@ curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' \
 That reliably returns ~6 GB, after which KoboldCPP starts normally. This is deliberately **not**
 automated — a frontend silently stopping or unloading another service is surprising behaviour.
 
-## PhotoMaker (Person mode) — how it's wired
+## PuLID-FLUX (Person mode) — how it's wired
 
-Working as of 2026-08-10; verified end-to-end with PhotoMaker V2 and two reference photos.
+Since 2026-11-05 (replaced PhotoMaker V2 on SDXL). Verified end to end on the Halo through the
+page: one reference photo → FLUX.1-dev Q8 at 1024², 20 steps, **104 s** including model load;
+likeness (face, glasses, beard) kept in a new scene. Same graph on schnell runs in ~40 s but
+loses most of the likeness — PuLID-FLUX was trained on dev, which is why the Person picker lists
+FLUX.1 models only, dev first.
 
-**Custom node.** `ComfyUI-PhotoMaker-Plus` (shiimizu), cloned into
-`~/Development/ai_ecosystem/ComfyUI/custom_nodes/ComfyUI-PhotoMaker-Plus`
-(pinned at `459f5c0`, 2024-12-01). It supplies `PhotoMakerLoaderPlus`,
-`PhotoMakerEncodePlus`, `PhotoMakerLoraLoaderPlus`, `PhotoMakerInsightFaceLoader`,
-and `PhotoMakerStyles`. ComfyUI's *built-in* `PhotoMakerLoader` / `PhotoMakerEncode` are a
-different, weaker pair — they have no InsightFace path, so **V2 needs the custom node**.
-V1 vs V2 is auto-detected by the loader from the checkpoint's keys, not from the filename.
+**What it does.** `ApplyPulidFlux` reads each reference: InsightFace `antelopev2` finds the face
+and gives an ArcFace embedding; the face is aligned, background-masked by facexlib's BiSeNet and
+encoded by EVA02-CLIP-L-14-336; PuLID's IDFormer turns both into ID tokens. Several photos are
+**averaged**. The tokens are cross-attended into FLUX's blocks during sampling — the prompt stays
+an ordinary FLUX prompt (describe the scene, not the face). A photo with no face is skipped with a
+warning in ComfyUI's log; if none has a face the node returns the model **unpatched**, so the job
+succeeds with a stranger. That's the node's behaviour, not ours.
 
-**Python deps live in the image, not the node.** Custom nodes are bind-mounted state, but their
-dependencies have to be baked into the ComfyUI image or they disappear every time the container
-is recreated (`start.sh` does `podman rm -f`). They're installed in
-`ai-stack/comfyui/Containerfile`: `insightface==1.0.1` + `onnxruntime==1.28.0`.
+**Graph** (`workflows/pulid.py`) is `flux.build()`'s text-to-image graph plus: per photo
+`LoadImage` → `ResizeAndPadImage` (1024² white letterbox, so `ImageBatch` doesn't stretch faces to
+the first photo's shape) → `ImageBatch` chain → `ApplyPulidFlux`, which sits between the loader and
+`ModelSamplingFlux`. `lora.apply` runs last and repoints `ApplyPulidFlux`'s `["1", 0]` at the LoRA
+chain: loader → LoRAs → PuLID → shift → sampler. Node ids are prefixed (`ref_N`, `pad_N`,
+`batch_N`, `p_*`), not numbered. 1–8 photos.
 
-Two deliberate deviations from the node's own `requirements.txt` — **do not "fix" these**:
-- It pins **`numpy<2`**, needed only for the ancient insightface 0.7.3 sdist. Honouring it would
-  downgrade numpy under torch 2.11 / ComfyUI 0.31 and break the image. insightface **1.0.1**
-  ships a pure-Python wheel (no compiler — this image has no gcc) and works fine on numpy 2.4.
-- It asks for **`onnxruntime-gpu`**. We install the CPU build: there's no onnxruntime-gpu wheel
-  matching this image's CUDA 13 torch, and it would pull a conflicting CUDA runtime. Face
-  detection is one ~0.3 s pass per job on the small buffalo_l model — irrelevant next to the
-  diffusion. `INSIGHTFACE_PROVIDER = "CPU"` in `workflows/photomaker.py` matches this.
+**Controls.** *Likeness* = `weight` (default 1.0; 0.8–1.0 close likeness, lower lets the prompt
+change more). *Identity from / until* = `start_at` / `end_at` as fractions of sampling; starting at
+0.1–0.3 leaves composition, pose and style to the prompt and applies the face after. `start_at <
+end_at` is checked in `jobs.params_for`, so a bad range fails the request instead of a queued job.
+Guidance rides on `cfg` like FLUX in Generate.
 
-**InsightFace models.** `models/insightface/models/buffalo_l/` (5 `.onnx` files) — that exact
-nesting matters, because the node calls `FaceAnalysis(name="buffalo_l", root=<models>/insightface)`
-and insightface then looks in `root/models/<name>/`. The stray `models/insightface/buffalo_1/`
-directory is an unused misnamed copy.
+**Custom node.** `ComfyUI_PuLID_Flux_ll` (lldacing), pinned `7c7362b` in ai-stack's
+`CUSTOM_NODES` registry **with a local patch** (`ai-stack/comfyui/patches/ComfyUI_PuLID_Flux_ll.patch`,
+applied by `stack install comfyui`, checked by `stack doctor`). Unpatched, every sample fails with
+`pulid_forward_orig() got an unexpected keyword argument 'timestep_zero_index'`: the node swaps
+FLUX's `forward_orig` for its own copy of an older one. The patch keeps ComfyUI's own forward,
+which already calls the node's block-replace hooks. **Re-check it on any ComfyUI upgrade.**
+Python deps are in both ComfyUI Containerfiles (`facexlib`, `filterpy`, `timm`, `ftfy`,
+`facenet-pytorch --no-deps` — it pins torch<2.3; insightface + CPU onnxruntime were already there).
+`INSIGHTFACE_PROVIDER = "CPU"` matches the CPU onnxruntime.
 
-**Behaviour note.** With studio-headshot references, V2's identity conditioning is strong enough to
-override scene/wardrobe terms in the prompt. If the background or clothing is being ignored, that's
-PhotoMaker working as designed, not a bug — lower the influence by using more varied reference
-photos, or describe the scene more emphatically.
+**Models** (none in git; all downloaded 2026-11-05 from upstream, no token needed):
+
+| File | Goes in | From |
+|---|---|---|
+| `flux1-dev-Q8_0.gguf` (12.7 GB) | `models/unet/` | `city96/FLUX.1-dev-gguf` (FLUX.1-dev licence: non-commercial) |
+| `pulid_flux_v0.9.1.safetensors` (1.1 GB) | `models/pulid/` | `guozinan/PuLID` |
+| `EVA02_CLIP_L_336_psz14_s6B.pt` (856 MB) | `models/clip/` | `QuanSun/EVA-CLIP` |
+| `detection_Resnet50_Final.pth`, `parsing_bisenet.pth`, `parsing_parsenet.pth` | `models/facexlib/` | `xinntao/facexlib` GitHub releases |
+| `antelopev2/*.onnx` (5 files) | `models/insightface/models/antelopev2/` | `deepinsight/insightface` release v0.7 (`antelopev2.zip`) |
+
+`clip_l`, `t5xxl_fp8_e4m3fn_scaled` and `ae` are the FLUX/Kontext files already installed.
+InsightFace's antelopev2 and FLUX.1-dev are non-commercial; the node's `PulidFluxFaceNetLoader`
+is a commercial-friendly face backend if that ever matters (not wired).
+
+**Why Q8 GGUF and not fp8/bf16:** it reuses `flux.py`'s existing split GGUF path unchanged, is
+near-lossless, and is ungated (BFL's own repo needs an accepted licence + token). On the Halo
+nothing forces a quant; on the 12 GB NVIDIA card it would not fit next to KoboldCPP — use
+`flux1-dev-Q4_K_S.gguf` there (pick it in the Person picker; untested with PuLID).
+
+**Retired:** `workflows/photomaker.py`, the `img` trigger word, `NEGATIVE_PORTRAIT`, the `pm-*`
+fields. Stale `pm-*` keys in a saved `studio_v1` blob are ignored on load. The PhotoMaker-Plus
+checkout and `models/photomaker/` are no longer used by anything.
 
 ## Known broken / stale
 
 **1. `run.py` CLI is thinner than the GUI.** `text2img`/`img2img` take `--checkpoint`, and size
 defaults to the checkpoint's native resolution via `defaults.default_size()` — so FLUX is reachable
-from the CLI too (any name containing `flux` switches workflow). Still missing: no `photomaker`
+from the CLI too (any name containing `flux` switches workflow). Still missing: no Person (`pulid`)
 subcommand, and none of the GUI's per-checkpoint step/CFG tuning, so lightning models need an
 explicit `--steps 6 --cfg 2`.
 
@@ -774,6 +803,6 @@ referenced as `["node_id", output_index]`.
 - `KSampler` → `[0]=latent` · `VAEDecode` → `[0]=image`
 - SDXL uses `CLIPTextEncodeSDXL` (dual `text_g`/`text_l`); SD 1.5 uses plain `CLIPTextEncode`
 - FLUX uses `CLIPTextEncodeFlux` + `ModelSamplingFlux` + `EmptySD3LatentImage`, cfg pinned to 1.0
-- `photomaker.py` builds node IDs **dynamically** (one `LoadImage` per reference photo, chained
-  through `ImageBatch`), so IDs shift with the number of uploads — the only non-static graph here
+- `pulid.py` builds reference node IDs **dynamically** (`ref_N` → `pad_N` per photo, chained
+  through `batch_N`), so the graph grows with the number of uploads — the only non-static graph here
 - `LoraLoader` → `[0]=model, [1]=clip`; it consumes MODEL+CLIP and hands back patched ones

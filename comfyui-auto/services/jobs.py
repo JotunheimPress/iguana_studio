@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 import client
-from workflows import text2img, img2img, video, photomaker, kontext
+from workflows import text2img, img2img, video, pulid, kontext
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = BASE_DIR / "outputs"
@@ -38,8 +38,9 @@ PHASES = {
     "VAELoader": "loading VAE",
     "LoraLoader": "applying LoRA",
     "ModelSamplingFlux": "preparing model",
-    "PhotoMakerLoaderPlus": "loading PhotoMaker", "PhotoMakerInsightFaceLoader": "loading face detector",
-    "PhotoMakerEncodePlus": "reading the reference faces",
+    "PulidFluxModelLoader": "loading PuLID", "PulidFluxInsightFaceLoader": "loading face detector",
+    "PulidFluxEvaClipLoader": "loading face encoder", "ResizeAndPadImage": "reading reference photos",
+    "ApplyPulidFlux": "reading the reference faces",
     "CLIPTextEncode": "encoding prompt", "CLIPTextEncodeSDXL": "encoding prompt",
     "CLIPTextEncodeFlux": "encoding prompt",
     "LoadImage": "reading source image", "VAEEncode": "encoding source image",
@@ -71,8 +72,8 @@ def _run(
             workflow = video.build_i2v(image_path=image_path, **params)
         elif task == "video":
             workflow = video.build_t2v(**params)
-        elif task == "photomaker":
-            workflow = photomaker.build(image_paths=image_paths, **params)
+        elif task == "pulid":
+            workflow = pulid.build(image_paths=image_paths, **params)
         elif task == "kontext":
             workflow = kontext.build(image_path=image_path, **params)
         else:
@@ -161,12 +162,16 @@ def params_for(task: str, f: dict) -> dict:
             width=f['width'], height=f['height'], length=f['length'],
             steps=f['steps'], cfg=f['cfg'], seed=f['seed'], fps=f['fps'], shift=f['shift'],
         )
-    elif task == "photomaker":
+    elif task == "pulid":
+        # FLUX: no negative prompt, and `cfg` carries guidance (as for FLUX in Generate).
+        # The range is checked here so a bad one fails the request, not a queued job.
+        if not 0.0 <= f['start_at'] < f['end_at'] <= 1.0:
+            raise ValueError("Identity 'from' must be below 'until'.")
         params = dict(
             prompt=f['prompt'],
-            negative_prompt=f['negative'] or photomaker.DEFAULT_NEGATIVE,
-            width=f['pm_width'], height=f['pm_height'], steps=f['steps'], cfg=f['cfg'], seed=f['seed'],
-            photomaker_model=f['pm_model'],
+            checkpoint=f['checkpoint'] or pulid.DEFAULT_CHECKPOINT,
+            width=f['width'], height=f['height'], steps=f['steps'], guidance=f['cfg'],
+            seed=f['seed'], weight=f['weight'], start_at=f['start_at'], end_at=f['end_at'],
             loras=f['loras'],
         )
     elif task == "kontext":

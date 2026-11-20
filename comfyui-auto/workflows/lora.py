@@ -10,7 +10,7 @@ Rather than have every builder thread LoRA wiring through its own node layout, t
 rewrites a graph after the fact. Every builder that loads a checkpoint already publishes
 the same two edges — `[ckpt, 0]` for MODEL and `[ckpt, 1]` for CLIP — so redirecting those
 to the end of the LoRA chain is enough, whatever the rest of the graph looks like. That is
-what makes one function cover text2img, img2img, photomaker and both FLUX builders.
+what makes one function cover text2img, img2img, pulid and both FLUX builders.
 
 The VAE edge, `[ckpt, 2]`, is deliberately left alone: LoRAs do not patch the VAE.
 

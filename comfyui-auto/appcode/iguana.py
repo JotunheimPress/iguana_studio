@@ -26,7 +26,7 @@ APP_ENTRYPOINT = "Iguana"
 MODES = [("generate", "Generate"), ("person", "Person"), ("refine", "Refine"),
          ("edit", "Edit"), ("animate", "Animate")]
 COMFY_POLL_MS = 10_000
-TASK = {"generate": "text2img", "person": "photomaker", "refine": "img2img",
+TASK = {"generate": "text2img", "person": "pulid", "refine": "img2img",
         "edit": "kontext", "animate": "img2vid"}
 # What each mode needs before it can run (the classic page's checks, same wording intent).
 MISSING_SOURCE = {
@@ -176,14 +176,14 @@ class Iguana(MainWindow):
             await message.alert("Add at least one reference photo.", title=title)
             return
         prompt = active_prompt(self.sidebar.fields(), mode)
-        if not prompt or (mode == "person" and prompt.strip() == "img"):
+        if not prompt:
             await message.alert(EMPTY_PROMPT.get(mode, "Write a prompt first."), title=title)
             return
         self._set_busy(True)
         self.jobs.status("Uploading…" if files else "Queuing…")
         try:
             # One request per file: pytincture caps a request body (48 MiB here), and a
-            # PhotoMaker set of several photos would add up past it in one.
+            # Person set of several photos would add up past it in one.
             ids = [await self._upload(f) for f in files]
             fields = {**self.panels.fields(mode), "prompt": prompt}
             if mode in LORA_MODES:

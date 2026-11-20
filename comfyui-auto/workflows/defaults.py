@@ -85,22 +85,6 @@ NEGATIVE = (
     "out of frame, cropped, lowres, draft"
 )
 
-# Portrait / PhotoMaker — same base plus face-specific terms
-NEGATIVE_PORTRAIT = (
-    "(worst quality, low quality, normal quality:1.4), "
-    "(jpeg artifacts, compression artifacts, blurry, grainy, noisy:1.2), "
-    "(deformed, distorted, disfigured:1.3), "
-    "bad anatomy, bad proportions, "
-    "(extra limbs, missing limbs, floating limbs:1.2), "
-    "(extra fingers, missing fingers, fused fingers, too many fingers:1.4), "
-    "malformed hands, mutated hands, "
-    "(bad face, ugly face, disfigured face:1.3), "
-    "(asymmetric eyes, cross-eyed, uneven eyes:1.2), "
-    "bad teeth, open mouth, "
-    "watermark, signature, text, logo, "
-    "out of frame, cropped, lowres"
-)
-
 # FLUX — guidance is baked into CLIPTextEncodeFlux; negative is not used
 NEGATIVE_FLUX = ""
 

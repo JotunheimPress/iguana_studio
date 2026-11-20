@@ -10,7 +10,7 @@ user's own numbers away:
 The checkpoint selects fill asynchronously, so their saved value is restored from the state
 blob once the list arrives — and an empty select never overwrites a saved choice.
 
-Every image preview (Refine/Edit/Animate source, Person thumbnails) is a data: URL via
+Every image preview (Refine/Edit/Animate source, Person reference thumbnails) is a data: URL via
 FileReader: pytincture's CSP has no `blob:` in img-src, so URL.createObjectURL is blocked.
 
 Animate sends an EMPTY negative on purpose: the server then uses workflows/video.py's
@@ -28,16 +28,23 @@ BASE_ORDER = ["FLUX.2", "Z-Image", "FLUX", "SDXL", "SD 1.5"]
 NUMERIC = {
     "g": ["g-width", "g-height", "g-steps", "g-cfg"],
     "r": ["r-steps", "r-cfg"],
+    "p": ["p-width", "p-height", "p-steps", "p-cfg"],
 }
 # Fields this module persists (shared with the classic page's PERSIST_IDS).
 PANEL_IDS = ["g-width", "g-height", "g-steps", "g-cfg", "g-seed",
              "r-denoise", "r-steps", "r-cfg", "r-seed", "neg-prompt",
-             "pm-model", "pm-width", "pm-height", "pm-steps", "pm-cfg",
+             "p-width", "p-height", "p-steps", "p-cfg", "p-seed", "p-weight", "p-start", "p-end",
              "k-instruction", "k-guidance", "k-steps", "k-seed",
              "v-motion", "v-length", "v-fps", "v-size", "v-steps", "v-cfg", "v-shift", "v-seed"]
 SOURCE_MODES = ("refine", "edit", "animate")
 MODE_IDS = ("generate", "person", "refine", "edit", "animate")
-ASYNC_IDS = ["g-checkpoint", "r-checkpoint"]
+ASYNC_IDS = ["g-checkpoint", "r-checkpoint", "p-checkpoint"]
+# Person runs PuLID-FLUX, which patches FLUX.1 only — its picker lists just that base.
+PERSON_BASE = "FLUX"
+# Identity sliders: element id -> (label span id, decimals).
+SLIDERS = {"r-denoise": ("denoise-val", 2), "k-guidance": ("k-guidance-val", 1),
+           "p-weight": ("p-weight-val", 2), "p-start": ("p-start-val", 2),
+           "p-end": ("p-end-val", 2)}
 
 
 def _num(id_, value, mn, mx, step, width):
@@ -67,22 +74,31 @@ def panels_html() -> str:
         f'<div class="ctrl-group"><label id="r-cfg-label">CFG</label>{_num("r-cfg", 7, 0.1, 100, 0.5, 58)}</div>'
         f'<div class="ctrl-group"><label>Seed (-1=random)</label>{_num("r-seed", -1, -1, 4294967295, 1, 90)}</div>'
         '</div>'
-        # Person (PhotoMaker)
+        # Person (PuLID-FLUX)
         '<div id="ctrl-person" class="ctrl-section hidden">'
-        '<div class="ctrl-group"><label>PhotoMaker</label><select id="pm-model">'
-        '<option value="photomaker-v2.bin" selected>V2 (recommended)</option>'
-        '<option value="photomaker-v1.bin">V1</option></select></div>'
-        f'<div class="ctrl-group"><label>Width</label>{_num("pm-width", 1024, 512, 2048, 64, 72)}</div>'
-        f'<div class="ctrl-group"><label>Height</label>{_num("pm-height", 1024, 512, 2048, 64, 72)}</div>'
-        f'<div class="ctrl-group"><label>Steps</label>{_num("pm-steps", 25, 1, 150, 1, 58)}</div>'
-        f'<div class="ctrl-group"><label>CFG</label>{_num("pm-cfg", 7, 1, 30, 0.5, 58)}</div>'
+        '<div class="ctrl-group"><label>Model</label><select id="p-checkpoint"><option value="">Loading…</option></select></div>'
+        f'<div class="ctrl-group"><label>Width</label>{_num("p-width", 1024, 512, 2048, 64, 72)}</div>'
+        f'<div class="ctrl-group"><label>Height</label>{_num("p-height", 1024, 512, 2048, 64, 72)}</div>'
+        f'<div class="ctrl-group"><label>Steps</label>{_num("p-steps", 20, 1, 60, 1, 58)}</div>'
+        f'<div class="ctrl-group"><label id="p-cfg-label">Guidance</label>{_num("p-cfg", 3.5, 1, 10, 0.1, 58)}</div>'
+        f'<div class="ctrl-group"><label>Seed (-1=random)</label>{_num("p-seed", -1, -1, 4294967295, 1, 90)}</div>'
+        '<div class="ctrl-group" title="How strongly the reference face is imposed. 0.8–1.0 for a close likeness; lower lets the prompt change more.">'
+        '<label>Likeness <span id="p-weight-val">1.00</span></label>'
+        '<input type="range" id="p-weight" min="0" max="1.5" step="0.05" value="1.0" class="slider"></div>'
+        '<div class="ctrl-group" title="When during sampling the identity switches on. Starting later (0.1–0.3) leaves the pose, framing and style to the prompt.">'
+        '<label>Identity from <span id="p-start-val">0.00</span></label>'
+        '<input type="range" id="p-start" min="0" max="0.9" step="0.05" value="0" class="slider"></div>'
+        '<div class="ctrl-group" title="When the identity switches off again. Below 1.0 lets the final steps refine freely.">'
+        '<label>until <span id="p-end-val">1.00</span></label>'
+        '<input type="range" id="p-end" min="0.1" max="1" step="0.05" value="1" class="slider"></div>'
         '<div class="ctrl-group"><label>Reference photos</label>'
         '<div class="dropzone" id="person-dropzone"><div class="icon">📷</div><p>Click or drag photos</p></div>'
         '<input type="file" id="person-upload-input" multiple accept="image/*" hidden></div>'
         '<div class="ctrl-group hidden" id="person-thumbs-col"><label>Loaded (<span id="person-count">0</span>)'
         ' — click to remove</label><div class="thumb-strip" id="person-thumbs"></div></div>'
-        '<div class="ctrl-group"><label class="tip-label">Prompt tip</label><span class="tip">'
-        '<code>img</code> is added before the prompt automatically in Person mode.</span></div>'
+        '<div class="ctrl-group"><label class="tip-label">Tip</label><span class="tip">'
+        'One clear, front-facing photo is enough; a few varied ones help. Describe the scene, '
+        'not the face — the face comes from the photos.</span></div>'
         '</div>'
         # Edit (Flux Kontext)
         '<div id="ctrl-edit" class="ctrl-section hidden">'
@@ -158,8 +174,8 @@ class Panels:
         for fid in PANEL_IDS:
             if fid in state and by_id(fid):
                 by_id(fid).value = str(state[fid])
-        by_id("denoise-val").textContent = f"{float(by_id('r-denoise').value):.2f}"
-        by_id("k-guidance-val").textContent = f"{float(by_id('k-guidance').value):.1f}"
+        for sid in SLIDERS:
+            self._slider_label(sid)
         self._length_label()
         bar = by_id("ctrl-generate").parentElement
         bar.addEventListener("input", proxy(self._on_input))
@@ -184,16 +200,18 @@ class Panels:
     # --- persistence ---------------------------------------------------------------------
     def _on_input(self, ev) -> None:
         tid = str(ev.target.id)
-        if tid == "r-denoise":
-            by_id("denoise-val").textContent = f"{float(ev.target.value):.2f}"
-        elif tid == "k-guidance":
-            by_id("k-guidance-val").textContent = f"{float(ev.target.value):.1f}"
+        if tid in SLIDERS:
+            self._slider_label(tid)
         elif tid in ("v-length", "v-fps"):
             self._length_label()
         if tid in PANEL_IDS:
             save_state({tid: str(ev.target.value)})
         if tid in ("k-instruction", "v-motion"):
             self.on_prompt_change()              # these ARE the prompt in Edit/Animate
+
+    def _slider_label(self, sid: str) -> None:
+        label, places = SLIDERS[sid]
+        by_id(label).textContent = f"{float(by_id(sid).value):.{places}f}"
 
     def _length_label(self) -> None:
         _, text = snap_length(by_id("v-length").value, by_id("v-fps").value)
@@ -224,17 +242,28 @@ class Panels:
                 f'<option value="{esc(c["name"])}">{esc(_label(c["name"]))}</option>'
                 for c in cps if c["base"] == base) + "</optgroup>"
             for base in order) or '<option value="">ComfyUI offline</option>'
-        for sid in ASYNC_IDS:
+        for sid in ("g-checkpoint", "r-checkpoint"):
             sel = by_id(sid)
             sel.innerHTML = html
             if state.get(sid) in self.ckpts:
                 sel.value = state[sid]
-        for sid, prefix in (("g-checkpoint", "g"), ("r-checkpoint", "r")):
+        self._fill_person(cps, state)
+        for sid, prefix in (("g-checkpoint", "g"), ("r-checkpoint", "r"), ("p-checkpoint", "p")):
             ckpt = str(by_id(sid).value)
             if all(str(state.get(f, "")) != "" for f in NUMERIC[prefix]):
                 self._apply_ui(ckpt, prefix)
             else:
                 self._apply_config(ckpt, prefix)
+
+    def _fill_person(self, cps: list, state: dict) -> None:
+        """Person's picker: FLUX.1 models only, dev first (PuLID was trained on it)."""
+        flux = sorted((c["name"] for c in cps if c["base"] == PERSON_BASE),
+                      key=lambda n: ("dev" not in n.lower(), n.lower()))
+        sel = by_id("p-checkpoint")
+        sel.innerHTML = "".join(f'<option value="{esc(n)}">{esc(_label(n))}</option>'
+                                for n in flux) or '<option value="">No FLUX.1 model installed</option>'
+        if state.get("p-checkpoint") in flux:
+            sel.value = state["p-checkpoint"]
 
     def base_of(self, ckpt: str) -> str:
         c = self.ckpts.get(ckpt)
@@ -262,9 +291,11 @@ class Panels:
         conf = (self.ckpts.get(ckpt) or {}).get("config")
         if not conf:
             return
-        values = ({"g-width": conf["w"], "g-height": conf["h"], "g-steps": conf["steps"],
-                   "g-cfg": conf["cfg"]} if prefix == "g"
-                  else {"r-steps": conf["steps"], "r-cfg": conf["cfg"]})
+        if prefix in ("g", "p"):
+            values = {f"{prefix}-width": conf["w"], f"{prefix}-height": conf["h"],
+                      f"{prefix}-steps": conf["steps"], f"{prefix}-cfg": conf["cfg"]}
+        else:
+            values = {"r-steps": conf["steps"], "r-cfg": conf["cfg"]}
         for fid, v in values.items():
             by_id(fid).value = str(v)
         save_state({k: str(v) for k, v in values.items()})
@@ -362,8 +393,11 @@ class Panels:
             return {"negative": neg, "checkpoint": val("r-checkpoint"), "denoise": val("r-denoise"),
                     "steps": val("r-steps"), "cfg": val("r-cfg"), "seed": val("r-seed")}
         if mode == "person":
-            return {"negative": neg, "pm_model": val("pm-model"), "pm_width": val("pm-width"),
-                    "pm_height": val("pm-height"), "steps": val("pm-steps"), "cfg": val("pm-cfg")}
+            # FLUX takes no negative; `cfg` carries guidance, as for FLUX in Generate.
+            return {"checkpoint": val("p-checkpoint"), "width": val("p-width"),
+                    "height": val("p-height"), "steps": val("p-steps"), "cfg": val("p-cfg"),
+                    "seed": val("p-seed"), "weight": val("p-weight"),
+                    "start_at": val("p-start"), "end_at": val("p-end")}
         if mode == "edit":
             # Guidance rides on `cfg` (the server's convention); sampler CFG is pinned to 1.
             return {"cfg": val("k-guidance"), "steps": val("k-steps"), "seed": val("k-seed")}

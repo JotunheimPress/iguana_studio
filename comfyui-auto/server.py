@@ -115,15 +115,15 @@ def debug_nodes():
 @app.post("/debug/workflow")
 async def debug_workflow(
     task: str = Form(...),
-    prompt: str = Form("a test prompt img"),
+    prompt: str = Form("a test prompt"),
 ):
     """Dry-run a minimal workflow and return what would be sent + any error."""
     import json
     try:
         if task == "text2img":
             wf = text2img.build(prompt=prompt)
-        elif task == "photomaker":
-            wf = {"error": "photomaker needs images — test via the GUI"}
+        elif task == "pulid":
+            wf = {"error": "pulid needs reference photos — test via the GUI"}
         else:
             wf = {"error": f"use task=text2img for quick test"}
         return {"workflow": wf}

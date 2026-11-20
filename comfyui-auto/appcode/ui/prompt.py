@@ -50,11 +50,9 @@ def build_prompt(fields: dict, mode: str = "generate") -> str:
         v = _get(fields, key)
         if v:
             parts.append(v)
-    prompt = ", ".join(parts)
-    # Person mode: the PhotoMaker trigger word (even on an empty prompt, like the JS).
-    if mode == "person":
-        prompt = "img " + prompt
-    return prompt
+    # Person mode adds nothing: PuLID takes the face from the photos, not a trigger word.
+    # (PhotoMaker's "img " prefix went with it on 2026-11-05.)
+    return ", ".join(parts)
 
 
 def active_prompt(fields: dict, mode: str) -> str:

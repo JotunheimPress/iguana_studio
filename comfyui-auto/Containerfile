@@ -3,7 +3,7 @@
 #
 # pytincture needs Python 3.13+. wapyt, the widgetset, is not on PyPI, so the first stages
 # fetch it from GitHub at a pinned commit and build the two wheels a pytincture app needs
-# (same recipe as ai-stack/stack-ui and Basilisk):
+# (same recipe as AI Ecosystem's stack-ui):
 #   * wapyt 0.3.1    — installed into the server's Python, where pytincture's widgetset
 #                      discovery reads it;
 #   * wapyt 99.99.99 — the development wheel the BROWSER installs from appcode/, with its
@@ -22,7 +22,7 @@ ARG PYTHON_IMAGE=docker.io/library/python:3.13-slim
 # ── wapyt source, from GitHub ────────────────────────────────────────────────
 FROM --platform=linux/amd64 ${PYTHON_IMAGE} AS wapyt-git
 ARG WAPYT_REPO=https://github.com/WAwesome-AI/wa_pytincture_widgetset.git
-# wapyt 0.3.1 (tag v0.3.1) — the commit stack-ui and Basilisk pin. Bump deliberately.
+# wapyt 0.3.1 (tag v0.3.1) — the commit AI Ecosystem's stack-ui pins. Bump deliberately.
 ARG WAPYT_REF=c6b8d5e8842d0a9b6f3b681c5745766431d742e2
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*

@@ -6,7 +6,7 @@ ComfyUI's node editor — you write a prompt, the GUI submits a generated workfl
 follows its progress, and saves the result.
 
 **The GUI is a pytincture + wapyt page since 2026-10-27** (Python in the browser, like
-Pantheon and the AI Ecosystem dashboard). It replaced the 2,594-line `static/index.html` in a
+the AI Ecosystem dashboard). It replaced the 2,594-line `static/index.html` in a
 phased, behaviour-for-behaviour port — plan, measurements and decision log in
 **`PYTINCTURE_PLAN.md`**. Much of the GUI write-up below predates the port and still names the
 old JavaScript functions; the behaviour is the same, and
